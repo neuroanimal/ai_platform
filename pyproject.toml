@@ -1,3 +1,71 @@
+[project]
+name = "ai_platform"
+version = "0.0.0"
+description = "Universal AI Platform"
+authors = [
+    { name = "Grzegorz Stadnik", email = "neuroanimal@gmail.com" },
+]
+
+dependencies = [
+    "check-jsonschema>=0.36.0",
+    "openpyxl>=3.1.5",
+    "PyYAML>=6.0.2",
+    "ruamel.yaml>=0.18.17",
+    "setuptools>=80.9.0",
+]
+
+requires-python = ">=3.13.0"
+readme = "README.md"
+license = { file = "LICENSE" }
+
+[build-system]
+requires = [
+  "setuptools>=65.0",
+  "pdm-backend >= 2.4.0",
+]
+build-backend = "setuptools.build_meta"
+# build-backend = "pdm.backend"
+
+[tool.setuptools]
+packages = [
+  "code",
+  "code.common",
+  "code.backend",
+]
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.build]
+includes = ["code/common", "code/backend"]
+excludes = ["test"]
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pre-commit",
+    "ruff",
+    "beautifulsoup4",
+    "tqdm",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-redis",
+    "geventhttpclient",
+    "-e file:///${PROJECT_ROOT}/../lib/my_example_lib",
+]
+
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-redis",
+    "geventhttpclient",
+]
+
 [tool.pylint]
 ignore-patterns = ["test/"]
 

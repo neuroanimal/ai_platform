@@ -193,3 +193,146 @@ Plugins:
 
 This architecture is intentionally strict to protect long-term scalability.
 
+# AI Platform Architecture
+
+This document describes the architectural design of ai-platform, including
+layering, core principles, module responsibilities, and plugin/registry usage.
+
+---
+
+## 1. Architectural Principles
+
+- **Add-only evolution** – no deletions or breaking changes; new functionality is added incrementally.
+- **Strong layer boundaries** – layers may only depend on permitted lower layers.
+- **Plugin-based extensibility** – all cross-cutting functionality is exposed via registry.
+- **Multi-language support** – Python, R, Julia, JavaScript/TypeScript, Rust, etc.
+- **Technology agnosticism** – core abstractions are independent of backend or frontend.
+
+---
+
+## 2. Layering Overview
+
+### 2.1 Common (code/common)
+- **Purpose:** cross-cutting, language-agnostic, reusable code
+- **Subdirectories:**
+  - `core/` – architectural contracts, interfaces, type definitions
+  - `engine/` – engines for IO, DataFrame abstraction, orchestration, visualization
+  - `util/` – utility functions and helpers
+  - `example/` – living examples demonstrating registry and plugin usage
+  - `other/` – ops, virtualization, container management
+- **Dependencies:** independent; may not import backend or frontend
+
+### 2.2 Backend (code/backend)
+- **Purpose:** server-side logic, domain rules, data persistence
+- **Subdirectories:**
+  - `data_layer/` – data models, database connectors, repository patterns
+  - `domain_layer/` – business logic and infra logic
+  - `service_layer/` – micro and macro services
+  - `ui_layer/` – CLI or other backend-facing interfaces
+- **Dependencies:** may import `common`; must not import `frontend`
+
+### 2.3 Frontend (code/frontend)
+- **Purpose:** client-side presentation and channel interfaces
+- **Subdirectories:**
+  - `channel/web/`
+  - `channel/mobile/`
+  - `channel/desktop/`
+  - `shared/` – reusable frontend components
+- **Dependencies:** may import `common`; must not import `backend`
+
+### 2.4 Documentation (doc/)
+- **Purpose:** architectural diagrams, reports, board notes, statistical analysis
+- **Subdirectories:**
+  - `arch/` – architecture and dependency documentation
+  - `board/` – kanban or decision boards
+  - `diagram/` – UML, TikZ/Forest, or other visualizations
+  - `report/` – structured reports and analytics
+
+### 2.5 Tests (test/)
+- Structured according to ISTQB:
+  - `basic-structural/` – unit, coverage, static analysis
+  - `functional/` – functional, integration, regression, UAT, system
+  - `non-functional/` – performance, security, usability, reliability, compatibility
+- Tests depend only on `common` or code under test
+
+---
+
+## 3. Plugin / Registry Mechanism
+
+- **All cross-cutting functionality** is exposed via the registry in `common/core/registry`
+- **PluginContract** defines the interface for all plugins
+- **PluginRegistry** manages registration and resolution
+- **Examples** are in `common/example/registry/`
+- Registry enables:
+  - LLM/Agent switching
+  - ML/DL backend selection
+  - DataFrame adapter injection
+
+---
+
+## 4. Import / Dependency Rules
+
+- **General rules**
+  - Absolute imports preferred
+  - No cyclic dependencies
+  - No cross-layer imports except allowed
+- **Layer rules**
+  - Backend ? may import Common
+  - Frontend ? may import Common
+  - Common ? may not import Backend or Frontend
+  - Examples ? may import Common only
+- **Configuration and docs**
+  - Do not import runtime code
+  - Use declarative config only
+
+---
+
+## 5. DataFrame Abstraction (engine/df)
+
+- **Purpose:** unified interface for multiple DataFrame types
+- **Supported types:**
+  - Pandas, Dask, Spark (Python)
+  - R `data.frame`, `caret`, `statsmodels`
+  - Julia `DataFrames.jl`
+- **Pattern:** adapter + registry
+- **Contracts:** defined in `common/core/interface/dataframe_contract.py`
+
+---
+
+## 6. Engines (engine/)
+
+- **IO Engine:** unified read/write for multiple formats (csv, parquet, json, DB)
+- **Orchestration Engine:** pipeline management, scheduler interface
+- **Visualization Engine:** abstracted plots (Plotly, Seaborn, TikZ, D3.js)
+- **Registry Integration:** engines are registered as plugins and resolved at runtime
+
+---
+
+## 7. Virtualization / Containerization
+
+- Located under `common/other/virtual/`
+- Supports:
+  - Docker images
+  - Kubernetes pods
+  - CI/CD integration
+  - Versioned environment reproducibility
+
+---
+
+## 8. Key Principles in Practice
+
+- **Examples** show exactly how to register and resolve plugins
+- **Import rules** prevent accidental cross-layer coupling
+- **Add-only** evolution ensures backward compatibility
+- **Layer isolation** allows parallel development across backend, frontend, and common
+- **Registry** supports dynamic switching of ML/DL backends, LLMs, and DataFrame types
+
+---
+
+## 9. References
+
+- See `DEPENDENCY_RULES.md` for more detailed allowed/forbidden import matrix
+- See `README.md` for high-level overview
+- See `common/example/` for executable reference implementations
+
+

@@ -1,5 +1,17 @@
 # code/common/core/registry
 
+## Registry
+
+This directory contains architectural registries.
+
+Rules:
+- no auto-discovery
+- no filesystem scanning
+- no implicit imports
+- explicit registration only
+
+Registries are lifecycle-controlled by the caller.
+
 ## Purpose
 Defines responsibilities and scope of this directory within the ai-platform.
 
@@ -18,3 +30,4 @@ Defines responsibilities and scope of this directory within the ai-platform.
 ## Notes
 - This directory is part of an add-only, versioned architecture
 - Changes require explicit acceptance
+
