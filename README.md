@@ -16,4 +16,4 @@ Package ai-platform is a modular, extensible AI/DS/ML platform designed for:
 - Plugin-based extensibility
 - Multi-language support
 
-See ARCHITECTURE.md and DEPENDENCY_RULES.md for details.
+See [Architecture](doc/arch/ARCHITECTURE.md) and [Dependency Rules](doc/arch/DEPENDENCY_RULES.md) for details.
