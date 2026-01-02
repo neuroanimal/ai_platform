@@ -1,0 +1,21 @@
+{
+  "rules": {
+    "import/no-restricted-paths": [
+      "warn",
+      {
+        "zones": [
+          {
+            "target": "./code/common",
+            "from": ["./code/backend", "./code/frontend"],
+            "message": "Common must not depend on backend or frontend."
+          },
+          {
+            "target": "./code/frontend",
+            "from": ["./code/backend"],
+            "message": "Frontend must not import backend directly."
+          }
+        ]
+      }
+    ]
+  }
+}

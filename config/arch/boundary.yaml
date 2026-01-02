@@ -1,0 +1,53 @@
+architecture:
+  name: ai-platform
+  style:
+    - layered
+    - hexagonal
+    - plugin-oriented
+
+layers:
+  common:
+    path: code/common
+    may_depend_on: []
+    forbidden_depend_on:
+      - backend
+      - frontend
+      - test
+      - config
+
+  backend:
+    path: code/backend
+    may_depend_on:
+      - common
+    forbidden_depend_on:
+      - frontend
+
+  frontend:
+    path: code/frontend
+    may_depend_on:
+      - common
+    forbidden_depend_on:
+      - backend
+
+  test:
+    path: test
+    may_depend_on:
+      - common
+      - backend
+      - frontend
+    forbidden_depend_on: []
+
+  config:
+    path: config
+    may_depend_on: []
+    forbidden_depend_on:
+      - common
+      - backend
+      - frontend
+      - test
+
+rules:
+  - no_circular_dependency
+  - inward_only_dependency
+  - interface_over_implementation
+  - plugin_registration_required
