@@ -1,0 +1,6 @@
+ruamel.yaml>=0.17.0
+pyyaml>=6.0
+yamllint>=1.26.0
+python-box>=6.0.0
+# JSON Schema processing
+pyyaml>=6.0

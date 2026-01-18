@@ -1,0 +1,7 @@
+priorities:
+  - "MRCF.recommended_value"
+  - "MRCF.default_per_flavor"
+  - "MRCF.default"
+  - "YAML.default_per_flavor"
+  - "HELM.default"
+  - "MRCF.example"

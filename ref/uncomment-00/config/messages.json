@@ -1,0 +1,41 @@
+{
+  "usage": {
+    "header": "Usage:",
+    "command_template": "python3 {script} $PATH_TO_INPUT_YAML_TEMPLATE_FILE",
+    "parameters": [
+      "[ --mrcf $PATH_TO_INPUT_MRCF_JSON_FILE ]",
+      "[ --helm $PATH_TO_INPUT_HELM_CHARTS_FOLDER ]",
+      "[ --flavor $SYSTEM_SIZE ]",
+      "[ --config $PATH_TO_CONFIG_YAML_FILE ]"
+    ],
+    "descriptions": {
+      "yaml_template": "is a path to values YAML template file from CSAR (mandatory)",
+      "mrcf_json": "is a path to MRCF JSON file from CPI or from Git (optional)",
+      "helm_charts": "is a path to HELM Charts folder, eg. relative path to helm subfolder (optional)",
+      "system_size": "is a name of the flavor/profile/system size and can be: small-system, standard-system, large-system (optional)",
+      "config_yaml": "is a path to config.yaml file containing configuration like priorities from where to take values to set up (optional)"
+    }
+  },
+  "errors": {
+    "fatal_missing_path": "FATAL ERROR: missing 'path' field in parameter:",
+    "fatal_unsupported_system_size": "FATAL ERROR! System size '{size}' unsupported. Possible values are: 'small-system', 'standard-system', 'large-system'.",
+    "warning_path_not_found_mrcf": "Warning: Cannot find path {path} in MRCF parameters, please check it manually!",
+    "warning_overwriting_param": "WARNING! Overwriting {key} param from {prev_val} to {val} at path {path}",
+    "critical_pyyaml_error": "CRITICAL! PYYAML ERROR ON LOADING YAML CONTENT: %s",
+    "critical_ruamel_error": "CRITICAL! RUEMAL ERROR ON LOADING YAML CONTENT: %s",
+    "wrong_yaml_content": "Wrong YAML content found in '{file}', breaking the tool...",
+    "unsupported_error_rule": "Unsupported error rule: {rule}"
+  },
+  "processing": {
+    "processing_chars": "Processing {length} chars of YAML content...",
+    "preprocessed_rows": "Preprocessed {count} rows",
+    "skipping_file": "Warning! Skipping processing of a file or a folder: {path}",
+    "all_done": "All done."
+  },
+  "debug": {
+    "processing_row": "DEBUG: Processing row #{row_num}: {row}",
+    "comment_in_row": "DEBUG: Comment in row? #{row_num}: {comment}",
+    "output_row": "DEBUG: The output_row[{row_num}]: {row}",
+    "output_path": "DEBUG: The output_path[{row_num}] = \"{path}\""
+  }
+}
