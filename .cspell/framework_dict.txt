@@ -1,2 +1,5 @@
 Abstra
+Akka
+Griptape
 langchain
+Langroid

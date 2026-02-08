@@ -1,5 +1,7 @@
+Bokeh
 dplyr
 ggplot
 matplotlib
+Metabase
 plotly
 seaborn

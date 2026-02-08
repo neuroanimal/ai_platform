@@ -13,6 +13,7 @@ pypackages
 pypirc
 pyproject
 PYTHONPATH
+randn
 sdist
 setuptools
 tqdm

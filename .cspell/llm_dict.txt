@@ -2,3 +2,4 @@ cursorignore
 cursorindexingignore
 Marimo
 mistralai
+Ollama
