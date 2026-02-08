@@ -10,8 +10,8 @@ import tempfile
 # Add AI Platform to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from code.common.tool.jsonschema_reorder import JSONSchemaReorder
-from code.common.engine.jsonschema_processing_engine import JSONSchemaProcessingEngine
+from ai_platform.common.tool.jsonschema_reorder import JSONSchemaReorder
+from ai_platform.common.engine.jsonschema_processing_engine import JSONSchemaProcessingEngine
 
 
 def example_direct_usage():

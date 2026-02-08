@@ -3,7 +3,7 @@ JSON Schema Processing Engine for AI Platform
 Provides engine-level interface for JSON Schema reordering functionality
 """
 from typing import Dict, Any, Optional
-from code.common.tool.jsonschema_reorder import JSONSchemaReorder
+from ai_platform.common.tool.jsonschema_reorder import JSONSchemaReorder
 
 
 class JSONSchemaProcessingEngine:

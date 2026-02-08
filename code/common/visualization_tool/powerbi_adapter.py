@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.visualization_tool.base import VisualizationToolAdapter
+from ai_platform.common.visualization_tool.base import VisualizationToolAdapter
 
 class PowerBIAdapter(VisualizationToolAdapter):
     def __init__(self):

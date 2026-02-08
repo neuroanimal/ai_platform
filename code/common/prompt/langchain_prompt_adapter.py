@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.prompt.base import PromptAdapter
+from ai_platform.common.prompt.base import PromptAdapter
 
 class LangChainPromptAdapter(PromptAdapter):
     def __init__(self):

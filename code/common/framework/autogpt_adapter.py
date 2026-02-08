@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from code.common.framework.base import FrameworkAdapter
+from ai_platform.common.framework.base import FrameworkAdapter
 
 class AutoGPTAdapter(FrameworkAdapter):
     def __init__(self):

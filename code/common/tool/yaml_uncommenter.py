@@ -8,10 +8,10 @@ import json
 from typing import Dict, Optional, Tuple
 from ruamel import yaml as yml
 
-from code.common.util.trace_handler import TraceHandler
-from code.common.util.error_handler import ErrorHandler, BaseEngineError
-from code.common.util.path_handler import PathHandler
-from code.common.util.template_validator import TemplateValidator
+from ai_platform.common.util.trace_handler import TraceHandler
+from ai_platform.common.util.error_handler import ErrorHandler, BaseEngineError
+from ai_platform.common.util.path_handler import PathHandler
+from ai_platform.common.util.template_validator import TemplateValidator
 
 
 class YAMLUncommenter:

@@ -1,5 +1,5 @@
 from typing import Dict, Type
-from code.common.protocol.base import ProtocolAdapter
+from ai_platform.common.protocol.base import ProtocolAdapter
 
 class ProtocolRegistry:
     """Registry for protocol adapters."""

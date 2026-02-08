@@ -10,7 +10,7 @@ import json
 # Add AI Platform to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
-from code.common.tool.jsonschema_reorder import JSONSchemaReorder
+from ai_platform.common.tool.jsonschema_reorder import JSONSchemaReorder
 
 
 def main():

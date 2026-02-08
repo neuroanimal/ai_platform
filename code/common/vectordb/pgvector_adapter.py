@@ -1,6 +1,6 @@
 """PGVector (PostgreSQL) vector database adapter implementation."""
 from typing import Any, Dict, List
-from code.common.vectordb.base import VectorDBAdapter
+from ai_platform.common.vectordb.base import VectorDBAdapter
 
 class PGVectorAdapter(VectorDBAdapter):
     """Adapter for PGVector (PostgreSQL with vector extension)."""

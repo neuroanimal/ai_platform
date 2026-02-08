@@ -25,7 +25,7 @@ req:
 # Install system dependencies (Linux/WSL only)
 system-deps:
 	sudo apt-get update
-	sudo apt-get install -y libjpeg-dev zlib1g-dev libtiff-dev libfreetype6-dev liblcms2-dev libwebp-dev gfortran
+	sudo apt-get install -y libjpeg-dev zlib1g-dev libtiff-dev libfreetype6-dev liblcms2-dev libwebp-dev gfortran libgfortran5
 
 # Install JavaScript dependencies
 install-js:

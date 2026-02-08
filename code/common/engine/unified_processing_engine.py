@@ -5,8 +5,8 @@ Combines YAML and JSON Schema processing services into a single engine
 from typing import Dict, Any, Optional, List, Union
 from pathlib import Path
 
-from code.backend.service_layer.yaml_processing.yaml_processing_service import YAMLProcessingService
-from code.backend.service_layer.schema_processing.jsonschema_processing_service import JSONSchemaProcessingService
+from ai_platform.backend.service_layer.yaml_processing.yaml_processing_service import YAMLProcessingService
+from ai_platform.backend.service_layer.schema_processing.jsonschema_processing_service import JSONSchemaProcessingService
 
 
 class UnifiedProcessingEngine:

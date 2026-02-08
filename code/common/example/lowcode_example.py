@@ -1,12 +1,12 @@
 """Example usage of low-code/no-code platform adapters."""
 
-from code.common.lowcode.lowcode_registry import get_registry
-from code.common.lowcode.agentgpt_adapter import AgentGPTAdapter
-from code.common.lowcode.flowise_adapter import FlowiseAdapter
-from code.common.lowcode.langflow_adapter import LangFlowAdapter
-from code.common.lowcode.n8n_adapter import N8nAdapter
-from code.common.lowcode.rivet_adapter import RivetAdapter
-from code.common.lowcode.superagi_adapter import SuperAGIAdapter
+from ai_platform.common.lowcode.lowcode_registry import get_registry
+from ai_platform.common.lowcode.agentgpt_adapter import AgentGPTAdapter
+from ai_platform.common.lowcode.flowise_adapter import FlowiseAdapter
+from ai_platform.common.lowcode.langflow_adapter import LangFlowAdapter
+from ai_platform.common.lowcode.n8n_adapter import N8nAdapter
+from ai_platform.common.lowcode.rivet_adapter import RivetAdapter
+from ai_platform.common.lowcode.superagi_adapter import SuperAGIAdapter
 
 def main():
     registry = get_registry()

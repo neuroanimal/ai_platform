@@ -1,10 +1,10 @@
 """Example usage of image tool adapters."""
 
-from code.common.image_tool.image_tool_registry import get_registry
-from code.common.image_tool.gimp_adapter import GIMPAdapter
-from code.common.image_tool.dia_adapter import DiaAdapter
-from code.common.image_tool.imagemagick_adapter import ImageMagickAdapter
-from code.common.image_tool.inkscape_tool_adapter import InkscapeToolAdapter
+from ai_platform.common.image_tool.image_tool_registry import get_registry
+from ai_platform.common.image_tool.gimp_adapter import GIMPAdapter
+from ai_platform.common.image_tool.dia_adapter import DiaAdapter
+from ai_platform.common.image_tool.imagemagick_adapter import ImageMagickAdapter
+from ai_platform.common.image_tool.inkscape_tool_adapter import InkscapeToolAdapter
 
 def main():
     registry = get_registry()

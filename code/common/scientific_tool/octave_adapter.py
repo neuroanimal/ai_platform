@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.scientific_tool.base import ScientificToolAdapter
+from ai_platform.common.scientific_tool.base import ScientificToolAdapter
 
 class OctaveAdapter(ScientificToolAdapter):
     def __init__(self):

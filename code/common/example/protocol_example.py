@@ -1,9 +1,9 @@
 """Example usage of protocol adapters."""
 
-from code.common.protocol.protocol_registry import get_registry
-from code.common.protocol.mcp_adapter import MCPAdapter
-from code.common.protocol.acp_adapter import ACPAdapter
-from code.common.protocol.a2a_adapter import A2AAdapter
+from ai_platform.common.protocol.protocol_registry import get_registry
+from ai_platform.common.protocol.mcp_adapter import MCPAdapter
+from ai_platform.common.protocol.acp_adapter import ACPAdapter
+from ai_platform.common.protocol.a2a_adapter import A2AAdapter
 
 def main():
     # Get registry

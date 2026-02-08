@@ -22,7 +22,7 @@ PROCESSORS_AVAILABLE = True
 MISSING_MODULES = []
 
 try:
-    from code.common.backend.service_layer.format_processing.conversion.universal_format_converter import (
+    from ai_platform.common.backend.service_layer.format_processing.conversion.universal_format_converter import (
         UniversalFormatConverter, SupportedFormat
     )
 except ImportError as e:
@@ -31,7 +31,7 @@ except ImportError as e:
     SupportedFormat = Enum('SupportedFormat', {})
 
 try:
-    from code.common.backend.service_layer.format_processing.excel_specialized.specialized_excel_processor import (
+    from ai_platform.common.backend.service_layer.format_processing.excel_specialized.specialized_excel_processor import (
         SpecializedExcelProcessor, ExcelType
     )
 except ImportError as e:
@@ -40,7 +40,7 @@ except ImportError as e:
     ExcelType = Enum('ExcelType', {})
 
 try:
-    from code.common.backend.service_layer.format_processing.path_query.path_query_processor import (
+    from ai_platform.common.backend.service_layer.format_processing.path_query.path_query_processor import (
         PathQueryProcessor, QueryType
     )
 except ImportError as e:
@@ -49,7 +49,7 @@ except ImportError as e:
     QueryType = Enum('QueryType', {})
 
 try:
-    from code.common.backend.service_layer.format_processing.netconf.netconf_xml_processor import (
+    from ai_platform.common.backend.service_layer.format_processing.netconf.netconf_xml_processor import (
         NetconfXMLProcessor, NetconfOperation
     )
 except ImportError as e:
@@ -58,14 +58,14 @@ except ImportError as e:
     NetconfOperation = Enum('NetconfOperation', {})
 
 try:
-    from code.common.backend.service_layer.format_processing.schema.yaml_schema_processor import (
+    from ai_platform.common.backend.service_layer.format_processing.schema.yaml_schema_processor import (
         YAMLSchemaProcessor, SchemaFormat
     )
 except ImportError as e:
     MISSING_MODULES.append(f"YAMLSchemaProcessor: {e}")
 
 try:
-    from code.common.backend.service_layer.format_processing.validation.universal_validation_service import (
+    from ai_platform.common.backend.service_layer.format_processing.validation.universal_validation_service import (
         UniversalValidationService, ValidationType, ValidationStandard
     )
 except ImportError as e:

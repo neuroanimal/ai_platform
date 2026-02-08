@@ -1,6 +1,6 @@
 """Elasticsearch vector database adapter implementation."""
 from typing import Any, Dict, List
-from code.common.vectordb.base import VectorDBAdapter
+from ai_platform.common.vectordb.base import VectorDBAdapter
 
 class ElasticsearchAdapter(VectorDBAdapter):
     """Adapter for Elasticsearch vector database."""

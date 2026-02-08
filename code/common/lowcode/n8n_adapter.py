@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.lowcode.base import LowCodeAdapter
+from ai_platform.common.lowcode.base import LowCodeAdapter
 
 class N8nAdapter(LowCodeAdapter):
     def __init__(self):

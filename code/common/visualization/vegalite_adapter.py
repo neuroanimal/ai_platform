@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.visualization.base import VisualizationAdapter
+from ai_platform.common.visualization.base import VisualizationAdapter
 
 class VegaLiteAdapter(VisualizationAdapter):
     def __init__(self):

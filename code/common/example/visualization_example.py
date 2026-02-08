@@ -1,15 +1,15 @@
 """Example usage of visualization library adapters."""
 
-from code.common.visualization.visualization_registry import get_registry
-from code.common.visualization.plotly_adapter import PlotlyAdapter
-from code.common.visualization.matplotlib_adapter import MatplotlibAdapter
-from code.common.visualization.seaborn_adapter import SeabornAdapter
-from code.common.visualization.d3_adapter import D3Adapter
-from code.common.visualization.ggplot2_adapter import GGPlot2Adapter
-from code.common.visualization.altair_adapter import AltairAdapter
-from code.common.visualization.bokeh_adapter import BokehAdapter
-from code.common.visualization.chartjs_adapter import ChartJSAdapter
-from code.common.visualization.vegalite_adapter import VegaLiteAdapter
+from ai_platform.common.visualization.visualization_registry import get_registry
+from ai_platform.common.visualization.plotly_adapter import PlotlyAdapter
+from ai_platform.common.visualization.matplotlib_adapter import MatplotlibAdapter
+from ai_platform.common.visualization.seaborn_adapter import SeabornAdapter
+from ai_platform.common.visualization.d3_adapter import D3Adapter
+from ai_platform.common.visualization.ggplot2_adapter import GGPlot2Adapter
+from ai_platform.common.visualization.altair_adapter import AltairAdapter
+from ai_platform.common.visualization.bokeh_adapter import BokehAdapter
+from ai_platform.common.visualization.chartjs_adapter import ChartJSAdapter
+from ai_platform.common.visualization.vegalite_adapter import VegaLiteAdapter
 
 def main():
     registry = get_registry()

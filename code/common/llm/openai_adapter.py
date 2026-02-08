@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from code.common.llm.base import LLMAdapter
+from ai_platform.common.llm.base import LLMAdapter
 
 class OpenAIAdapter(LLMAdapter):
     def __init__(self):

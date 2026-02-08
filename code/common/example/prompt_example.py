@@ -1,11 +1,11 @@
 """Example usage of prompt engineering adapters."""
 
-from code.common.prompt.prompt_registry import get_registry
-from code.common.prompt.priompt_adapter import PriomptAdapter
-from code.common.prompt.promptlayer_adapter import PromptLayerAdapter
-from code.common.prompt.langchain_prompt_adapter import LangChainPromptAdapter
-from code.common.prompt.guidance_adapter import GuidanceAdapter
-from code.common.prompt.lmql_adapter import LMQLAdapter
+from ai_platform.common.prompt.prompt_registry import get_registry
+from ai_platform.common.prompt.priompt_adapter import PriomptAdapter
+from ai_platform.common.prompt.promptlayer_adapter import PromptLayerAdapter
+from ai_platform.common.prompt.langchain_prompt_adapter import LangChainPromptAdapter
+from ai_platform.common.prompt.guidance_adapter import GuidanceAdapter
+from ai_platform.common.prompt.lmql_adapter import LMQLAdapter
 
 def main():
     registry = get_registry()

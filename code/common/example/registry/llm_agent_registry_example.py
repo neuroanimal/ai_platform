@@ -1,4 +1,4 @@
-from code.common.core.registry.plugin_registry import PluginRegistry
+from ai_platform.common.core.registry.plugin_registry import PluginRegistry
 
 
 class OpenAILLM:

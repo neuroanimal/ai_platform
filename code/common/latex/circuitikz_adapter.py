@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.latex.base import LaTeXAdapter
+from ai_platform.common.latex.base import LaTeXAdapter
 
 class CircuiTikZAdapter(LaTeXAdapter):
     def __init__(self):

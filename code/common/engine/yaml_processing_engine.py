@@ -3,7 +3,7 @@ YAML Processing Engine for AI Platform
 Provides engine-level interface for YAML uncommenting functionality
 """
 from typing import Dict, Optional, Any
-from code.common.tool.yaml_uncommenter import YAMLUncommenter
+from ai_platform.common.tool.yaml_uncommenter import YAMLUncommenter
 
 
 class YAMLProcessingEngine:

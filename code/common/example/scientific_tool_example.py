@@ -1,11 +1,11 @@
 """Example usage of scientific computing tool adapters."""
 
-from code.common.scientific_tool.scientific_tool_registry import get_registry
-from code.common.scientific_tool.matlab_adapter import MATLABAdapter
-from code.common.scientific_tool.mathcad_adapter import MathCADAdapter
-from code.common.scientific_tool.octave_adapter import OctaveAdapter
-from code.common.scientific_tool.mathematica_adapter import MathematicaAdapter
-from code.common.scientific_tool.sagemath_adapter import SageMathAdapter
+from ai_platform.common.scientific_tool.scientific_tool_registry import get_registry
+from ai_platform.common.scientific_tool.matlab_adapter import MATLABAdapter
+from ai_platform.common.scientific_tool.mathcad_adapter import MathCADAdapter
+from ai_platform.common.scientific_tool.octave_adapter import OctaveAdapter
+from ai_platform.common.scientific_tool.mathematica_adapter import MathematicaAdapter
+from ai_platform.common.scientific_tool.sagemath_adapter import SageMathAdapter
 
 def main():
     registry = get_registry()

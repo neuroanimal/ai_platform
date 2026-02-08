@@ -1,6 +1,6 @@
 from typing import Any, Dict
 import numpy as np
-from code.common.ml.base import MLAdapter
+from ai_platform.common.ml.base import MLAdapter
 
 class KerasAdapter(MLAdapter):
     def __init__(self):

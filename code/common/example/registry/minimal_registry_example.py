@@ -1,5 +1,5 @@
-from code.common.core.registry.plugin_registry import PluginRegistry
-from code.common.core.interface.plugin_contract import PluginContract
+from ai_platform.common.core.registry.plugin_registry import PluginRegistry
+from ai_platform.common.core.interface.plugin_contract import PluginContract
 
 
 class ExamplePlugin(PluginContract):

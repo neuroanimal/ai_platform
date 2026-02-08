@@ -12,7 +12,7 @@ from pathlib import Path
 # Add AI Platform to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
-from code.common.engine.unified_processing_engine import UnifiedProcessingEngine
+from ai_platform.common.engine.unified_processing_engine import UnifiedProcessingEngine
 
 
 def create_parser():

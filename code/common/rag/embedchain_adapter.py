@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from code.common.rag.base import RAGAdapter
+from ai_platform.common.rag.base import RAGAdapter
 
 class EmbedchainAdapter(RAGAdapter):
     def __init__(self):

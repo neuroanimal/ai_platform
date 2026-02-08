@@ -84,16 +84,16 @@ def main():
             if wanted_backend in available_backends:
                 """
                 if backend == 'pandas':
-                    from code.common.engine.df.pandas_adapter import PandasDataFrame, PandasDataFrameBuilder
+                    from ai_platform.common.engine.df.pandas_adapter import PandasDataFrame, PandasDataFrameBuilder
                     df = PandasDataFrame()
                     df = PandasDataFrameBuilder().build()
                 elif backend == 'dask':
-                    from code.common.engine.df.dask_adapter import DaskDataFrame, DaskDataFrameBuilder
+                    from ai_platform.common.engine.df.dask_adapter import DaskDataFrame, DaskDataFrameBuilder
                     df = DaskDataFrame()
                     df = DaskDataFrameBuilder().build()
                     df = DaskDataFrameBuilder().set_scheduler("threads").build()
                 elif backend == 'pyspark':
-                    from code.common.engine.df.pyspark_adapter import PySparkDataFrame, PySparkDataFrameBuilder
+                    from ai_platform.common.engine.df.pyspark_adapter import PySparkDataFrame, PySparkDataFrameBuilder
                     # SparkSession tworzony tutaj:
                     # ### spark = SparkSession.builder.appName("DFExample").getOrCreate()
                     # ### df = PySparkDataFrame(spark)
@@ -101,11 +101,11 @@ def main():
                     df = PySparkDataFrame()
                     df = PySparkDataFrameBuilder().build()
                 elif backend == 'r':
-                    from code.common.engine.df.r_adapter import RDataFrame, RDataFrameBuilder
+                    from ai_platform.common.engine.df.r_adapter import RDataFrame, RDataFrameBuilder
                     df = RDataFrame()
                     df = RDataFrameBuilder().build()
                 elif backend == 'julia':
-                    from code.common.engine.df.julia_adapter import JuliaDataFrame, JuliaDataFrameBuilder
+                    from ai_platform.common.engine.df.julia_adapter import JuliaDataFrame, JuliaDataFrameBuilder
                     df = JuliaDataFrame()
                     df = JuliaDataFrameBuilder().build()
                 else:

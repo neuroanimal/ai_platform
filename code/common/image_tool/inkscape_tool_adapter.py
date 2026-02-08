@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.image_tool.base import ImageToolAdapter
+from ai_platform.common.image_tool.base import ImageToolAdapter
 
 class InkscapeToolAdapter(ImageToolAdapter):
     def __init__(self):

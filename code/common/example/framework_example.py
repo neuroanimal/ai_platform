@@ -1,19 +1,19 @@
 """Example usage of all framework adapters."""
 
-from code.common.framework.framework_registry import get_registry
-from code.common.framework.langchain_adapter import LangChainAdapter
-from code.common.framework.langgraph_adapter import LangGraphAdapter
-from code.common.framework.crewai_adapter import CrewAIAdapter
-from code.common.framework.akka_adapter import AkkaAdapter
-from code.common.framework.autogen_adapter import AutoGenAdapter
-from code.common.framework.autogpt_adapter import AutoGPTAdapter
-from code.common.framework.haystack_adapter import HaystackAdapter
-from code.common.framework.griptape_adapter import GriptapeAdapter
-from code.common.framework.langroid_adapter import LangroidAdapter
-from code.common.framework.gradientj_adapter import GradientJAdapter
-from code.common.framework.outlines_adapter import OutlinesAdapter
-from code.common.framework.langdock_adapter import LangDockAdapter
-from code.common.framework.semantic_kernel_adapter import SemanticKernelAdapter
+from ai_platform.common.framework.framework_registry import get_registry
+from ai_platform.common.framework.langchain_adapter import LangChainAdapter
+from ai_platform.common.framework.langgraph_adapter import LangGraphAdapter
+from ai_platform.common.framework.crewai_adapter import CrewAIAdapter
+from ai_platform.common.framework.akka_adapter import AkkaAdapter
+from ai_platform.common.framework.autogen_adapter import AutoGenAdapter
+from ai_platform.common.framework.autogpt_adapter import AutoGPTAdapter
+from ai_platform.common.framework.haystack_adapter import HaystackAdapter
+from ai_platform.common.framework.griptape_adapter import GriptapeAdapter
+from ai_platform.common.framework.langroid_adapter import LangroidAdapter
+from ai_platform.common.framework.gradientj_adapter import GradientJAdapter
+from ai_platform.common.framework.outlines_adapter import OutlinesAdapter
+from ai_platform.common.framework.langdock_adapter import LangDockAdapter
+from ai_platform.common.framework.semantic_kernel_adapter import SemanticKernelAdapter
 
 def main():
     registry = get_registry()

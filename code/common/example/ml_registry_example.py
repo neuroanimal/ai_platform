@@ -1,16 +1,16 @@
 """Example usage of ML framework adapters with registry pattern."""
 
 import numpy as np
-from code.common.ml.ml_registry import get_registry
-from code.common.ml.tensorflow_adapter import TensorFlowAdapter
-from code.common.ml.pytorch_adapter import PyTorchAdapter
-from code.common.ml.scikitlearn_adapter import ScikitLearnAdapter
-from code.common.ml.keras_adapter import KerasAdapter
-from code.common.ml.jax_adapter import JAXAdapter
-from code.common.ml.xgboost_adapter import XGBoostAdapter
-from code.common.ml.lightgbm_adapter import LightGBMAdapter
-from code.common.ml.catboost_adapter import CatBoostAdapter
-from code.common.ml.mxnet_adapter import MXNetAdapter
+from ai_platform.common.ml.ml_registry import get_registry
+from ai_platform.common.ml.tensorflow_adapter import TensorFlowAdapter
+from ai_platform.common.ml.pytorch_adapter import PyTorchAdapter
+from ai_platform.common.ml.scikitlearn_adapter import ScikitLearnAdapter
+from ai_platform.common.ml.keras_adapter import KerasAdapter
+from ai_platform.common.ml.jax_adapter import JAXAdapter
+from ai_platform.common.ml.xgboost_adapter import XGBoostAdapter
+from ai_platform.common.ml.lightgbm_adapter import LightGBMAdapter
+from ai_platform.common.ml.catboost_adapter import CatBoostAdapter
+from ai_platform.common.ml.mxnet_adapter import MXNetAdapter
 
 def main():
     registry = get_registry()

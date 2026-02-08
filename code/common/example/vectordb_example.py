@@ -1,19 +1,19 @@
 """Example usage of vector database adapters."""
 
-from code.common.vectordb.vectordb_registry import get_registry
-from code.common.vectordb.chromadb_adapter import ChromaDBAdapter
-from code.common.vectordb.faiss_adapter import FAISSAdapter
-from code.common.vectordb.qdrant_adapter import QdrantAdapter
-from code.common.vectordb.pgvector_adapter import PGVectorAdapter
-from code.common.vectordb.sqlite_adapter import SQLiteAdapter
-from code.common.vectordb.elasticsearch_adapter import ElasticsearchAdapter
-from code.common.vectordb.opensearch_adapter import OpenSearchAdapter
-from code.common.vectordb.weaviate_adapter import WeaviateAdapter
-from code.common.vectordb.milvus_adapter import MilvusAdapter
-from code.common.vectordb.pinecone_adapter import PineconeAdapter
-from code.common.vectordb.lantern_adapter import LanternAdapter
-from code.common.vectordb.txtai_adapter import TXTaiAdapter
-from code.common.vectordb.lancedb_adapter import LanceDBAdapter
+from ai_platform.common.vectordb.vectordb_registry import get_registry
+from ai_platform.common.vectordb.chromadb_adapter import ChromaDBAdapter
+from ai_platform.common.vectordb.faiss_adapter import FAISSAdapter
+from ai_platform.common.vectordb.qdrant_adapter import QdrantAdapter
+from ai_platform.common.vectordb.pgvector_adapter import PGVectorAdapter
+from ai_platform.common.vectordb.sqlite_adapter import SQLiteAdapter
+from ai_platform.common.vectordb.elasticsearch_adapter import ElasticsearchAdapter
+from ai_platform.common.vectordb.opensearch_adapter import OpenSearchAdapter
+from ai_platform.common.vectordb.weaviate_adapter import WeaviateAdapter
+from ai_platform.common.vectordb.milvus_adapter import MilvusAdapter
+from ai_platform.common.vectordb.pinecone_adapter import PineconeAdapter
+from ai_platform.common.vectordb.lantern_adapter import LanternAdapter
+from ai_platform.common.vectordb.txtai_adapter import TXTaiAdapter
+from ai_platform.common.vectordb.lancedb_adapter import LanceDBAdapter
 
 def main():
     """Register and test all vector database adapters."""

@@ -1,0 +1,1 @@
+import sys; import code as _stdlib_code; sys.modules.setdefault('code', _stdlib_code)

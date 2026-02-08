@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.protocol.base import ProtocolAdapter
+from ai_platform.common.protocol.base import ProtocolAdapter
 
 class ACPAdapter(ProtocolAdapter):
     """Agent Communication Protocol adapter."""

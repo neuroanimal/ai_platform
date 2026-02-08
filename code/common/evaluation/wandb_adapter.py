@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from code.common.evaluation.base import EvaluationAdapter
+from ai_platform.common.evaluation.base import EvaluationAdapter
 
 class WandBAdapter(EvaluationAdapter):
     def __init__(self):

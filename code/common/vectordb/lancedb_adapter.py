@@ -1,6 +1,6 @@
 """LanceDB vector database adapter implementation."""
 from typing import Any, Dict, List
-from code.common.vectordb.base import VectorDBAdapter
+from ai_platform.common.vectordb.base import VectorDBAdapter
 
 class LanceDBAdapter(VectorDBAdapter):
     """Adapter for LanceDB vector database."""

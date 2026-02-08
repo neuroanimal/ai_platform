@@ -29,10 +29,6 @@ ml = [
     "xgboost>=2.0.0",
     "lightgbm>=4.0.0",
     "catboost>=1.2.0",
-    "torch>=2.0.0",
-    "tensorflow>=2.15.0",
-    "jax>=0.4.0",
-    "mxnet>=1.9.0",
     "joblib>=1.3.0",
 ]
 vectordb = [
@@ -68,10 +64,10 @@ build-backend = "setuptools.build_meta"
 # build-backend = "pdm.backend"
 
 [tool.setuptools]
-packages = ["code", "code.common", "code.backend"]
+packages = ["ai_platform", "ai_platform.common", "ai_platform.backend"]
 
 [tool.setuptools.package-dir]
-"" = "."
+ai_platform = "code"
 
 [tool.pdm]
 distribution = true

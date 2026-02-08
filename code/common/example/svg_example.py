@@ -1,11 +1,11 @@
 """Example usage of SVG adapters."""
 
-from code.common.svg.svg_registry import get_registry
-from code.common.svg.svgwrite_adapter import SvgwriteAdapter
-from code.common.svg.snapsvg_adapter import SnapSVGAdapter
-from code.common.svg.svgjs_adapter import SVGJSAdapter
-from code.common.svg.raphael_adapter import RaphaelAdapter
-from code.common.svg.inkscape_adapter import InkscapeAdapter
+from ai_platform.common.svg.svg_registry import get_registry
+from ai_platform.common.svg.svgwrite_adapter import SvgwriteAdapter
+from ai_platform.common.svg.snapsvg_adapter import SnapSVGAdapter
+from ai_platform.common.svg.svgjs_adapter import SVGJSAdapter
+from ai_platform.common.svg.raphael_adapter import RaphaelAdapter
+from ai_platform.common.svg.inkscape_adapter import InkscapeAdapter
 
 def main():
     registry = get_registry()

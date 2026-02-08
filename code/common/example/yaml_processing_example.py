@@ -9,8 +9,8 @@ import tempfile
 # Add AI Platform to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from code.common.tool.yaml_uncommenter import YAMLUncommenter
-from code.common.engine.yaml_processing_engine import YAMLProcessingEngine
+from ai_platform.common.tool.yaml_uncommenter import YAMLUncommenter
+from ai_platform.common.engine.yaml_processing_engine import YAMLProcessingEngine
 
 
 def example_direct_usage():

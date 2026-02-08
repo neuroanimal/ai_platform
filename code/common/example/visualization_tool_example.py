@@ -1,11 +1,11 @@
 """Example usage of visualization tool adapters."""
 
-from code.common.visualization_tool.visualization_tool_registry import get_registry
-from code.common.visualization_tool.tableau_adapter import TableauAdapter
-from code.common.visualization_tool.powerbi_adapter import PowerBIAdapter
-from code.common.visualization_tool.grafana_adapter import GrafanaAdapter
-from code.common.visualization_tool.superset_adapter import SupersetAdapter
-from code.common.visualization_tool.metabase_adapter import MetabaseAdapter
+from ai_platform.common.visualization_tool.visualization_tool_registry import get_registry
+from ai_platform.common.visualization_tool.tableau_adapter import TableauAdapter
+from ai_platform.common.visualization_tool.powerbi_adapter import PowerBIAdapter
+from ai_platform.common.visualization_tool.grafana_adapter import GrafanaAdapter
+from ai_platform.common.visualization_tool.superset_adapter import SupersetAdapter
+from ai_platform.common.visualization_tool.metabase_adapter import MetabaseAdapter
 
 def main():
     registry = get_registry()

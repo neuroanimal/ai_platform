@@ -1,21 +1,21 @@
 """Example usage of LLM adapters."""
 
-from code.common.llm.llm_registry import get_registry
-from code.common.llm.openai_adapter import OpenAIAdapter
-from code.common.llm.anthropic_adapter import AnthropicAdapter
-from code.common.llm.google_adapter import GoogleAdapter
-from code.common.llm.cohere_adapter import CohereAdapter
-from code.common.llm.mistral_adapter import MistralAdapter
-from code.common.llm.huggingface_adapter import HuggingFaceAdapter
-from code.common.llm.bedrock_adapter import BedrockAdapter
-from code.common.llm.azure_openai_adapter import AzureOpenAIAdapter
-from code.common.llm.ollama_adapter import OllamaAdapter
-from code.common.llm.together_adapter import TogetherAdapter
-from code.common.llm.replicate_adapter import ReplicateAdapter
-from code.common.llm.qwen_adapter import QwenAdapter
-from code.common.llm.phi_adapter import PhiAdapter
-from code.common.llm.deepseek_adapter import DeepSeekAdapter
-from code.common.llm.grok_adapter import GrokAdapter
+from ai_platform.common.llm.llm_registry import get_registry
+from ai_platform.common.llm.openai_adapter import OpenAIAdapter
+from ai_platform.common.llm.anthropic_adapter import AnthropicAdapter
+from ai_platform.common.llm.google_adapter import GoogleAdapter
+from ai_platform.common.llm.cohere_adapter import CohereAdapter
+from ai_platform.common.llm.mistral_adapter import MistralAdapter
+from ai_platform.common.llm.huggingface_adapter import HuggingFaceAdapter
+from ai_platform.common.llm.bedrock_adapter import BedrockAdapter
+from ai_platform.common.llm.azure_openai_adapter import AzureOpenAIAdapter
+from ai_platform.common.llm.ollama_adapter import OllamaAdapter
+from ai_platform.common.llm.together_adapter import TogetherAdapter
+from ai_platform.common.llm.replicate_adapter import ReplicateAdapter
+from ai_platform.common.llm.qwen_adapter import QwenAdapter
+from ai_platform.common.llm.phi_adapter import PhiAdapter
+from ai_platform.common.llm.deepseek_adapter import DeepSeekAdapter
+from ai_platform.common.llm.grok_adapter import GrokAdapter
 
 def main():
     registry = get_registry()

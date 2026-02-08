@@ -1,12 +1,12 @@
 """Example usage of LaTeX/TeX adapters."""
 
-from code.common.latex.latex_registry import get_registry
-from code.common.latex.tikz_adapter import TikZAdapter
-from code.common.latex.pgf_adapter import PGFAdapter
-from code.common.latex.pgfplots_adapter import PGFPlotsAdapter
-from code.common.latex.asymptote_adapter import AsymptoteAdapter
-from code.common.latex.metapost_adapter import MetaPostAdapter
-from code.common.latex.circuitikz_adapter import CircuiTikZAdapter
+from ai_platform.common.latex.latex_registry import get_registry
+from ai_platform.common.latex.tikz_adapter import TikZAdapter
+from ai_platform.common.latex.pgf_adapter import PGFAdapter
+from ai_platform.common.latex.pgfplots_adapter import PGFPlotsAdapter
+from ai_platform.common.latex.asymptote_adapter import AsymptoteAdapter
+from ai_platform.common.latex.metapost_adapter import MetaPostAdapter
+from ai_platform.common.latex.circuitikz_adapter import CircuiTikZAdapter
 
 def main():
     registry = get_registry()

@@ -1,9 +1,9 @@
 """Example usage of video tool adapters."""
 
-from code.common.video_tool.video_tool_registry import get_registry
-from code.common.video_tool.vlc_adapter import VLCAdapter
-from code.common.video_tool.virtualdub_adapter import VirtualDubAdapter
-from code.common.video_tool.ffmpeg_adapter import FFmpegAdapter
+from ai_platform.common.video_tool.video_tool_registry import get_registry
+from ai_platform.common.video_tool.vlc_adapter import VLCAdapter
+from ai_platform.common.video_tool.virtualdub_adapter import VirtualDubAdapter
+from ai_platform.common.video_tool.ffmpeg_adapter import FFmpegAdapter
 
 def main():
     registry = get_registry()

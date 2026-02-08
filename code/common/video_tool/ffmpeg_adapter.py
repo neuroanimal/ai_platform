@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.video_tool.base import VideoToolAdapter
+from ai_platform.common.video_tool.base import VideoToolAdapter
 
 class FFmpegAdapter(VideoToolAdapter):
     def __init__(self):

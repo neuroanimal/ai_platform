@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from code.common.svg.base import SVGAdapter
+from ai_platform.common.svg.base import SVGAdapter
 
 class RaphaelAdapter(SVGAdapter):
     def __init__(self):
