@@ -1,0 +1,9 @@
+chromadb
+faiss
+lancedb
+Milvus
+opensearch
+pgvector
+Qdrant
+txtai
+vectordb

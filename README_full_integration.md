@@ -5,7 +5,9 @@ All-purpose general and broad AI Platform with Traditional and Modern AI, NLP, O
 **Now with complete YAML and JSON Schema processing capabilities fully integrated.**
 
 ## Overview
+
 Package ai-platform is a modular, extensible AI/DS/ML platform designed for:
+
 - rapid development of AI solutions,
 - support for Traditional and Modern AI (including Generative AI),
 - maximum architectural rigor with good skeleton prepared,
@@ -13,6 +15,7 @@ Package ai-platform is a modular, extensible AI/DS/ML platform designed for:
 - and long-term scalability.
 
 ## Principles
+
 - Add-only evolution
 - Strong layer boundaries
 - Plugin-based extensibility
@@ -21,6 +24,7 @@ Package ai-platform is a modular, extensible AI/DS/ML platform designed for:
 ## Fully Integrated Processing Services
 
 ### YAML Processing Service (Complete uncomment-00 Integration)
+
 Full merge of uncomment-00 functionality with all original features:
 
 ```python
@@ -38,6 +42,7 @@ result = yaml_service.process_yaml_template(
 ```
 
 **Features:**
+
 - Complete YAML uncommenting with all edge cases
 - MRCF integration for parameter resolution
 - Helm charts integration
@@ -48,6 +53,7 @@ result = yaml_service.process_yaml_template(
 - Full preprocessing and postprocessing pipeline
 
 ### JSON Schema Processing Service (Complete jsonschema_reorder Integration)
+
 Full merge of jsonschema_reorder functionality with enhanced features:
 
 ```python
@@ -64,6 +70,7 @@ result = schema_service.reorder_from_files(
 ```
 
 **Features:**
+
 - Complete JSON Schema reordering
 - Reference-based property ordering
 - Keyword sorting by JSON Schema standards
@@ -74,6 +81,7 @@ result = schema_service.reorder_from_files(
 - Support for all JSON Schema keywords
 
 ### Unified Processing Engine
+
 Single interface combining both services:
 
 ```python
@@ -95,6 +103,7 @@ batch_result = engine.batch_process([
 ```
 
 ### Comprehensive CLI Interface
+
 Complete command-line interface for all functionality:
 
 ```bash
@@ -115,7 +124,7 @@ python code/common/tool/unified_cli.py auto input_file output_file --validate
 
 ## Architecture - Full Integration
 
-```
+```text
 ai_platform/
 ├── code/
 │   ├── backend/
@@ -142,6 +151,7 @@ ai_platform/
 ## Complete Feature Set
 
 ### YAML Processing (All uncomment-00 features)
+
 - ✅ Complete YAML uncommenting pipeline
 - ✅ MRCF JSON parameter integration
 - ✅ Helm charts value integration
@@ -157,6 +167,7 @@ ai_platform/
 - ✅ Debug and verbose modes
 
 ### JSON Schema Processing (All jsonschema_reorder features)
+
 - ✅ Complete schema reordering
 - ✅ Reference-based ordering
 - ✅ Keyword sorting by standards
@@ -171,6 +182,7 @@ ai_platform/
 - ✅ Comprehensive error handling
 
 ### Unified Features
+
 - ✅ Single engine interface
 - ✅ Auto-detection processing
 - ✅ Batch processing
@@ -182,6 +194,7 @@ ai_platform/
 ## Installation
 
 Install all dependencies:
+
 ```bash
 pip install -r config/requirements/yaml.txt
 ```
@@ -189,6 +202,7 @@ pip install -r config/requirements/yaml.txt
 ## Migration from Original Projects
 
 This is a **complete merge**, not a wrapper:
+
 - **All source code** from uncomment-00 and jsonschema_reorder is integrated
 - **All functionality** is preserved and enhanced
 - **All edge cases** are handled

@@ -13,14 +13,14 @@ from .computer_vision import ComputerVision
 
 class AIAlgorithmsAPI:
     """Unified API for all AI algorithms with minimal interface"""
-    
+
     def __init__(self):
         self.unsupervised = UnsupervisedLearning()
         self.time_series = TimeSeriesForecasting()
         self.anomaly = AnomalyDetection()
         self.explainable = ExplainableAI()
         self.vision = ComputerVision()
-    
+
     # Unsupervised Learning shortcuts
     def cluster(self, data: np.ndarray, method: str = 'kmeans', **kwargs):
         """Unified clustering interface"""
@@ -32,7 +32,7 @@ class AIAlgorithmsAPI:
             return self.unsupervised.hierarchical(data, **kwargs)
         else:
             raise ValueError(f"Unknown clustering method: {method}")
-    
+
     def reduce_dimensions(self, data: np.ndarray, method: str = 'pca', **kwargs):
         """Unified dimensionality reduction interface"""
         if method == 'pca':
@@ -43,7 +43,7 @@ class AIAlgorithmsAPI:
             return self.unsupervised.autoencoder(data, **kwargs)
         else:
             raise ValueError(f"Unknown reduction method: {method}")
-    
+
     # Time Series shortcuts
     def forecast(self, data: Union[np.ndarray, pd.DataFrame], method: str = 'prophet', **kwargs):
         """Unified forecasting interface"""
@@ -59,7 +59,7 @@ class AIAlgorithmsAPI:
             return self.time_series.temporal_transformer(data, **kwargs)
         else:
             raise ValueError(f"Unknown forecasting method: {method}")
-    
+
     # Anomaly Detection shortcuts
     def detect_anomalies(self, data: np.ndarray, method: str = 'isolation_forest', **kwargs):
         """Unified anomaly detection interface"""
@@ -75,13 +75,13 @@ class AIAlgorithmsAPI:
             return self.anomaly.ensemble_anomaly(data, **kwargs)
         else:
             raise ValueError(f"Unknown anomaly detection method: {method}")
-    
+
     def detect_changepoints(self, data: np.ndarray, **kwargs):
         """Change point detection"""
         return self.anomaly.bayesian_changepoint(data, **kwargs)
-    
+
     # Explainable AI shortcuts
-    def explain_model(self, model, X_train: np.ndarray, X_test: np.ndarray, 
+    def explain_model(self, model, X_train: np.ndarray, X_test: np.ndarray,
                      method: str = 'shap', **kwargs):
         """Unified model explanation interface"""
         if method == 'shap':
@@ -92,7 +92,7 @@ class AIAlgorithmsAPI:
             return self.explainable.feature_attribution(model, X_test, **kwargs)
         else:
             raise ValueError(f"Unknown explanation method: {method}")
-    
+
     def extract_rules(self, X: np.ndarray, y: np.ndarray, method: str = 'tree', **kwargs):
         """Extract interpretable rules"""
         if method == 'tree':
@@ -101,8 +101,8 @@ class AIAlgorithmsAPI:
             return self.explainable.extract_forest_rules(X, y, **kwargs)
         else:
             raise ValueError(f"Unknown rule extraction method: {method}")
-    
-    def discover_causality(self, data: np.ndarray, feature_names: List[str], 
+
+    def discover_causality(self, data: np.ndarray, feature_names: List[str],
                           method: str = 'pc', **kwargs):
         """Causal discovery"""
         if method == 'pc':
@@ -115,7 +115,7 @@ class AIAlgorithmsAPI:
             return self.explainable.build_dag(adjacency_matrix, feature_names)
         else:
             raise ValueError(f"Unknown causal discovery method: {method}")
-    
+
     # Computer Vision shortcuts
     def apply_filter(self, image: np.ndarray, filter_type: str = 'sobel', **kwargs):
         """Unified image filtering interface"""
@@ -132,7 +132,7 @@ class AIAlgorithmsAPI:
             return self.vision.morphological_operations(image, operation, **kwargs)
         else:
             raise ValueError(f"Unknown filter type: {filter_type}")
-    
+
     def extract_features(self, image: np.ndarray, method: str = 'hog', **kwargs):
         """Unified feature extraction interface"""
         if method == 'hog':
@@ -145,11 +145,11 @@ class AIAlgorithmsAPI:
             return self.vision.corner_detection(image, **kwargs)
         else:
             raise ValueError(f"Unknown feature extraction method: {method}")
-    
+
     def optical_flow(self, prev_frame: np.ndarray, curr_frame: np.ndarray, **kwargs):
         """Optical flow calculation"""
         return self.vision.lucas_kanade_flow(prev_frame, curr_frame, **kwargs)
-    
+
     # Utility methods
     def get_available_methods(self) -> Dict[str, List[str]]:
         """Get all available methods for each category"""
@@ -165,57 +165,57 @@ class AIAlgorithmsAPI:
             'feature_extraction': ['hog', 'sift', 'surf', 'corners'],
             'optical_flow': ['lucas_kanade']
         }
-    
+
     def check_dependencies(self) -> Dict[str, bool]:
         """Check which dependencies are available"""
         dependencies = {}
-        
+
         try:
             import sklearn
             dependencies['sklearn'] = True
         except ImportError:
             dependencies['sklearn'] = False
-        
+
         try:
             import tensorflow
             dependencies['tensorflow'] = True
         except ImportError:
             dependencies['tensorflow'] = False
-        
+
         try:
             import cv2
             dependencies['opencv'] = True
         except ImportError:
             dependencies['opencv'] = False
-        
+
         try:
             import skimage
             dependencies['skimage'] = True
         except ImportError:
             dependencies['skimage'] = False
-        
+
         try:
             import prophet
             dependencies['prophet'] = True
         except ImportError:
             dependencies['prophet'] = False
-        
+
         try:
             import statsmodels
             dependencies['statsmodels'] = True
         except ImportError:
             dependencies['statsmodels'] = False
-        
+
         try:
             import shap
             dependencies['shap'] = True
         except ImportError:
             dependencies['shap'] = False
-        
+
         try:
             import lime
             dependencies['lime'] = True
         except ImportError:
             dependencies['lime'] = False
-        
+
         return dependencies

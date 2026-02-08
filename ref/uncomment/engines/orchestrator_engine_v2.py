@@ -20,20 +20,20 @@ class OrchestratorEngine:
         self.product = product
         self.version = version
         self.config = config
-        
+
         # Initialize Handlers
         self.tracer = TraceHandler(product, version, "Orchestrator")
         self.path_handler = PathHandler()
-        
+
         # Initialize IO Modules
         self.helm_io = HelmModule(self.tracer)
         self.yaml_io = YAMLModule(self.tracer)
         self.json_io = JSONModule(self.tracer)
-        
+
         # Initialize AI Engines
         self.structure_model = StructureModel(self.tracer, self.path_handler)
         self.template_model = TemplateModel(self.tracer, self.path_handler, self.structure_model)
-        
+
         # Initialize YAML Processor Engine (from uncomment-00)
         self.yaml_processor = YAMLProcessorEngine(self.tracer)
 
@@ -67,15 +67,15 @@ class OrchestratorEngine:
         except Exception as e:
             ErrorHandler.handle(e, self.tracer)
 
-    def run_direct_yaml_process(self, mrcf_path: str = None, helm_path: str = None, 
+    def run_direct_yaml_process(self, mrcf_path: str = None, helm_path: str = None,
                                system_size: str = "standard-system"):
         """Direct YAML processing using uncomment-00 approach."""
         try:
             self.tracer.info(f"--- START DIRECT YAML PROCESS: {self.product} v{self.version} ---")
-            
+
             input_path = self._get_path("input/template/values.yaml")
             output_path = self._get_path("output/template/uncommented_values_direct.yaml")
-            
+
             # Use YAML Processor Engine directly
             success = self.yaml_processor.process_yaml_template(
                 input_path=input_path,
@@ -84,14 +84,14 @@ class OrchestratorEngine:
                 helm_path=helm_path,
                 system_size=system_size
             )
-            
+
             if success:
                 self.tracer.info("--- DIRECT YAML PROCESS COMPLETED SUCCESSFULLY ---")
             else:
                 self.tracer.error("--- DIRECT YAML PROCESS FAILED ---")
-                
+
             return success
-            
+
         except Exception as e:
             ErrorHandler.handle(e, self.tracer)
             return False
@@ -101,20 +101,20 @@ class OrchestratorEngine:
         """Hybrid approach: ML analysis + direct processing."""
         try:
             self.tracer.info(f"--- START HYBRID PROCESS: {self.product} v{self.version} ---")
-            
+
             # First run ML analysis for insights
             self.tracer.info("Phase 1: ML Analysis")
             helm_data = self.helm_io.read_all_charts(self._get_path("input/structure/helm"))
             json_params = self.json_io.read_parameters(self._get_path("input/structure/flat/params.json"))
-            
+
             self.structure_model.build_from_sources(helm_data, {})
             self.structure_model.ingest_json_parameters(json_params)
-            
+
             # Then run direct processing
             self.tracer.info("Phase 2: Direct YAML Processing")
             input_path = self._get_path("input/template/values.yaml")
             output_path = self._get_path("output/template/uncommented_values_hybrid.yaml")
-            
+
             success = self.yaml_processor.process_yaml_template(
                 input_path=input_path,
                 output_path=output_path,
@@ -122,21 +122,21 @@ class OrchestratorEngine:
                 helm_path=helm_path or self._get_path("input/structure/helm"),
                 system_size=system_size
             )
-            
+
             if success:
                 self.tracer.info("--- HYBRID PROCESS COMPLETED SUCCESSFULLY ---")
             else:
                 self.tracer.error("--- HYBRID PROCESS FAILED ---")
-                
+
             return success
-            
+
         except Exception as e:
             ErrorHandler.handle(e, self.tracer)
             return False
 
     def _execute_uncomment_logic(self) -> list:
         """
-        Decision logic: For each INACTIVE_DATA line, check if it should be 
+        Decision logic: For each INACTIVE_DATA line, check if it should be
         uncommented based on the structure model.
         """
         final_lines = []
@@ -161,22 +161,22 @@ class OrchestratorEngine:
                     # Success - uncomment
                     if line.structure_node.children:
                         force_uncomment_until_indent = line.indent_level
-                    
+
                     # DECISION: If model knows this parameter, uncomment it
                     target_indent = line.structure_node.metadata['depth'] * 2
                     clean_content = line.raw_content.strip().lstrip('#').strip()
-                    
+
                     content = f"{' ' * target_indent}{clean_content}\n"
                     uncommented_count += 1
                     self.tracer.trace_decision(
-                        step="uncomment", 
+                        step="uncomment",
                         reason=f"Found in StructureModel at path: {line.identified_path}"
                     )
                 else:
                     self.tracer.debug(f"Path not found in model: {line.identified_path}")
 
             final_lines.append(content)
-        
+
         self.tracer.info(f"Uncommented {uncommented_count} lines based on model.")
         return final_lines
 

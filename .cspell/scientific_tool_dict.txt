@@ -1,0 +1,7 @@
+grpcio
+libopenblas
+Mathematica
+numpy
+openblas
+pydantic
+scipy

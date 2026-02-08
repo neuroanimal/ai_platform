@@ -30,21 +30,21 @@ class StructureModel:
     def build_from_sources(self, helm_data: Dict, flat_json_data: Dict):
         """Integruje oba zródla danych w jeden model."""
         self.tracer.info("Budowanie modelu struktury...")
-        
+
         # 1. Najpierw budujemy szkielet z Helm (SSOT)
         self._ingest_dict(helm_data, source="helm")
-        
+
         # 2. Wzbogacamy o dane z Flat JSON
         for path, value in flat_json_data.items():
             self._ingest_flat_path(path, value, source="flat_json")
-            
+
         self.tracer.info(f"Model zbudowany. Utworzono {self.stats['nodes_created']} wezlów.")
 
     def _ingest_dict(self, data: Any, parent_node: StructureNode = None, depth: int = 0, source: str = "helm"):
         """Rekurencyjnie przetwarza zagnieżdżony słownik."""
-        if parent_node is None: 
+        if parent_node is None:
             parent_node = self.root
-        
+
         if isinstance(data, dict):
             for key, value in data.items():
                 node = self._get_or_create_node(parent_node, key, "key", depth)
@@ -53,7 +53,7 @@ class StructureModel:
                 node.metadata["data_type"] = type(value).__name__
                 # Przekazujemy source dalej w rekurencji
                 self._ingest_dict(value, node, depth + 1, source=source)
-        
+
         elif isinstance(data, list):
             # Obsluga list w Helm - tworzymy węzeł specjalny dla elementów listy
             node = self._get_or_create_node(parent_node, "[N]", "index", depth)
@@ -67,13 +67,13 @@ class StructureModel:
         """Wprowadza sciezke z pliku plaskiego do istniejacego modelu."""
         tokens = self.path_handler.tokenize(path)
         current = self.root
-        
+
         for i, token in enumerate(tokens):
             token_val = token['value']
             # Jesli token jest dynamiczny {{...}}, szukamy pasujacego wezla lub tworzymy nowy
             if token['type'] == 'dynamic':
                 self.stats["dynamic_links"] += 1
-            
+
             current = self._get_or_create_node(current, token_val, token['type'], i)
             current.metadata["source"] = "both" if current.metadata["source"] == "helm" else source
             if i == len(tokens) - 1:
@@ -85,24 +85,24 @@ class StructureModel:
             # Używamy pola 'name' (z kropkami) lub 'path' (z slashami)
             # Zamieniamy slashe na kropki dla spójności
             raw_path = param.get("name") or param.get("path").replace("/", ".").strip(".")
-            
+
             # Tokenizacja ścieżki (uwzględnia placeholdery i tablice)
             tokens = self._tokenize_complex_path(raw_path)
-            
+
             current = self.root
             for i, token in enumerate(tokens):
                 # Czyścimy nazwę tokena z nawiasów i śmieci
                 clean_name = token.replace("(", "").replace(")", "")
-                
+
                 # Typ węzła
                 n_type = "key"
                 if "[N]" in clean_name or re.match(r"\[\d+\]", clean_name):
                     n_type = "index"
                 elif "{{" in clean_name:
                     n_type = "dynamic"
-                
+
                 current = self._get_or_create_node(current, clean_name, n_type, i)
-                
+
                 # Jeśli to ostatni element (liść), dodajemy metadane z JSON
                 if i == len(tokens) - 1:
                     current.metadata.update({
@@ -125,7 +125,7 @@ class StructureModel:
         # (Uproszczony split, można go dopracować w razie problemów z grupami (x.y))
         ### return [t for t in path.split('.') if t]
 
-        # 1. Normalizacja: zamieniamy slashe na kropki (poza grupami to ryzykowne, 
+        # 1. Normalizacja: zamieniamy slashe na kropki (poza grupami to ryzykowne,
         # więc robimy to tylko tam, gdzie path jest formatu /root/node)
         if path.startswith('/'):
             path = path.lstrip('/').replace('/', '.')
@@ -144,7 +144,7 @@ class StructureModel:
         for match in token_pattern.finditer(path):
             # Wybieramy pierwszą niepustą grupę z dopasowania
             token = next((g for g in match.groups() if g is not None), "").strip()
-            
+
             if not token:
                 continue
 
@@ -172,7 +172,7 @@ class StructureModel:
         """
         tokens = self.path_handler.tokenize(raw_path)
         current = self.root
-        
+
         for token in tokens:
             # 1. Próba dopasowania bezposredniego
             if token['value'] in current.children:
@@ -195,10 +195,10 @@ class StructureModel:
         for name, child_node in node.children.items():
             # Budujemy ścieżkę: jeśli to element listy, dodajemy [N]
             new_path = f"{parent_path}.{name}" if parent_path else name
-            
+
             # Zapisujemy metadane węzła dla lepszego tracingu
             items[new_path] = child_node.metadata.get("source", "unknown")
-            
+
             # Rekurencja w dół drzewa
             items.update(self._flatten_node(child_node, new_path))
         return items

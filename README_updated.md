@@ -3,7 +3,9 @@
 All-purpose general and broad AI Platform with Traditional and Modern AI, NLP, OCR, ML, DL, LLM, GenAI, AI Agents.
 
 ## Overview
+
 Package ai-platform is a modular, extensible AI/DS/ML platform designed for:
+
 - rapid development of AI solutions,
 - support for Traditional AI and Modern AI (including Generative AI),
 - maximum architectural rigor with good skeleton prepared,
@@ -11,6 +13,7 @@ Package ai-platform is a modular, extensible AI/DS/ML platform designed for:
 - and long-term scalability.
 
 ## Principles
+
 - Add-only evolution
 - Strong layer boundaries
 - Plugin-based extensibility
@@ -19,6 +22,7 @@ Package ai-platform is a modular, extensible AI/DS/ML platform designed for:
 ## Integrated Tools
 
 ### YAML Processing Tool
+
 Integrated YAML uncommenting functionality for DevOps and configuration management:
 
 ```python
@@ -33,6 +37,7 @@ success = uncommenter.process(
 ```
 
 ### JSON Schema Reorder Tool
+
 Integrated JSON Schema reordering functionality for API and data structure management:
 
 ```python
@@ -43,6 +48,7 @@ result = reorder.reorder(schema, reference_schema)
 ```
 
 ### Engine Interfaces
+
 ```python
 from code.common.engine.yaml_processing_engine import YAMLProcessingEngine
 from code.common.engine.jsonschema_processing_engine import JSONSchemaProcessingEngine
@@ -55,6 +61,7 @@ schema_result = schema_engine.reorder_schema(schema, reference)
 ```
 
 ### CLI Usage
+
 ```bash
 # YAML processing
 python code/common/tool/yaml_cli.py input.yaml output.yaml --flavor standard-system
@@ -66,6 +73,7 @@ python code/common/tool/jsonschema_cli.py schema.json output.json --reference re
 ## Installation
 
 Install processing dependencies:
+
 ```bash
 pip install -r config/requirements/yaml.txt
 ```
@@ -73,6 +81,7 @@ pip install -r config/requirements/yaml.txt
 ## Architecture
 
 The integrated tools follow AI Platform architecture:
+
 - **Tools** (`code/common/tool/`): Direct functionality
 - **Engines** (`code/common/engine/`): Higher-level interfaces  
 - **Examples** (`code/common/example/`): Usage demonstrations

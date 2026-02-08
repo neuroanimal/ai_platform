@@ -16,7 +16,7 @@ class ValidationError(BaseEngineError):
 
 class ErrorHandler:
     """Centralny punkt zarzadzania bledami w systemie."""
-    
+
     @staticmethod
     def handle(error: Exception, tracer: TraceHandler):
         if isinstance(error, BaseEngineError):

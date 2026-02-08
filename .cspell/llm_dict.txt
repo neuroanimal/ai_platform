@@ -1,0 +1,4 @@
+cursorignore
+cursorindexingignore
+Marimo
+mistralai

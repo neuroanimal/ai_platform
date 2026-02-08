@@ -12,7 +12,7 @@ class TemplateValidator:
     def __init__(self, tracer: TraceHandler, config_path: str = None):
         self.tracer = tracer
         self.stats = {"errors": 0, "warnings": 0}
-        
+
         # Konfiguracja lintera - jesli nie ma pliku, uzywamy domyslnej "relaxed"
         if config_path and os.path.exists(config_path):
             with open(config_path, 'r') as f:
@@ -44,12 +44,12 @@ class TemplateValidator:
                     "rule": problem.rule
                 }
                 issues.append(issue)
-                
+
                 if problem.level == "error":
                     self.stats["errors"] += 1
                 else:
                     self.stats["warnings"] += 1
-                
+
                 self.tracer.debug(f"Linter Found [{problem.level.upper()}]: Line {problem.line} - {problem.message}")
 
             if self.stats["errors"] > 0:

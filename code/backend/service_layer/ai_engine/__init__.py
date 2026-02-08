@@ -8,6 +8,6 @@ from .template_analysis import TemplateAnalysisEngine, TemplateLine
 __all__ = [
     'StructureAnalysisEngine',
     'StructureNode',
-    'TemplateAnalysisEngine', 
+    'TemplateAnalysisEngine',
     'TemplateLine'
 ]

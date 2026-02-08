@@ -161,7 +161,7 @@ def fix_values(yaml_content, map_path_mrcf, map_path_helm, system_size, prioriti
                 parent_paths[row_num] = "/"
             if DEBUG:
                 print(f"\tparent[{row_num}] = '{parent_paths[row_num]}'")
-            
+
             # compose path from parent keys
             if row_num > 0:
             ### if row_num > 1:
@@ -1617,7 +1617,7 @@ if __name__ == "__main__":
                     path = str(root) + os.sep + file
                     #print(path),
                     # Load from yaml file
-                    # Here it is also possible to use PyYAML arguments, 
+                    # Here it is also possible to use PyYAML arguments,
                     # for example to specify different loaders e.g. SafeLoader or FullLoader
                     ### values = Box.from_yaml(filename=path, box_duplicates='ignore', ruamel_attrs=box_settings)
                     values = Box.from_yaml(yaml_string=None, filename=path, encoding="UTF-8", errors="strict", box_duplicates='ignore', Constructor=MyConstructor, allow_duplicate_keys=None, ruamel_attrs=box_settings)

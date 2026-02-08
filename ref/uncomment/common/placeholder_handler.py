@@ -11,10 +11,10 @@ class PlaceholderHandler:
 
     def protect_placeholders(self, content: str) -> str:
         """
-        Zabezpiecza placeholdery przed blednym parsowaniem YAML, 
+        Zabezpiecza placeholdery przed blednym parsowaniem YAML,
         zamykajac je w cudzyslowy, jesli to konieczne.
         """
-        # Logika: jesli linter ma problem z {{...}}, 
+        # Logika: jesli linter ma problem z {{...}},
         # mozemy to tymczasowo zamienic na "PLACEHOLDER_ID"
         return content
 

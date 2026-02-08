@@ -1,0 +1,11 @@
+beautifulsoup
+dask
+dataframe
+dataframes
+openpyxl
+ropeproject
+Scrapy
+Spyder
+spyderproject
+spyproject
+wrangling

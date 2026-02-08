@@ -16,15 +16,15 @@ class OrchestratorEngine:
         self.product = product
         self.version = version
         self.config = config
-        
+
         # Inicjalizacja Handlerów
         self.tracer = TraceHandler(product, version, "Orchestrator")
         self.path_handler = PathHandler()  # (config_mapping=self.config)
-        
+
         # Inicjalizacja Modulów IO
         self.yaml_io = YAMLModule(self.tracer)
         self.json_io = JSONModule(self.tracer)
-        
+
         # Inicjalizacja Silników AI
         self.structure_model = StructureModel(self.tracer, self.path_handler)
         self.template_model = TemplateModel(self.tracer, self.path_handler, self.structure_model)
@@ -58,7 +58,7 @@ class OrchestratorEngine:
 
     def _execute_uncomment_logic(self) -> list:
         """
-        Logika decyzyjna: Dla kazdej linii INACTIVE_DATA sprawdza, 
+        Logika decyzyjna: Dla kazdej linii INACTIVE_DATA sprawdza,
         czy powinna zostac odkomentowana na podstawie modelu struktury.
         """
         final_lines = []
@@ -66,7 +66,7 @@ class OrchestratorEngine:
 
         for line in self.template_model.lines:
             content = line.raw_content
-            
+
             if line.classification == "INACTIVE_DATA":
                 # Sprawdzamy czy sciezka tej linii istnieje w naszym modelu wiedzy
                 if line.structure_node:
@@ -74,16 +74,16 @@ class OrchestratorEngine:
                     # Tutaj wyliczamy tez odpowiednie wciecie
                     target_indent = line.structure_node.metadata['depth'] * 2
                     clean_content = line.raw_content.strip().lstrip('#').strip()
-                    
+
                     content = f"{' ' * target_indent}{clean_content}\n"
                     uncommented_count += 1
                     self.tracer.trace_decision(
-                        step="uncomment", 
+                        step="uncomment",
                         reason=f"Found in StructureModel at path: {line.identified_path}"
                     )
 
             final_lines.append(content)
-        
+
         self.tracer.info(f"Odkomentowano {uncommented_count} linii na podstawie modelu.")
         return final_lines
 

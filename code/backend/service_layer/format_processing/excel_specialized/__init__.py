@@ -13,7 +13,7 @@ from .specialized_excel_processor import (
 __all__ = [
     'SpecializedExcelProcessor',
     'ExcelType',
-    'ProductType', 
+    'ProductType',
     'DeploymentDay',
     'ExcelMetadata',
     'ProcessedExcelData'

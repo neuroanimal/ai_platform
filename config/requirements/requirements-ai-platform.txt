@@ -1,0 +1,77 @@
+# AI Platform - Python Dependencies
+# Install with: pip install -r requirements-ai-platform.txt
+
+# === LLM Providers ===
+openai>=1.0.0
+anthropic>=0.18.0
+google-generativeai>=0.3.0
+cohere>=4.0.0
+mistralai>=0.0.11
+together>=0.2.0
+replicate>=0.20.0
+
+# === ML/DL Frameworks ===
+# PyTorch - Install separately: pip install torch
+# TensorFlow - Install separately: pip install tensorflow
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+lightgbm>=4.0.0
+catboost>=1.2.0
+# JAX - Install separately: pip install jax[cpu]
+
+# === Vector Databases ===
+chromadb>=0.4.0
+# faiss-cpu - Not compatible with Python 3.15 yet
+qdrant-client>=1.7.0
+pymilvus>=2.3.0
+pinecone-client>=3.0.0
+lancedb>=0.4.0
+txtai>=6.0.0
+
+# === RAG Frameworks ===
+llama-index>=0.9.0
+langchain>=0.1.0
+haystack-ai>=2.0.0
+ragas>=0.1.0
+embedchain>=0.1.0
+
+# === Agent Frameworks ===
+autogen-agentchat>=0.2.0
+crewai>=0.1.0
+
+# === Evaluation Tools ===
+evaluate>=0.4.0
+mlflow>=2.10.0
+wandb>=0.16.0
+deepeval>=0.20.0
+trulens-eval>=0.20.0
+
+# === Visualization ===
+plotly>=5.18.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+altair>=5.2.0
+bokeh>=3.3.0
+
+# === Image/Video Tools ===
+Pillow>=10.0.0
+opencv-python>=4.9.0
+imageio>=2.33.0
+imageio-ffmpeg>=0.4.9
+
+# === SVG/Graphics ===
+svgwrite>=1.4.3
+cairosvg>=2.7.0
+
+# === Scientific Computing ===
+numpy>=1.26.0
+scipy>=1.11.0
+pandas>=2.1.0
+sympy>=1.12
+
+# === Utilities ===
+pydantic>=2.5.0
+httpx>=0.26.0
+aiohttp>=3.9.0
+requests>=2.31.0
+python-dotenv>=1.0.0

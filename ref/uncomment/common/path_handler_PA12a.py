@@ -10,7 +10,7 @@ class PathHandler:
     # def __init__(self):
     def __init__(self, config_mapping: dict):
         self.config = config_mapping
-        # Regex do wylapywania segmentów: 
+        # Regex do wylapywania segmentów:
         # 1. Tekst w cudzyslowie (obsluga escaped quotes)
         # 2. Tekst w nawiasach kwadratowych [N] lub [id="x"]
         # 3. Dynamiczne placeholdery {{...}}
@@ -29,7 +29,7 @@ class PathHandler:
         if not path: return []
         # Normalizacja separatorów przed tokenizacja (np. zamiana / na .)
         path = path.replace('\\', '.').replace('/', '.')
-        
+
         tokens = []
         for match in self.token_regex.finditer(path):
             if match.group('quoted'):

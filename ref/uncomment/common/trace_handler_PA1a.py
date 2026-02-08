@@ -10,18 +10,18 @@ class TraceHandler:
     def __init__(self, product: str, version: str, component: str):
         self.log_path = f"data/{product}/{version}/output/template/process.log"
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
-        
+
         self.logger = logging.getLogger(f"{product}_{version}_{component}")
         self.logger.setLevel(logging.DEBUG)
-        
+
         # Formatowanie: Czas | Poziom | Komponent | Wiadomosc
         formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s')
-        
+
         # Handler do pliku
         fh = logging.FileHandler(self.log_path)
         fh.setFormatter(formatter)
         self.logger.addHandler(fh)
-        
+
         # Handler do konsoli
         ch = logging.StreamHandler()
         ch.setFormatter(formatter)

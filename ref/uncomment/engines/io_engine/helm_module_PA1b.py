@@ -16,7 +16,7 @@ class HelmModule:
     def read_all_charts(self, helm_dir: str) -> dict:
         """Przeszukuje katalog i scala wszystkie values.yaml z wielu archiwów .tgz."""
         aggregated_data = {}
-        
+
         if not os.path.exists(helm_dir):
             self.tracer.warning(f"Katalog Helm nie istnieje: {helm_dir}")
             return aggregated_data
@@ -29,13 +29,13 @@ class HelmModule:
                 # Glebokie scalanie (deep merge) danych z archiwum do glównego worka
                 self._deep_merge(aggregated_data, chart_data)
                 self.stats["archives_processed"] += 1
-        
+
         return aggregated_data
 
     def _process_tgz(self, tgz_path: str) -> dict:
         """Wyciaga dane z jednego archiwu .tgz, mapujac subcharty na klucze."""
         chart_root_data = {}
-        
+
         with tarfile.open(tgz_path, "r:gz") as tar:
             for member in tar.getmembers():
                 if member.name.endswith("values.yaml"):
@@ -46,12 +46,12 @@ class HelmModule:
                         # Wyznaczamy "sciezke kluczy" na podstawie struktury katalogów
                         # Np. 'mychart/charts/logging/values.yaml' -> ['logging']
                         key_path = self._infer_key_path(member.name)
-                        
+
                         if not key_path:
                             self._deep_merge(chart_root_data, content)
                         else:
                             self._nest_data(chart_root_data, key_path, content)
-                            
+
         return chart_root_data
 
     def _infer_key_path(self, internal_path: str) -> list:

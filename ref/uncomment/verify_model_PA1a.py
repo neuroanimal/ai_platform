@@ -8,11 +8,11 @@ def verify():
     # Inicjalizacja podstawowych komponentów
     tracer = TraceHandler("VERIFY", "0.0", "Tool")
     model = StructureModel(tracer, None)
-    
+
     # Symulacja wczytywania danych (podmien sciezki na swoje testowe)
     helm_io = HelmModule(tracer)
     json_io = JSONModule(tracer)
-    
+
     print("--- Ladowanie danych do testu ---")
     # Tutaj ladujemy tylko wycinek lub calosc, by sprawdzic model
     # helm_data = helm_io.read_all_charts("data/ANONYMOUS/0.01/input/structure/helm")
@@ -27,9 +27,9 @@ def verify():
         path = input("Podaj sciezke do sprawdzenia: ")
         if path.lower() == 'exit':
             break
-            
+
         node = model.resolve_path_context(path)
-        
+
         if node:
             print(f"? SUKCES!")
             print(f"   Typ wezla: {node.node_type}")

@@ -43,7 +43,7 @@ def uncomment_row(row):
     uncom_row = re.sub("[#]+", "", row, count=1)
     lvl_after_uncom = indent_level(uncom_row)
     diff_lvl_before_after_uncom = lvl_after_uncom - lvl_before_uncom
-    
+
     if diff_lvl_before_after_uncom > 0:
         if lvl_before_uncom % 2 == 0:
             if lvl_after_uncom % 2 == 1:
@@ -62,7 +62,7 @@ def is_correct_yaml(last_block, row_num):
     """Check if a block is valid YAML."""
     if VERBOSE:
         print(f"Is this correct YAML in row #{row_num}:\n'{last_block}'\n?")
-    
+
     try:
         correct_yaml = yamel.load(last_block)
         if correct_yaml is None:
@@ -95,21 +95,21 @@ def is_correct_yaml(last_block, row_num):
         elif isinstance(correct_yaml, dict):
             keys = list(dict(correct_yaml).keys())
             key = keys[0]
-            
-            excluded_keys = ['IPv4', 'IPv6', 'VirtualTapBroker', 'NFStatusNotify', 
+
+            excluded_keys = ['IPv4', 'IPv6', 'VirtualTapBroker', 'NFStatusNotify',
                            'DUAL_STACK_INBOUND_PASSTHROUGH', 'PILOT_ENABLE_INBOUND_PASSTHROUGH',
                            'ETCD_SNAPSHOT_COUNT', 'ETCD_QUOTA_BACKEND_BYTES',
                            'ENABLE_TLS_ON_SIDECAR_INGRESS', 'ENABLE_AUTO_SNI']
-            
-            if ((key[0].isupper() or " " in key) and key not in excluded_keys and 
-                not key.startswith("PREFIX-") and not key.startswith("ENABLE_") and 
+
+            if ((key[0].isupper() or " " in key) and key not in excluded_keys and
+                not key.startswith("PREFIX-") and not key.startswith("ENABLE_") and
                 not key.startswith("ETCD_")):
                 print("WARNING! Considering as comment text KVP block like title")
                 return False, correct_yaml
             elif key in ["supportedGps", "proxy.istio.io/config"] and isinstance(correct_yaml[key], str):
                 return True, correct_yaml
-            elif (correct_yaml[key] and isinstance(correct_yaml[key], str) and 
-                  len(correct_yaml[key].strip().split(' ')) > 2 and 
+            elif (correct_yaml[key] and isinstance(correct_yaml[key], str) and
+                  len(correct_yaml[key].strip().split(' ')) > 2 and
                   not (correct_yaml[key].strip().startswith('"') and correct_yaml[key].strip().endswith('"'))):
                 if key == "cleanupSchedule" or (key == 'filter' and correct_yaml[key].startswith("ruby")):
                     return True, correct_yaml
@@ -153,7 +153,7 @@ def process_yaml_file1(in_yaml_content):
         except (yml.scanner.ScannerError, yml.composer.ComposerError, yml.parser.ParserError) as ex:
             print("CRITICAL! RUEMAL ERROR ON LOADING YAML CONTENT: %s", ex)
             return ""
-    
+
     buf = io.BytesIO()
     out_yaml_content = yamel.dump(data=in_out_yaml, stream=buf)
     if out_yaml_content is None:

@@ -1,0 +1,4 @@
+texlive
+mactex
+latex
+tex

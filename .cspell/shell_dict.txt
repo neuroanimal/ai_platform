@@ -1,0 +1,4 @@
+pyenv
+venv
+venvs
+envrc

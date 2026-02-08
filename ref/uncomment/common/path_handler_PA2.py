@@ -15,7 +15,7 @@ class PathHandler:
         if not path: return []
         # Normalizacja separatorów przed tokenizacja (np. zamiana / na .)
         path = path.replace('\\', '.').replace('/', '.')
-        
+
         tokens = []
         for match in self.token_regex.finditer(path):
             if match.group('quoted'):

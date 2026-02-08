@@ -25,10 +25,10 @@ class YAMLModule:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            
+
             # 1. Preprocessing
             processed_content = self._preprocessing(content)
-            
+
             # 2. Load
             data = self.yaml.load(processed_content)
             self.stats["files_read"] += 1
@@ -45,13 +45,13 @@ class YAMLModule:
             stream = io.StringIO()
             self.yaml.dump(data, stream)
             content = stream.getvalue()
-            
+
             # 3. Postprocessing
             final_content = self._postprocessing(content)
-            
+
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(final_content)
-            
+
             self.stats["files_written"] += 1
             self.tracer.info(f"Pomyslnie zapisano YAML: {output_path}")
         except Exception as e:
@@ -64,8 +64,8 @@ class YAMLModule:
         """
         original_content = content
         # Przyklad: usuwanie specyficznych dla Helm znaczników, które psuja YAML
-        # content = content.replace("{{-", "# {{-") 
-        
+        # content = content.replace("{{-", "# {{-")
+
         if content != original_content:
             self.stats["preprocessing_hits"] += 1
             self.tracer.debug("Wykonano preprocessing na tresci YAML.")

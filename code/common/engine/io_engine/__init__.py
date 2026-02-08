@@ -9,7 +9,7 @@ from .excel_io_module import ExcelIOModule
 
 __all__ = [
     'YAMLIOModule',
-    'JSONIOModule', 
+    'JSONIOModule',
     'HelmIOModule',
     'ExcelIOModule'
 ]

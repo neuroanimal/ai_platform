@@ -28,7 +28,7 @@ class TemplateModel:
         self.lines: List[TemplateLine] = []
 
         # Stos kontekstu: przechowuje słowniki {'indent': int, 'path': str}
-        self.context_stack = [] 
+        self.context_stack = []
 
         # Reguly RBMT (Regex)
         self.rules = {
@@ -40,7 +40,7 @@ class TemplateModel:
     def process_template(self, raw_lines: List[str]):
         """Glówna petla procesujaca szablon."""
         self.tracer.info("Rozpoczynanie klasyfikacji linii szablonu (Metoda RBMT)...")
-        
+
         """Główna pętla analizująca i procesująca szablon linia po linii."""
         self.context_stack = [] # Reset stosu przed nowym plikiem
         ### current_stack = []  # Do sledzenia hierarchii podczas czytania
@@ -132,7 +132,7 @@ class TemplateModel:
     def _resolve_line_path(self, line: TemplateLine, stack: List[dict]):
         """
         Wiaze linie z modelem struktury na podstawie wciec (Logic of Indentation).
-        Udoskonalone śledzenie kontekstu. 
+        Udoskonalone śledzenie kontekstu.
         Obsługuje listy i dynamiczne poziomy wcięć.
         """
 
@@ -142,11 +142,11 @@ class TemplateModel:
 
         # Czyścimy linię z komentarzy i białych znaków, by znaleźć klucz
         stripped_content = line.raw_content.lstrip().lstrip('#').strip()
-        
+
         # Obsługa elementu listy: "- key: value" lub "- value"
         is_list_item = stripped_content.startswith('-')
         clean_key_match = re.search(r'([a-zA-Z0-9_\-\.]+)\s*:', stripped_content.lstrip('- '))
-        
+
         key = clean_key_match.group(1) if clean_key_match else (None if not is_list_item else "[N]")
         if not key: return
 
@@ -155,14 +155,14 @@ class TemplateModel:
             stack.pop()
 
         parent_path = stack[-1]['path'] if stack else ""
-        
+
         # Jeśli jesteśmy w liście, dodajemy marker [N] do ścieżki
         current_path = f"{parent_path}.{key}" if parent_path else key
-        
+
         line.identified_path = current_path
         # Próba dopasowania w StructureModel (z uwzględnieniem fuzzy match dla [N])
         line.structure_node = self.structure_model.resolve_path_context(current_path)
-        
+
         # Zapamiętujemy ten poziom na stosie
         stack.append({'indent': line.indent_level, 'path': current_path})
 
@@ -172,10 +172,10 @@ class TemplateModel:
         Obsługuje również elementy list (zaczynające się od '-').
         """
         stripped = line.raw_content.lstrip().lstrip('#').strip()
-        
+
         # Wyciągamy klucz: "key:", "- key:" lub "- value" (traktowane jako [N])
         key_match = re.search(r'^([a-zA-Z0-9_\-\.]+)\s*:', stripped.lstrip('- '))
-        
+
         if key_match:
             current_key = key_match.group(1)
         elif stripped.startswith('-'):
@@ -190,7 +190,7 @@ class TemplateModel:
 
         # Budujemy pełną ścieżkę na podstawie rodzica ze stosu
         parent_path = self.context_stack[-1]['path'] if self.context_stack else ""
-        
+
         # Obsługa specyfiki list w ścieżkach
         if stripped.startswith('-') and not current_key == "[N]":
             # Przypadek: "- key: value" -> to jest element listy, który sam jest obiektem
@@ -210,10 +210,10 @@ class TemplateModel:
 
         # PRÓBA POWIĄZANIA Z MODELEM STRUKTURY
         line.structure_node = self.structure_model.resolve_path_context(full_path)
-        
+
         if line.structure_node:
             self.tracer.debug(f"SUKCES: Dopasowano {full_path}")
-        
+
         # Dodajemy obecny poziom na stos dla przyszłych linii (dzieci)
         self.context_stack.append({
             'indent': line.indent_level,
@@ -225,10 +225,10 @@ class TemplateModel:
         # Usuwamy komentarze, białe znaki na początku i końcowe dwukropki
         raw_clean = line.raw_content.strip()
         content_no_comment = raw_clean.lstrip('#').strip()
-        
+
         # Wyciągamy klucz przed dwukropkiem
         key_match = re.search(r'^([a-zA-Z0-9_\-\.]+)\s*:', content_no_comment.lstrip('- '))
-        
+
         if key_match:
             current_key = key_match.group(1)
         elif content_no_comment.startswith('-'):
@@ -243,7 +243,7 @@ class TemplateModel:
             self.context_stack.pop()
 
         parent_path = self.context_stack[-1]['path'] if self.context_stack else ""
-        
+
         # Budujemy ścieżkę
         if content_no_comment.startswith('-') and current_key != "[N]":
              # Element listy będący obiektem: - key: val
@@ -256,7 +256,7 @@ class TemplateModel:
 
         # 3. PRÓBA DOPASOWANIA
         line.structure_node = self.structure_model.resolve_path_context(full_path)
-        
+
         # Jeśli dopasowano, dodajemy do stosu dla dzieci
         self.context_stack.append({
             'indent': line.indent_level,

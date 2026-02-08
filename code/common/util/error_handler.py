@@ -12,7 +12,7 @@ class ValidationError(BaseEngineError):
 
 class ErrorHandler:
     """Centralized error management."""
-    
+
     @staticmethod
     def handle(error: Exception, tracer):
         if isinstance(error, BaseEngineError):

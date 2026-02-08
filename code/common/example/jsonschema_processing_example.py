@@ -17,7 +17,7 @@ from code.common.engine.jsonschema_processing_engine import JSONSchemaProcessing
 def example_direct_usage():
     """Example of direct tool usage."""
     print("=== Direct Tool Usage ===")
-    
+
     # Sample JSON Schema (unordered)
     schema = {
         "additionalProperties": False,
@@ -31,7 +31,7 @@ def example_direct_usage():
         "$schema": "http://json-schema.org/draft-07/schema#",
         "$id": "https://example.com/person.schema.json"
     }
-    
+
     # Reference for property ordering
     reference = {
         "properties": {
@@ -40,10 +40,10 @@ def example_direct_usage():
             "email": {}
         }
     }
-    
+
     reorder = JSONSchemaReorder()
     result = reorder.reorder(schema, reference)
-    
+
     print("Original schema keys:", list(schema.keys()))
     print("Reordered schema keys:", list(result.keys()))
     print("Property order:", list(result["properties"].keys()))
@@ -53,7 +53,7 @@ def example_direct_usage():
 def example_file_processing():
     """Example of file-based processing."""
     print("\n=== File Processing ===")
-    
+
     schema = {
         "required": ["id"],
         "properties": {
@@ -70,27 +70,27 @@ def example_file_processing():
         "type": "object",
         "$schema": "http://json-schema.org/draft-07/schema#"
     }
-    
+
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as schema_file:
         json.dump(schema, schema_file, indent=2)
         schema_file.flush()
-        
+
         output_path = schema_file.name.replace('.json', '_reordered.json')
-        
+
         reorder = JSONSchemaReorder()
         result = reorder.reorder_from_files(
             schema_path=schema_file.name,
             output_path=output_path,
             sort_keywords=True
         )
-        
+
         print(f"✓ Processed file: {output_path}")
-        
+
         # Show result
         with open(output_path, 'r') as f:
             reordered = json.load(f)
             print("Reordered keys:", list(reordered.keys()))
-        
+
         # Cleanup
         os.unlink(schema_file.name)
         os.unlink(output_path)
@@ -99,7 +99,7 @@ def example_file_processing():
 def example_engine_usage():
     """Example of engine interface usage."""
     print("\n=== Engine Interface Usage ===")
-    
+
     schema = {
         "patternProperties": {
             "^[a-z]+$": {"type": "string"}
@@ -108,17 +108,17 @@ def example_engine_usage():
         "type": "object",
         "$schema": "http://json-schema.org/draft-07/schema#"
     }
-    
+
     engine = JSONSchemaProcessingEngine()
-    
+
     # Show capabilities
     caps = engine.get_capabilities()
     print(f"Engine: {caps['name']} v{caps['version']}")
     print(f"Supports: {', '.join(caps['supports'])}")
-    
+
     # Process schema
     result = engine.reorder_schema(schema, sort_keywords=True)
-    
+
     if result['success']:
         print(f"✓ {result['message']}")
         reordered = result['result']
@@ -131,11 +131,11 @@ def main():
     """Run examples."""
     print("AI Platform JSON Schema Processing Examples")
     print("=" * 50)
-    
+
     example_direct_usage()
     example_file_processing()
     example_engine_usage()
-    
+
     print("\n" + "=" * 50)
     print("Examples completed!")
 

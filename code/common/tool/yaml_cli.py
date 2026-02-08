@@ -27,12 +27,12 @@ def main():
                        choices=['rule-based', 'ML-based', 'GenAI-LLM-based', 'GenAI-SMLM-based'],
                        help='Uncommenting method (default: rule-based)')
     parser.add_argument('--log', help='Log file path')
-    
+
     args = parser.parse_args()
-    
+
     if args.method != 'rule-based':
         print(f"Method '{args.method}' not yet implemented. Using rule-based.")
-    
+
     uncommenter = YAMLUncommenter(log_path=args.log)
     success = uncommenter.process(
         input_path=args.input,
@@ -41,7 +41,7 @@ def main():
         helm_path=args.helm,
         system_size=args.flavor
     )
-    
+
     if success:
         print(f"Successfully processed: {args.output}")
     else:

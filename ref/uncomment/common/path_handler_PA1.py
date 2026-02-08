@@ -6,10 +6,10 @@ class PathHandler:
     Odpowiada za parsowanie, normalizacje i porównywanie sciezek parametrów.
     Obsluguje formaty: dot-notation, brackets [N], escaped strings, regex placeholders.
     """
-    
+
     def __init__(self, config_mapping: dict):
         self.config = config_mapping
-        # Regex do wylapywania segmentów: 
+        # Regex do wylapywania segmentów:
         # 1. Tekst w cudzyslowie (obsluga escaped quotes)
         # 2. Tekst w nawiasach kwadratowych [N] lub [id="x"]
         # 3. Dynamiczne placeholdery {{...}}

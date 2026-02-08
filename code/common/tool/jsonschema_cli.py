@@ -21,11 +21,11 @@ def main():
     parser.add_argument('--no-sort', action='store_true', help='Keep original keyword order')
     parser.add_argument('--merge-leaf', action='store_true', help='Merge leaf properties from reference')
     parser.add_argument('--pretty', action='store_true', help='Pretty print output')
-    
+
     args = parser.parse_args()
-    
+
     reorder = JSONSchemaReorder()
-    
+
     try:
         result = reorder.reorder_from_files(
             schema_path=args.schema,
@@ -34,13 +34,13 @@ def main():
             sort_keywords=not args.no_sort,
             merge_leaf_properties=args.merge_leaf
         )
-        
+
         if args.pretty:
             print("Reordered schema:")
             print(json.dumps(result, indent=2, ensure_ascii=False))
-        
+
         print(f"Successfully reordered schema: {args.output}")
-        
+
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)

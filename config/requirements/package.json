@@ -1,0 +1,23 @@
+{
+  "name": "ai-platform-js",
+  "version": "0.0.0",
+  "description": "JavaScript/Node.js dependencies for AI Platform",
+  "private": true,
+  "dependencies": {
+    "d3": "^7.8.5",
+    "chart.js": "^4.4.1",
+    "vega": "^5.27.0",
+    "vega-lite": "^5.16.3",
+    "svg.js": "^2.7.1",
+    "snapsvg": "^0.5.1",
+    "raphael": "^2.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.6",
+    "@types/d3": "^7.4.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

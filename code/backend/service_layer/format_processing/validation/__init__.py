@@ -15,7 +15,7 @@ __all__ = [
     'ValidationService',
     'UniversalValidationService',
     'ValidationType',
-    'ValidationStandard', 
+    'ValidationStandard',
     'ValidationResult',
     'CrossFormatValidationResult'
 ]

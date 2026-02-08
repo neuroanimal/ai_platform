@@ -31,7 +31,7 @@ class ValidationError(BaseEngineError):
 
 class ErrorHandler:
     """Centralized error handling and recovery"""
-    
+
     @staticmethod
     def handle(error: Exception, tracer: TraceHandler, context: Optional[str] = None) -> bool:
         """
@@ -39,25 +39,25 @@ class ErrorHandler:
         Returns True if error was handled and processing can continue
         """
         error_context = f" in {context}" if context else ""
-        
+
         if isinstance(error, BaseEngineError):
             tracer.error(f"Engine Error{error_context}: {str(error)}")
             if error.metadata:
                 tracer.debug(f"Error metadata: {error.metadata}")
             return False
-        
+
         elif isinstance(error, (FileNotFoundError, PermissionError)):
             tracer.error(f"File System Error{error_context}: {str(error)}")
             return False
-        
+
         elif isinstance(error, (ValueError, TypeError)):
             tracer.error(f"Data Error{error_context}: {str(error)}")
             return False
-        
+
         else:
             tracer.error(f"Unexpected Error{error_context}: {str(error)}")
             return False
-    
+
     @staticmethod
     def create_error(error_type: str, message: str, **kwargs) -> BaseEngineError:
         """Factory method for creating typed errors"""
@@ -66,6 +66,6 @@ class ErrorHandler:
             "ai": AIEngineError,
             "validation": ValidationError
         }
-        
+
         error_class = error_classes.get(error_type, BaseEngineError)
         return error_class(message, **kwargs)

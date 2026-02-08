@@ -1,0 +1,11 @@
+imageio
+libfreetype
+libjpeg
+liblcms
+libtiff
+libwebp
+SKIMAGE
+Sobel
+sobelx
+sobely
+zlib1g

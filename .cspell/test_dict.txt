@@ -1,0 +1,6 @@
+htmlcov
+nosetests
+pytest
+testcase
+testcases
+unittest

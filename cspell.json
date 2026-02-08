@@ -1,0 +1,213 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "vectordb",
+    "lowcode",
+    "cspell"
+  ],
+  "dictionaries": [
+    "js_dict",
+    "julia_dict",
+    "r_dict",
+    "python_dict",
+    "latex_dict",
+    "fortran_dict",
+    "torch_dict",
+    "shell_dict",
+    "md_dict",
+    "telco_dict",
+    "excel_dict",
+    "vectordb_dict",
+    "llm_dict",
+    "rag_dict",
+    "df_dict",
+    "lowcode_dict",
+    "ml_dict",
+    "prompt_dict",
+    "protocol_dict",
+    "evaluation_dict",
+    "framework_dict",
+    "image_tool_dict",
+    "video_tool_dict",
+    "scientific_tool_dict",
+    "svg_dict",
+    "viz_dict",
+    "viz_tool_dict",
+    "yaml_dict",
+    "yang_dict",
+    "person_dict",
+    "json_dict",
+    "genai_dict",
+    "data_wrangling_dict",
+    "test_dict",
+    "connect_dict",
+    "lint_dict",
+    "big_data_dict",
+    "dummy_dict",
+    "task_dict",
+    "doc_dict"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "js_dict",
+      "path": "./.cspell/js_dict.txt"
+    },
+    {
+      "name": "julia_dict",
+      "path": "./.cspell/julia_dict.txt"
+    },
+    {
+      "name": "r_dict",
+      "path": "./.cspell/r_dict.txt"
+    },
+    {
+      "name": "python_dict",
+      "path": "./.cspell/python_dict.txt"
+    },
+    {
+      "name": "latex_dict",
+      "path": "./.cspell/latex_dict.txt"
+    },
+    {
+      "name": "fortran_dict",
+      "path": "./.cspell/fortran_dict.txt"
+    },
+    {
+      "name": "torch_dict",
+      "path": "./.cspell/torch_dict.txt"
+    },
+    {
+      "name": "shell_dict",
+      "path": "./.cspell/shell_dict.txt"
+    },
+    {
+      "name": "md_dict",
+      "path": "./.cspell/md_dict.txt"
+    },
+    {
+      "name": "telco_dict",
+      "path": "./.cspell/telco_dict.txt"
+    },
+    {
+      "name": "excel_dict",
+      "path": "./.cspell/excel_dict.txt"
+    },
+    {
+      "name": "vectordb_dict",
+      "path": "./.cspell/vectordb_dict.txt"
+    },
+    {
+      "name": "llm_dict",
+      "path": "./.cspell/llm_dict.txt"
+    },
+    {
+      "name": "rag_dict",
+      "path": "./.cspell/rag_dict.txt"
+    },
+    {
+      "name": "df_dict",
+      "path": "./.cspell/df_dict.txt"
+    },
+    {
+      "name": "lowcode_dict",
+      "path": "./.cspell/lowcode_dict.txt"
+    },
+    {
+      "name": "ml_dict",
+      "path": "./.cspell/ml_dict.txt"
+    },
+    {
+      "name": "prompt_dict",
+      "path": "./.cspell/prompt_dict.txt"
+    },
+    {
+      "name": "protocol_dict",
+      "path": "./.cspell/protocol_dict.txt"
+    },
+    {
+      "name": "evaluation_dict",
+      "path": "./.cspell/evaluation_dict.txt"
+    },
+    {
+      "name": "framework_dict",
+      "path": "./.cspell/framework_dict.txt"
+    },
+    {
+      "name": "image_tool_dict",
+      "path": "./.cspell/image_tool_dict.txt"
+    },
+    {
+      "name": "video_tool_dict",
+      "path": "./.cspell/video_tool_dict.txt"
+    },
+    {
+      "name": "scientific_tool_dict",
+      "path": "./.cspell/scientific_tool_dict.txt"
+    },
+    {
+      "name": "svg_dict",
+      "path": "./.cspell/svg_dict.txt"
+    },
+    {
+      "name": "viz_dict",
+      "path": "./.cspell/viz_dict.txt"
+    },
+    {
+      "name": "viz_tool_dict",
+      "path": "./.cspell/viz_tool_dict.txt"
+    },
+    {
+      "name": "yaml_dict",
+      "path": "./.cspell/yaml_dict.txt"
+    },
+    {
+      "name": "yang_dict",
+      "path": "./.cspell/yang_dict.txt"
+    },
+    {
+      "name": "person_dict",
+      "path": "./.cspell/person_dict.txt"
+    },
+    {
+      "name": "json_dict",
+      "path": "./.cspell/json_dict.txt"
+    },
+    {
+      "name": "genai_dict",
+      "path": "./.cspell/genai_dict.txt"
+    },
+    {
+      "name": "data_wrangling_dict",
+      "path": "./.cspell/data_wrangling_dict.txt"
+    },
+    {
+      "name": "test_dict",
+      "path": "./.cspell/test_dict.txt"
+    },
+    {
+      "name": "connect_dict",
+      "path": "./.cspell/connect_dict.txt"
+    },
+    {
+      "name": "lint_dict",
+      "path": "./.cspell/lint_dict.txt"
+    },
+    {
+      "name": "big_data_dict",
+      "path": "./.cspell/big_data_dict.txt"
+    },
+    {
+      "name": "dummy_dict",
+      "path": "./.cspell/dummy_dict.txt"
+    },
+    {
+      "name": "task_dict",
+      "path": "./.cspell/task_dict.txt"
+    },
+    {
+      "name": "doc_dict",
+      "path": "./.cspell/doc_dict.txt"
+    }
+  ]
+}

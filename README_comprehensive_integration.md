@@ -8,7 +8,7 @@ The AI Platform has been completely refactored to integrate the full functionali
 
 ### Layered Architecture
 
-```
+```text
 ai_platform/
 ├── code/
 │   ├── backend/
@@ -42,24 +42,28 @@ ai_platform/
 ## Key Features
 
 ### 1. Multi-Modal Processing
+
 - **Rule-Based**: Traditional rule-based processing (uncomment-00 approach)
 - **AI-Based**: AI-enhanced analysis and decision making
 - **Hybrid**: Combines rule-based and AI approaches for optimal results
 - **ML Analysis**: Comprehensive ML workflow with multiple processing modes
 
 ### 2. Format Support
+
 - **YAML**: Complete YAML template processing with comment preservation
 - **JSON**: JSON Schema processing with reordering and validation
 - **Helm**: Helm chart processing with subchart support
 - **MRCF**: Machine Readable Configuration File processing
 
 ### 3. AI Integration
+
 - **Structure Analysis Engine**: AI-enhanced structure modeling and path resolution
 - **Template Analysis Engine**: AI-based template classification and analysis
 - **Confidence Scoring**: AI confidence metrics for decision making
 - **Pattern Recognition**: Advanced pattern recognition for complex templates
 
 ### 4. Processing Capabilities
+
 - **Template Uncommenting**: Intelligent uncommenting based on structure knowledge
 - **Batch Processing**: Process multiple files with consistent settings
 - **Auto-Detection**: Automatic file type detection and appropriate processing
@@ -68,6 +72,7 @@ ai_platform/
 ## Installation & Setup
 
 ### Prerequisites
+
 ```bash
 pip install ruamel.yaml
 pip install jsonschema
@@ -75,6 +80,7 @@ pip install pyyaml
 ```
 
 ### Project Structure Setup
+
 The project follows a modular architecture with clear separation of concerns:
 
 - **Backend Service Layer**: Core processing services organized by format
@@ -87,6 +93,7 @@ The project follows a modular architecture with clear separation of concerns:
 ### 1. YAML Processing
 
 #### Command Line Interface
+
 ```bash
 # Hybrid processing (recommended)
 python comprehensive_cli.py yaml process input.yaml --output output.yaml --mode hybrid --mrcf config.json --helm charts/
@@ -102,6 +109,7 @@ python comprehensive_cli.py yaml validate input.yaml
 ```
 
 #### Programmatic Usage
+
 ```python
 from common.engine.unified_orchestrator_engine import UnifiedOrchestratorEngine, ProcessingMode
 
@@ -121,7 +129,8 @@ success = orchestrator.process_yaml_template(
 
 ### 2. JSON Schema Processing
 
-#### Command Line Interface
+#### JSON Schema CLI
+
 ```bash
 # Reorder JSON Schema
 python comprehensive_cli.py json reorder schema.json --output reordered.json
@@ -150,18 +159,21 @@ python comprehensive_cli.py workflow ml-analysis input.yaml output_dir/ --mrcf c
 ## Processing Modes
 
 ### Rule-Based Mode
+
 - Uses traditional rule-based logic from uncomment-00
 - Fast and deterministic
 - Best for well-structured, predictable templates
 - High precision for known patterns
 
 ### AI-Based Mode
+
 - Uses AI engines for structure analysis and template classification
 - Handles complex and ambiguous cases
 - Confidence scoring for decisions
 - Better for dynamic and complex templates
 
 ### Hybrid Mode (Recommended)
+
 - Combines rule-based and AI approaches
 - Uses rule-based for high-confidence cases
 - Falls back to AI for complex cases
@@ -170,6 +182,7 @@ python comprehensive_cli.py workflow ml-analysis input.yaml output_dir/ --mrcf c
 ## Configuration
 
 ### MRCF (Machine Readable Configuration File)
+
 ```json
 {
   "parameters": [
@@ -189,6 +202,7 @@ python comprehensive_cli.py workflow ml-analysis input.yaml output_dir/ --mrcf c
 ```
 
 ### System Size Flavors
+
 - **small-system**: Optimized for small deployments
 - **standard-system**: Default configuration
 - **large-system**: Optimized for large-scale deployments
@@ -196,12 +210,14 @@ python comprehensive_cli.py workflow ml-analysis input.yaml output_dir/ --mrcf c
 ## AI Engine Details
 
 ### Structure Analysis Engine
+
 - Builds comprehensive structure models from multiple sources
 - Supports fuzzy path matching and dynamic placeholders
 - Confidence scoring for path resolutions
 - Usage pattern analysis for optimization
 
 ### Template Analysis Engine
+
 - AI-enhanced line classification (ACTIVE_DATA, INACTIVE_DATA, DOCUMENTATION, CONSTRAINT)
 - Context-aware path resolution with backtracking
 - Feature extraction for AI decision making
@@ -210,6 +226,7 @@ python comprehensive_cli.py workflow ml-analysis input.yaml output_dir/ --mrcf c
 ## Integration Benefits
 
 ### From uncomment-00 Project
+
 - ✅ Complete rule-based processing logic
 - ✅ MRCF integration
 - ✅ Helm chart processing
@@ -217,6 +234,7 @@ python comprehensive_cli.py workflow ml-analysis input.yaml output_dir/ --mrcf c
 - ✅ Error handling and validation
 
 ### From uncomment Project
+
 - ✅ AI engine architecture
 - ✅ Structure modeling
 - ✅ Template analysis
@@ -224,6 +242,7 @@ python comprehensive_cli.py workflow ml-analysis input.yaml output_dir/ --mrcf c
 - ✅ Advanced path resolution
 
 ### New Enhancements
+
 - ✅ Unified orchestration engine
 - ✅ Hybrid processing modes
 - ✅ Comprehensive CLI interface
@@ -234,12 +253,14 @@ python comprehensive_cli.py workflow ml-analysis input.yaml output_dir/ --mrcf c
 ## Testing
 
 ### Run Integration Tests
+
 ```bash
 cd test/functional/integration_test/
 python test_comprehensive_integration.py
 ```
 
 ### Test Coverage
+
 - ✅ YAML processing (all modes)
 - ✅ JSON Schema processing
 - ✅ Batch processing
@@ -251,16 +272,19 @@ python test_comprehensive_integration.py
 ## Performance Characteristics
 
 ### Processing Speed
+
 - **Rule-based**: Fastest, ~1000 lines/second
 - **AI-based**: Moderate, ~200 lines/second
 - **Hybrid**: Balanced, ~500 lines/second
 
 ### Memory Usage
+
 - **Rule-based**: Low memory footprint
 - **AI-based**: Higher memory for model storage
 - **Hybrid**: Moderate memory usage
 
 ### Accuracy
+
 - **Rule-based**: High for known patterns, limited for edge cases
 - **AI-based**: Good for complex cases, may over-analyze simple cases
 - **Hybrid**: Best overall accuracy across all scenarios
@@ -268,6 +292,7 @@ python test_comprehensive_integration.py
 ## Future Enhancements
 
 ### Planned Features
+
 - [ ] Support for additional formats (TOML, XML, YANG)
 - [ ] Advanced ML models for better accuracy
 - [ ] Web-based UI for interactive processing
@@ -275,6 +300,7 @@ python test_comprehensive_integration.py
 - [ ] Distributed processing for large-scale operations
 
 ### AI Enhancements
+
 - [ ] Deep learning models for template understanding
 - [ ] Natural language processing for documentation analysis
 - [ ] Computer vision for diagram processing
@@ -283,12 +309,14 @@ python test_comprehensive_integration.py
 ## Contributing
 
 ### Code Organization
+
 - Follow the layered architecture pattern
 - Maintain separation between format-specific and generic logic
 - Use dependency injection for testability
 - Implement comprehensive error handling
 
 ### Testing Requirements
+
 - Unit tests for individual components
 - Integration tests for end-to-end workflows
 - Performance tests for large-scale processing
@@ -313,6 +341,7 @@ python test_comprehensive_integration.py
    - Monitor memory usage with AI-based processing
 
 ### Debug Mode
+
 ```bash
 python comprehensive_cli.py yaml process input.yaml --output output.yaml --log-level DEBUG
 ```
@@ -320,6 +349,7 @@ python comprehensive_cli.py yaml process input.yaml --output output.yaml --log-l
 ## License
 
 This project integrates code from multiple sources:
+
 - Original AI Platform architecture
 - uncomment-00 project (rule-based processing)
 - uncomment project (AI-enhanced processing)

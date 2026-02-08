@@ -25,7 +25,7 @@ class TemplateModel:
         self.path_handler = path_handler
         self.structure_model = structure_model
         self.lines: List[TemplateLine] = []
-        
+
         # Reguly RBMT (Regex)
         self.rules = {
             "data_pattern": re.compile(r'^\s*#?\s*([a-zA-Z0-9_\-\.]+)\s*:\s*(.*)'),
@@ -36,17 +36,17 @@ class TemplateModel:
     def process_template(self, raw_lines: List[str]):
         """Glówna petla procesujaca szablon."""
         self.tracer.info("Rozpoczynanie klasyfikacji linii szablonu (Metoda RBMT)...")
-        
+
         current_stack = []  # Do sledzenia hierarchii podczas czytania
 
         for i, raw_content in enumerate(raw_lines):
             line = TemplateLine(raw_content, i + 1)
             self._classify_line(line)
-            
+
             # Jesli to dane (aktywne lub nie), próbujemy wyznaczyc sciezke
             if line.classification in ["ACTIVE_DATA", "INACTIVE_DATA"]:
                 self._resolve_line_path(line, current_stack)
-            
+
             self.lines.append(line)
 
     def _classify_line(self, line: TemplateLine):
@@ -76,12 +76,12 @@ class TemplateModel:
                 if len(data_match.group(1)) < 50: # Klucze YAML rzadko są aż tak długie
                     line.classification = "INACTIVE_DATA"
                     return
-            
+
             # 3. Sprawdzanie CONSTRAINT (slowa kluczowe w komentarzu)
             if any(k in stripped.lower() for k in self.rules["constraint_keywords"]):
                 line.classification = "CONSTRAINT"
                 return
-            
+
             # 4. Jesli nic nie pasuje, to DOCUMENTATION
             line.classification = "DOCUMENTATION"
 
@@ -91,17 +91,17 @@ class TemplateModel:
         if not match: return
 
         key = match.group(1)
-        
+
         # Zarzadzanie stosem wciec (indentation-based tree traversal)
         while stack and stack[-1]['indent'] >= line.indent_level:
             stack.pop()
-        
+
         parent_path = stack[-1]['path'] if stack else ""
         current_path = f"{parent_path}.{key}" if parent_path else key
-        
+
         line.identified_path = current_path
         line.structure_node = self.structure_model.resolve_path_context(current_path)
-        
+
         stack.append({'indent': line.indent_level, 'path': current_path})
 
     def get_inactive_data_lines(self) -> List[TemplateLine]:

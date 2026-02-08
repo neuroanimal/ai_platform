@@ -8,11 +8,11 @@ from code.common.tool.jsonschema_reorder import JSONSchemaReorder
 
 class JSONSchemaProcessingEngine:
     """Engine wrapper for JSON Schema processing functionality."""
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.reorder = JSONSchemaReorder()
-    
+
     def reorder_schema(self, schema: Dict[str, Any], reference: Optional[Dict[str, Any]] = None,
                       **kwargs) -> Dict[str, Any]:
         """Reorder JSON Schema with engine interface."""
@@ -23,20 +23,20 @@ class JSONSchemaProcessingEngine:
                 sort_keywords=kwargs.get('sort_keywords', True),
                 merge_leaf_properties=kwargs.get('merge_leaf_properties', False)
             )
-            
+
             return {
                 'success': True,
                 'result': result,
                 'message': 'Schema reordered successfully'
             }
-            
+
         except Exception as e:
             return {
                 'success': False,
                 'error': str(e),
                 'message': f'Reordering failed: {e}'
             }
-    
+
     def reorder_from_files(self, schema_path: str, reference_path: Optional[str] = None,
                           output_path: Optional[str] = None, **kwargs) -> Dict[str, Any]:
         """Reorder JSON Schema from files with engine interface."""
@@ -47,7 +47,7 @@ class JSONSchemaProcessingEngine:
                 output_path=output_path,
                 **kwargs
             )
-            
+
             return {
                 'success': True,
                 'result': result,
@@ -55,14 +55,14 @@ class JSONSchemaProcessingEngine:
                 'output_path': output_path,
                 'message': 'Schema processed successfully'
             }
-            
+
         except Exception as e:
             return {
                 'success': False,
                 'error': str(e),
                 'message': f'Processing failed: {e}'
             }
-    
+
     def get_capabilities(self) -> Dict[str, Any]:
         """Return engine capabilities."""
         return {

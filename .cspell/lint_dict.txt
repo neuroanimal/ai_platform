@@ -1,0 +1,9 @@
+cspell
+isort
+markdownlint
+pylint
+pytype
+ruff
+shellcheck
+mypy
+dmypy
