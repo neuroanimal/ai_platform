@@ -39,7 +39,10 @@ class FakeJsonServer:
             def _handle(self, method: str) -> None:
                 length = int(self.headers.get("Content-Length") or 0)
                 raw = self.rfile.read(length) if length else b""
-                body = json.loads(raw) if raw else None
+                try:
+                    body = json.loads(raw) if raw else None
+                except ValueError:  # multipart or other non-JSON uploads
+                    body = raw
                 headers = {k.lower(): v for k, v in self.headers.items()}
                 owner.requests.append(
                     {"method": method, "path": self.path, "body": body, "headers": headers}

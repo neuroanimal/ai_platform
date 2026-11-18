@@ -1,23 +1,23 @@
-from typing import Any, Dict, List
-from ai_platform.common.llm.base import LLMAdapter
+"""
+OpenAI API (https://platform.openai.com/docs/api-reference/chat).
 
-class OpenAIAdapter(LLMAdapter):
-    def __init__(self):
-        self.initialized = False
+Hosted endpoint: needs an API key, read from ``OPENAI_API_KEY`` unless ``api_key`` or
+``api_key_env`` is configured. ``model`` has no default on purpose - hosted
+model names change faster than this code, so a stale default would fail
+silently on the provider side instead of loudly here.
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.model = config.get("model", "gpt-4")
-        self.initialized = True
+Previously a stub returning a fabricated string; the class name and the
+LLMAdapter methods are unchanged.
+"""
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"OpenAI({self.model}): {prompt[:20]}..."
+from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"OpenAI({self.model}): chat response"
 
-    def shutdown(self) -> None:
-        self.initialized = False
+class OpenAIAdapter(OpenAICompatibleAdapter):
+    """Chat Completions adapter for the openai hosted API."""
+
+    PROVIDER = "openai"
+    DEFAULT_BASE_URL = "https://api.openai.com"
+    DEFAULT_API_PREFIX = "/v1"
+    DEFAULT_API_KEY_ENV = "OPENAI_API_KEY"
+    REQUIRES_API_KEY = True

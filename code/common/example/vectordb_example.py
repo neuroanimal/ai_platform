@@ -1,5 +1,6 @@
 """Example usage of vector database adapters."""
 
+from ai_platform.common.vectordb.vector_store_support import VectorDBError
 from ai_platform.common.vectordb.vectordb_registry import get_registry
 from ai_platform.common.vectordb.chromadb_adapter import ChromaDBAdapter
 from ai_platform.common.vectordb.faiss_adapter import FAISSAdapter
@@ -40,12 +41,23 @@ def main():
 
     print(f"Registered {len(dbs)} vector databases: {registry.list()}\n")
 
+    # Local backends need no server; the others are tried with their default
+    # local endpoint and reported as skipped when nothing is listening.
+    vectors = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.7, 0.7, 0.0]]
+    metadata = [{"id": "x"}, {"id": "y"}, {"id": "xy"}]
+
     for name in dbs:
         adapter = registry.get(name)
-        adapter.connect({})
-        result = adapter.search([0.1, 0.2, 0.3], top_k=5)
-        print(f"{result[0]['db']}: OK")
-        adapter.disconnect()
+        try:
+            adapter.connect({"dimension": 3, "metric": "cosine"})
+            adapter.insert(vectors, metadata)
+            result = adapter.search([0.9, 0.1, 0.0], top_k=2)
+            print(f"{name:14} OK      {[(r['id'], round(r['score'], 3)) for r in result]}")
+        except VectorDBError as exc:
+            print(f"{name:14} skipped {type(exc).__name__}: {str(exc)[:80]}")
+        finally:
+            adapter.disconnect()
+
 
 if __name__ == "__main__":
     main()

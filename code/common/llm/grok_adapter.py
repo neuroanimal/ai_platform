@@ -1,23 +1,23 @@
-from typing import Any, Dict, List
-from ai_platform.common.llm.base import LLMAdapter
+"""
+xAI Grok API, OpenAI-compatible (https://docs.x.ai).
 
-class GrokAdapter(LLMAdapter):
-    def __init__(self):
-        self.initialized = False
+Hosted endpoint: needs an API key, read from ``XAI_API_KEY`` unless ``api_key`` or
+``api_key_env`` is configured. ``model`` has no default on purpose - hosted
+model names change faster than this code, so a stale default would fail
+silently on the provider side instead of loudly here.
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.model = config.get("model", "grok-1")
-        self.initialized = True
+Previously a stub returning a fabricated string; the class name and the
+LLMAdapter methods are unchanged.
+"""
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Grok({self.model}): {prompt[:20]}..."
+from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Grok({self.model}): chat response"
 
-    def shutdown(self) -> None:
-        self.initialized = False
+class GrokAdapter(OpenAICompatibleAdapter):
+    """Chat Completions adapter for the grok hosted API."""
+
+    PROVIDER = "grok"
+    DEFAULT_BASE_URL = "https://api.x.ai"
+    DEFAULT_API_PREFIX = "/v1"
+    DEFAULT_API_KEY_ENV = "XAI_API_KEY"
+    REQUIRES_API_KEY = True

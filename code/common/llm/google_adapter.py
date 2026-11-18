@@ -1,23 +1,23 @@
-from typing import Any, Dict, List
-from ai_platform.common.llm.base import LLMAdapter
+"""
+Google Gemini adapter via the Gemini API's OpenAI-compatible endpoint
+(https://ai.google.dev/gemini-api/docs/openai).
 
-class GoogleAdapter(LLMAdapter):
-    def __init__(self):
-        self.initialized = False
+Key from ``GEMINI_API_KEY`` unless configured. ``model`` is required
+(e.g. a current "gemini-*" id).
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.model = config.get("model", "gemini-pro")
-        self.initialized = True
+Previously a stub returning a fabricated string; the class name and the
+LLMAdapter methods are unchanged.
+"""
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Google({self.model}): {prompt[:20]}..."
+from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Google({self.model}): chat response"
 
-    def shutdown(self) -> None:
-        self.initialized = False
+class GoogleAdapter(OpenAICompatibleAdapter):
+    """Chat Completions adapter for Google Gemini."""
+
+    PROVIDER = "google"
+    DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+    # The base URL already contains the version segment.
+    DEFAULT_API_PREFIX = ""
+    DEFAULT_API_KEY_ENV = "GEMINI_API_KEY"
+    REQUIRES_API_KEY = True

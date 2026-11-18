@@ -1,23 +1,28 @@
-from typing import Any, Dict, List
-from ai_platform.common.llm.base import LLMAdapter
+"""
+Hugging Face Inference Providers router, OpenAI-compatible
+(https://huggingface.co/docs/inference-providers). Model ids look like
+"meta-llama/Llama-3.1-8B-Instruct", optionally suffixed with ":<provider>".
 
-class HuggingFaceAdapter(LLMAdapter):
-    def __init__(self):
-        self.initialized = False
+A local Hugging Face TGI server is also OpenAI-compatible: pass its base_url
+and require_api_key=False.
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.model = config.get("model", "meta-llama")
-        self.initialized = True
+Hosted endpoint: needs an API key, read from ``HF_TOKEN`` unless ``api_key`` or
+``api_key_env`` is configured. ``model`` has no default on purpose - hosted
+model names change faster than this code, so a stale default would fail
+silently on the provider side instead of loudly here.
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"HuggingFace({self.model}): {prompt[:20]}..."
+Previously a stub returning a fabricated string; the class name and the
+LLMAdapter methods are unchanged.
+"""
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"HuggingFace({self.model}): chat response"
+from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
 
-    def shutdown(self) -> None:
-        self.initialized = False
+
+class HuggingFaceAdapter(OpenAICompatibleAdapter):
+    """Chat Completions adapter for the huggingface hosted API."""
+
+    PROVIDER = "huggingface"
+    DEFAULT_BASE_URL = "https://router.huggingface.co"
+    DEFAULT_API_PREFIX = "/v1"
+    DEFAULT_API_KEY_ENV = "HF_TOKEN"
+    REQUIRES_API_KEY = True

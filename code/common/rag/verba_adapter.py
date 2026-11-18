@@ -1,21 +1,43 @@
+"""Verba RAG adapter - not implemented, on purpose.
+
+Verba (Weaviate's RAG application, package ``goldenverba``) is an end-user
+application with a web UI; it does not offer a documented, stable
+programmatic API that an adapter could rely on (none could be confirmed).
+
+Instead of returning a fabricated answer (what the earlier stub did), every
+method raises ``NotImplementedError`` with this explanation. Equivalent
+functionality that does work:
+
+- ``NativeRAGAdapter`` with ``vector_store=WeaviateAdapter()`` - the same
+  Weaviate backend, driven through this platform's ports.
+
+The class name is kept so that registries and imports do not break.
+"""
+
 from typing import Any, Dict, List
+
 from ai_platform.common.rag.base import RAGAdapter
 
+_MESSAGE = (
+    "VerbaAdapter is not implemented: Verba has no stable programmatic API. "
+    "Use NativeRAGAdapter with {\"vector_store\": WeaviateAdapter()} instead."
+)
+
+
 class VerbaAdapter(RAGAdapter):
-    def __init__(self):
-        self.initialized = False
+    """Placeholder that refuses to pretend; see the module docstring."""
 
     def initialize(self, config: Dict[str, Any]) -> None:
-        self.initialized = True
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def ingest(self, documents: List[Dict[str, Any]]) -> None:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def query(self, question: str, **kwargs) -> Dict[str, Any]:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return {"stack": "Verba", "answer": f"Response to: {question[:30]}...", "sources": []}
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def shutdown(self) -> None:
-        self.initialized = False
+        """Nothing to release."""

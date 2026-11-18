@@ -1,29 +1,38 @@
-"""Elasticsearch vector database adapter implementation."""
+"""Elasticsearch vector database adapter implementation.
+
+Uses the REST API (``dense_vector`` field + top-level ``knn`` search,
+Elasticsearch 8.x) through the stdlib HTTP client - no SDK required.
+Configuration and score conversion: see ``search_engine_support.py``.
+``metric="ip"`` maps to ``max_inner_product`` (Elasticsearch 8.11+).
+
+Previously a stub returning a constant score; the class name and the
+VectorDBAdapter methods are unchanged.
+"""
+
 from typing import Any, Dict, List
-from ai_platform.common.vectordb.base import VectorDBAdapter
 
-class ElasticsearchAdapter(VectorDBAdapter):
-    """Adapter for Elasticsearch vector database."""
+from ai_platform.common.vectordb.search_engine_support import SearchEngineVectorAdapter
 
-    def __init__(self):
-        """Initialize Elasticsearch adapter."""
-        self.connected = False
+_SIMILARITY = {"cosine": "cosine", "l2": "l2_norm", "ip": "max_inner_product"}
 
-    def connect(self, config: Dict[str, Any]) -> None:
-        """Connect to Elasticsearch."""
-        self.connected = True
 
-    def insert(self, vectors: List[List[float]], metadata: List[Dict[str, Any]]) -> None:
-        """Insert vectors into Elasticsearch."""
-        if not self.connected:
-            raise RuntimeError("Not connected")
+class ElasticsearchAdapter(SearchEngineVectorAdapter):
+    """Adapter for Elasticsearch."""
 
-    def search(self, query_vector: List[float], top_k: int) -> List[Dict[str, Any]]:
-        """Search for similar vectors in Elasticsearch."""
-        if not self.connected:
-            raise RuntimeError("Not connected")
-        return [{"db": "Elasticsearch", "score": 0.9}]
+    ENGINE = "elasticsearch"
 
-    def disconnect(self) -> None:
-        """Disconnect from Elasticsearch."""
-        self.connected = False
+    def _mapping(self, dimension: int) -> Dict[str, Any]:
+        return {"mappings": {"properties": {
+            "record_id": {"type": "keyword"},
+            "metadata_json": {"type": "text", "index": False},
+            "vector": {"type": "dense_vector", "dims": dimension, "index": True,
+                       "similarity": _SIMILARITY[self.metric]},
+        }}}
+
+    def _knn_query(self, vector: List[float], top_k: int) -> Dict[str, Any]:
+        return {
+            "knn": {"field": "vector", "query_vector": vector, "k": top_k,
+                    "num_candidates": max(100, top_k)},
+            "size": top_k,
+            "_source": ["record_id", "metadata_json"],
+        }

@@ -209,3 +209,9 @@ __marimo__/
 # Node.js
 node_modules/
 yarn.lock
+
+# LocalAI runtime state written to its working directory when started from
+# config/test_env (--data-path and --localai-config-dir default to ./data and
+# ./configuration). configuration/ may hold api_keys.json - never commit it.
+config/test_env/data/
+config/test_env/configuration/

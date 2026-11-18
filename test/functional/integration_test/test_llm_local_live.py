@@ -57,3 +57,24 @@ def test_ollama_openai_and_native():
     assert native.metrics["total_seconds"] > 0
     assert native.usage["completion_tokens"] > 0
     llm.shutdown()
+
+
+def test_native_rag_with_local_llm():
+    """End to end: SQLite store, HashingEmbedder, a local LocalAI model answering."""
+    from ai_platform.common.rag.native_rag_adapter import (  # pylint: disable=import-outside-toplevel
+        NativeRAGAdapter,
+    )
+
+    llm = ready(LocalAIAdapter(), LOCALAI_URLS[-1], LOCALAI_MODEL)
+    llm.default_params["max_tokens"] = 64
+    rag = NativeRAGAdapter()
+    rag.initialize({"llm": llm, "top_k": 1})
+    rag.ingest([
+        {"id": "code", "text": "Kod dostępu do magazynu numer 7 to 4512."},
+        {"id": "other", "text": "Biuro jest otwarte od 8 do 16."},
+    ])
+    result = rag.query("Jaki jest kod dostępu do magazynu numer 7?")
+    rag.shutdown()
+    llm.shutdown()
+    assert result["sources"][0]["document_id"] == "code"
+    assert "4512" in result["answer"]

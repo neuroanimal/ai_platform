@@ -1,23 +1,23 @@
-from typing import Any, Dict, List
-from ai_platform.common.llm.base import LLMAdapter
+"""
+Together AI API, OpenAI-compatible (https://docs.together.ai).
 
-class TogetherAdapter(LLMAdapter):
-    def __init__(self):
-        self.initialized = False
+Hosted endpoint: needs an API key, read from ``TOGETHER_API_KEY`` unless ``api_key`` or
+``api_key_env`` is configured. ``model`` has no default on purpose - hosted
+model names change faster than this code, so a stale default would fail
+silently on the provider side instead of loudly here.
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.model = config.get("model", "llama-2-70b")
-        self.initialized = True
+Previously a stub returning a fabricated string; the class name and the
+LLMAdapter methods are unchanged.
+"""
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Together({self.model}): {prompt[:20]}..."
+from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Together({self.model}): chat response"
 
-    def shutdown(self) -> None:
-        self.initialized = False
+class TogetherAdapter(OpenAICompatibleAdapter):
+    """Chat Completions adapter for the together hosted API."""
+
+    PROVIDER = "together"
+    DEFAULT_BASE_URL = "https://api.together.xyz"
+    DEFAULT_API_PREFIX = "/v1"
+    DEFAULT_API_KEY_ENV = "TOGETHER_API_KEY"
+    REQUIRES_API_KEY = True

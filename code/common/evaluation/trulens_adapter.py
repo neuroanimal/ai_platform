@@ -1,31 +1,42 @@
+"""TruLens evaluation adapter - not implemented, on purpose.
+
+TruLens evaluates *running applications*: it instruments an app, records
+traces and applies feedback functions to them. That does not map onto
+``evaluate(predictions, references)`` without inventing an app around the
+data, and its API has changed substantially between releases
+(``trulens_eval`` -> ``trulens``).
+
+Instead of returning constant metrics (what the earlier stub did), every
+method raises ``NotImplementedError`` with this explanation. Equivalent
+functionality that does work:
+
+- ``NativeEvaluationAdapter`` with ``judge=<LLM adapter>`` for LLM-judged scores;
+- ``RAGASAdapter`` / ``DeepEvalAdapter`` for RAG-specific judged metrics.
+
+The class name is kept so that registries and imports do not break.
+"""
+
 from typing import Any, Dict, List
+
 from ai_platform.common.evaluation.base import EvaluationAdapter
 
+_MESSAGE = (
+    'TrulensAdapter is not implemented: TruLens evaluates instrumented apps, '
+    'not prediction/reference lists.'
+    ' Use NativeEvaluationAdapter (judge=...) or RAGASAdapter instead.'
+)
+
+
 class TrulensAdapter(EvaluationAdapter):
-    def __init__(self):
-        self.initialized = False
-        self.app_id = None
-        self.evaluations = []
+    """Placeholder that refuses to pretend; see the module docstring."""
 
     def initialize(self, config: Dict[str, Any]) -> None:
-        self.app_id = config.get("app_id", "default_app")
-        self.initialized = True
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def evaluate(self, predictions: List[Any], references: List[Any], **kwargs) -> Dict[str, Any]:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        eval_id = f"eval_{len(self.evaluations) + 1}"
-        self.evaluations.append(eval_id)
-        return {
-            "tool": "Trulens",
-            "app_id": self.app_id,
-            "eval_id": eval_id,
-            "groundedness": 0.87,
-            "relevance": 0.91,
-            "context_relevance": 0.89
-        }
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def shutdown(self) -> None:
-        self.initialized = False
-        self.app_id = None
-        self.evaluations.clear()
+        """Nothing to release."""

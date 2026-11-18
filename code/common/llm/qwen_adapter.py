@@ -1,23 +1,26 @@
-from typing import Any, Dict, List
-from ai_platform.common.llm.base import LLMAdapter
+"""
+Alibaba Cloud Model Studio (DashScope) OpenAI-compatible mode for Qwen models.
 
-class QwenAdapter(LLMAdapter):
-    def __init__(self):
-        self.initialized = False
+For the mainland-China region pass base_url="https://dashscope.aliyuncs.com/compatible-mode".
+For a local Qwen (LocalAI, Ollama, vLLM) use those adapters instead.
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.model = config.get("model", "qwen-max")
-        self.initialized = True
+Hosted endpoint: needs an API key, read from ``DASHSCOPE_API_KEY`` unless ``api_key`` or
+``api_key_env`` is configured. ``model`` has no default on purpose - hosted
+model names change faster than this code, so a stale default would fail
+silently on the provider side instead of loudly here.
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Qwen({self.model}): {prompt[:20]}..."
+Previously a stub returning a fabricated string; the class name and the
+LLMAdapter methods are unchanged.
+"""
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Qwen({self.model}): chat response"
+from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
 
-    def shutdown(self) -> None:
-        self.initialized = False
+
+class QwenAdapter(OpenAICompatibleAdapter):
+    """Chat Completions adapter for the qwen hosted API."""
+
+    PROVIDER = "qwen"
+    DEFAULT_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode"
+    DEFAULT_API_PREFIX = "/v1"
+    DEFAULT_API_KEY_ENV = "DASHSCOPE_API_KEY"
+    REQUIRES_API_KEY = True

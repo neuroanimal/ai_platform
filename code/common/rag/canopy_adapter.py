@@ -1,21 +1,43 @@
+"""Canopy RAG adapter - not implemented, on purpose.
+
+Canopy (Pinecone's RAG framework, package ``canopy-sdk``) is, to the best of
+the author's knowledge, no longer maintained by Pinecone; building on it
+would tie this platform to an abandoned dependency.
+
+Instead of returning a fabricated answer (what the earlier stub did), every
+method raises ``NotImplementedError`` with this explanation. Equivalent
+functionality that does work:
+
+- ``NativeRAGAdapter`` with ``vector_store=PineconeAdapter()`` - the same
+  Pinecone index, with this platform's chunking, retrieval and LLM adapters.
+
+The class name is kept so that registries and imports do not break.
+"""
+
 from typing import Any, Dict, List
+
 from ai_platform.common.rag.base import RAGAdapter
 
+_MESSAGE = (
+    "CanopyAdapter is not implemented: Canopy is no longer maintained. "
+    "Use NativeRAGAdapter with {\"vector_store\": PineconeAdapter()} instead."
+)
+
+
 class CanopyAdapter(RAGAdapter):
-    def __init__(self):
-        self.initialized = False
+    """Placeholder that refuses to pretend; see the module docstring."""
 
     def initialize(self, config: Dict[str, Any]) -> None:
-        self.initialized = True
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def ingest(self, documents: List[Dict[str, Any]]) -> None:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def query(self, question: str, **kwargs) -> Dict[str, Any]:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return {"stack": "Canopy", "answer": f"Response to: {question[:30]}...", "sources": []}
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def shutdown(self) -> None:
-        self.initialized = False
+        """Nothing to release."""

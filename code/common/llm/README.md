@@ -1,32 +1,52 @@
 # LLM Support
 
-LLM API adapters for AI Platform.
+LLM API adapters for AI Platform. Every adapter sends real requests; none
+returns a fabricated answer. An adapter that cannot reach its server, or
+lacks a key, raises an `LLMError` subclass (`llm_exception.py`).
 
-## Supported LLMs
+## Adapters
 
-- **OpenAI**: GPT-4, GPT-3.5
-- **Anthropic**: Claude 3 (Opus, Sonnet, Haiku)
-- **Google**: Gemini Pro
-- **Cohere**: Command
-- **Mistral**: Mistral Large
-- **HuggingFace**: Open models
-- **AWS Bedrock**: Titan, Claude
-- **Azure OpenAI**: GPT-4
-- **Ollama**: Local models
-- **Together AI**: Open models
-- **Replicate**: Cloud models
+| Adapter | Protocol | Default endpoint | Key variable |
+|---|---|---|---|
+| `OpenAICompatibleAdapter` | OpenAI Chat Completions | none (set `base_url`) | optional `api_key_env` |
+| `LocalAIAdapter` | OpenAI-compatible | `http://127.0.0.1:8080` | none |
+| `OllamaAdapter` | OpenAI-compatible `/v1` + native `/api/chat` | `http://127.0.0.1:11434` | none |
+| `PhiAdapter` | OpenAI-compatible | none (local or Azure AI) | optional |
+| `OpenAIAdapter` | OpenAI-compatible | `https://api.openai.com` | `OPENAI_API_KEY` |
+| `AzureOpenAIAdapter` | Azure deployments | none (resource URL) | `AZURE_OPENAI_API_KEY` |
+| `DeepSeekAdapter` | OpenAI-compatible | `https://api.deepseek.com` | `DEEPSEEK_API_KEY` |
+| `GrokAdapter` | OpenAI-compatible | `https://api.x.ai` | `XAI_API_KEY` |
+| `MistralAdapter` | OpenAI-compatible | `https://api.mistral.ai` | `MISTRAL_API_KEY` |
+| `TogetherAdapter` | OpenAI-compatible | `https://api.together.xyz` | `TOGETHER_API_KEY` |
+| `QwenAdapter` | DashScope compatible mode | `https://dashscope-intl.aliyuncs.com/compatible-mode` | `DASHSCOPE_API_KEY` |
+| `HuggingFaceAdapter` | Inference Providers router | `https://router.huggingface.co` | `HF_TOKEN` |
+| `GoogleAdapter` | Gemini OpenAI-compatible | `https://generativelanguage.googleapis.com/v1beta/openai` | `GEMINI_API_KEY` |
+| `AnthropicAdapter` | Messages API | `https://api.anthropic.com` | `ANTHROPIC_API_KEY` |
+| `CohereAdapter` | Chat v2 | `https://api.cohere.com` | `CO_API_KEY` |
+| `ReplicateAdapter` | Predictions | `https://api.replicate.com` | `REPLICATE_API_TOKEN` |
+| `BedrockAdapter` | Converse (boto3) | AWS region | AWS credential chain |
+
+Hosted adapters have no default `model`: provider model names change faster
+than this code.
+
+Verification status: local adapters (LocalAI, Ollama) are tested live in
+`test/functional/integration_test/test_llm_local_live.py`; hosted adapters
+are tested against a fake server / fake client only
+(`test/basic-structural/static/basic_unit_test/common/test_llm_hosted_adapters.py`).
 
 ## Usage
 
 ```python
-from code.common.llm.llm_registry import get_registry
-from code.common.llm.openai_adapter import OpenAIAdapter
+from ai_platform.common.llm.localai_adapter import LocalAIAdapter
 
-registry = get_registry()
-registry.register("openai", OpenAIAdapter)
+llm = LocalAIAdapter()
+llm.initialize({"base_url": "http://127.0.0.1:8081",
+                "model": "bielik-15b-localai",
+                "temperature": 0, "max_tokens": 256})
 
-llm = registry.get("openai")
-llm.initialize({"model": "gpt-4", "api_key": "..."})
-response = llm.generate("Explain AI")
+print(llm.generate("Ile wynosi 17 razy 23?"))          # text only
+
+result = llm.chat_completion([{"role": "user", "content": "..."}])
+print(result.text, result.finish_reason, result.truncated, result.usage)
 llm.shutdown()
 ```

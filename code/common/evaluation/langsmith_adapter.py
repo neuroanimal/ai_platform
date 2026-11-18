@@ -1,30 +1,57 @@
-from typing import Any, Dict, List
-from ai_platform.common.evaluation.base import EvaluationAdapter
+"""LangSmith evaluation adapter.
 
-class LangSmithAdapter(EvaluationAdapter):
+Computes the native metrics and, when a LangSmith run is named, attaches
+them to that run as feedback (``Client.create_feedback``) - one feedback
+entry per metric with the batch mean as score. Without a ``run_id`` the
+metrics are returned but nothing is sent (``logged: False``).
+
+Configuration:
+
+    client           a ready ``langsmith.Client`` (tests, custom endpoints);
+                     default ``langsmith.Client()``, which reads
+                     LANGSMITH_API_KEY / LANGSMITH_ENDPOINT
+    metrics, judge   as in NativeEvaluationAdapter
+
+``evaluate(..., run_id="<uuid>")`` selects the run. Not verified against
+the LangSmith service here (no API key); unit tests use a fake client.
+Previously a stub returning constant metrics; the class name and the
+EvaluationAdapter methods are unchanged.
+"""
+
+from typing import Any, Dict
+
+from ai_platform.common.evaluation.native_evaluation_adapter import (
+    EvaluationError,
+    NativeEvaluationAdapter,
+)
+
+
+class LangSmithAdapter(NativeEvaluationAdapter):
+    """Native metrics attached to a LangSmith run as feedback."""
+
+    TOOL = "LangSmith"
+
     def __init__(self):
-        self.initialized = False
-        self.project_name = None
-        self.traces = []
+        super().__init__()
+        self._client = None
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.project_name = config.get("project_name", "default_project")
-        self.initialized = True
+    def _setup(self, config: Dict[str, Any]) -> None:
+        self._client = config.get("client")
+        if self._client is None:
+            try:
+                from langsmith import Client  # pylint: disable=import-outside-toplevel
+            except ImportError as exc:
+                raise EvaluationError("LangSmithAdapter requires: pip install langsmith") from exc
+            self._client = Client()
 
-    def evaluate(self, predictions: List[Any], references: List[Any], **kwargs) -> Dict[str, Any]:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        trace_id = f"trace_{len(self.traces) + 1}"
-        self.traces.append(trace_id)
-        return {
-            "tool": "LangSmith",
-            "project": self.project_name,
-            "trace_id": trace_id,
-            "traced": True,
-            "dataset_id": f"dataset_{len(self.traces)}"
-        }
+    def _log(self, result: Dict[str, Any], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        run_id = kwargs.get("run_id")
+        if not run_id:
+            return {"logged": False, "reason": "no run_id given"}
+        for name, value in result["metrics"].items():
+            self._client.create_feedback(run_id, key=name, score=value,
+                                         comment=f"ai_platform, n={result['n']}")
+        return {"logged": True, "run_id": run_id}
 
-    def shutdown(self) -> None:
-        self.initialized = False
-        self.project_name = None
-        self.traces.clear()
+    def _teardown(self) -> None:
+        self._client = None

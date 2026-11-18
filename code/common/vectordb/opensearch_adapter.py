@@ -1,29 +1,40 @@
-"""OpenSearch vector database adapter implementation."""
+"""OpenSearch vector database adapter implementation.
+
+Uses the REST API (k-NN plugin: ``knn_vector`` field, HNSW on the Lucene
+engine, ``knn`` query) through the stdlib HTTP client - no SDK required.
+Configuration and score conversion: see ``search_engine_support.py``.
+
+Previously a stub returning a constant score; the class name and the
+VectorDBAdapter methods are unchanged.
+"""
+
 from typing import Any, Dict, List
-from ai_platform.common.vectordb.base import VectorDBAdapter
 
-class OpenSearchAdapter(VectorDBAdapter):
-    """Adapter for OpenSearch vector database."""
+from ai_platform.common.vectordb.search_engine_support import SearchEngineVectorAdapter
 
-    def __init__(self):
-        """Initialize OpenSearch adapter."""
-        self.connected = False
+_SPACE = {"cosine": "cosinesimil", "l2": "l2", "ip": "innerproduct"}
 
-    def connect(self, config: Dict[str, Any]) -> None:
-        """Connect to OpenSearch."""
-        self.connected = True
 
-    def insert(self, vectors: List[List[float]], metadata: List[Dict[str, Any]]) -> None:
-        """Insert vectors into OpenSearch."""
-        if not self.connected:
-            raise RuntimeError("Not connected")
+class OpenSearchAdapter(SearchEngineVectorAdapter):
+    """Adapter for OpenSearch."""
 
-    def search(self, query_vector: List[float], top_k: int) -> List[Dict[str, Any]]:
-        """Search for similar vectors in OpenSearch."""
-        if not self.connected:
-            raise RuntimeError("Not connected")
-        return [{"db": "OpenSearch", "score": 0.9}]
+    ENGINE = "opensearch"
 
-    def disconnect(self) -> None:
-        """Disconnect from OpenSearch."""
-        self.connected = False
+    def _mapping(self, dimension: int) -> Dict[str, Any]:
+        return {
+            "settings": {"index": {"knn": True}},
+            "mappings": {"properties": {
+                "record_id": {"type": "keyword"},
+                "metadata_json": {"type": "text", "index": False},
+                "vector": {"type": "knn_vector", "dimension": dimension,
+                           "method": {"name": "hnsw", "engine": "lucene",
+                                      "space_type": _SPACE[self.metric]}},
+            }},
+        }
+
+    def _knn_query(self, vector: List[float], top_k: int) -> Dict[str, Any]:
+        return {
+            "size": top_k,
+            "query": {"knn": {"vector": {"vector": vector, "k": top_k}}},
+            "_source": ["record_id", "metadata_json"],
+        }

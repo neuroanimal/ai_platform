@@ -1,23 +1,29 @@
-from typing import Any, Dict, List
-from ai_platform.common.llm.base import LLMAdapter
+"""
+Microsoft Phi models adapter.
 
-class PhiAdapter(LLMAdapter):
-    def __init__(self):
-        self.initialized = False
+Phi is a model family, not a hosting service, so this adapter does not pick
+a vendor endpoint for you. It is the generic OpenAI-compatible client with
+two common setups documented:
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.model = config.get("model", "phi-3")
-        self.initialized = True
+- local (Ollama, LocalAI, vLLM, llama.cpp server)::
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Phi({self.model}): {prompt[:20]}..."
+      PhiAdapter().initialize({"base_url": "http://127.0.0.1:11434",
+                               "model": "phi3:mini"})
 
-    def chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"Phi({self.model}): chat response"
+- Azure AI Foundry serverless endpoint (OpenAI-compatible)::
 
-    def shutdown(self) -> None:
-        self.initialized = False
+      PhiAdapter().initialize({"base_url": "https://<endpoint>.models.ai.azure.com",
+                               "model": "Phi-4", "api_key_env": "AZURE_AI_API_KEY"})
+
+``base_url`` and ``model`` are therefore required. Previously a stub
+returning a fabricated string; the class name and methods are unchanged.
+"""
+
+from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
+
+
+class PhiAdapter(OpenAICompatibleAdapter):
+    """OpenAI-compatible adapter for Phi models served anywhere."""
+
+    PROVIDER = "phi"
+    REQUIRES_API_KEY = False
