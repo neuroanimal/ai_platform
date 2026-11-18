@@ -1,0 +1,96 @@
+# Core / numerical
+numpy
+scipy
+pandas
+polars
+pyarrow
+pydantic
+pyyaml
+python-dotenv
+tqdm
+rich
+loguru
+
+# Data science / visualization
+matplotlib
+seaborn
+plotly
+scikit-learn
+statsmodels
+sympy
+networkx
+
+# Machine learning / deep learning
+torch
+torchvision
+torchaudio
+lightning
+torchmetrics
+transformers
+datasets
+accelerate
+safetensors
+sentencepiece
+tokenizers
+huggingface-hub
+onnx
+onnxruntime
+optimum
+
+# NLP
+spacy
+nltk
+stanza
+gensim
+flair
+sentence-transformers
+wordfreq
+lemminflect
+textacy
+beautifulsoup4
+lxml
+ftfy
+regex
+langdetect
+lingua-language-detector
+
+# Knowledge Graph / Semantic Web
+rdflib
+owlrl
+pyshacl
+SPARQLWrapper
+neo4j
+pronto
+
+# Vector databases / search
+qdrant-client
+chromadb
+faiss-cpu
+rank-bm25
+
+# API / backend
+fastapi
+uvicorn[standard]
+httpx
+aiohttp
+websockets
+grpcio
+grpcio-tools
+celery
+redis
+sqlalchemy
+alembic
+asyncpg
+psycopg[binary]
+
+# Experiments / MLOps
+mlflow
+optuna
+tensorboard
+evidently
+shap
+lime
+joblib
+jupyterlab
+ipykernel
+

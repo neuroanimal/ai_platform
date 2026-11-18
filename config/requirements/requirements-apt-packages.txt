@@ -1,0 +1,22 @@
+# Python
+python3.12
+python3.12-venv
+python3.12-dev
+python3-pip
+
+# Build tools
+build-essential
+cmake
+ninja-build
+pkg-config
+git
+curl
+wget
+unzip
+
+# Numerical libraries
+libopenblas-dev
+liblapack-dev
+libffi-dev
+libssl-dev
+
