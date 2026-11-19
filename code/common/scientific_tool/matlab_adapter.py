@@ -1,17 +1,27 @@
-from typing import Any, Dict
-from ai_platform.common.scientific_tool.base import ScientificToolAdapter
+"""MATLAB adapter.
 
-class MATLABAdapter(ScientificToolAdapter):
-    def __init__(self):
-        self.connected = False
+Runs a script with ``matlab -batch <script>`` (MATLAB R2019a or later)
+(separate process per call, see
+``script_tool_support.py``) and returns its standard output.
 
-    def connect(self, config: Dict[str, Any]) -> None:
-        self.connected = True
+Needs a licensed MATLAB installation; ``-batch`` runs without a desktop and
+exits with a non-zero status on error. Not verified here (no MATLAB).
 
-    def execute(self, script: str, **kwargs) -> Any:
-        if not self.connected:
-            raise RuntimeError("Not connected")
-        return {"tool": "MATLAB", "result": "computed"}
+Previously a stub returning a fabricated result; the class name and the
+ScientificToolAdapter methods are unchanged.
+"""
 
-    def disconnect(self) -> None:
-        self.connected = False
+from typing import List
+
+from ai_platform.common.scientific_tool.script_tool_support import ScriptToolAdapter
+
+
+class MATLABAdapter(ScriptToolAdapter):
+    """MATLAB scripts."""
+
+    TOOLS = ["matlab"]
+    HINT = 'install MATLAB R2019a+'
+
+    def command(self, script: str) -> List[str]:
+        """matlab -batch <script>"""
+        return [self.executable, "-batch", script]

@@ -9,6 +9,7 @@ required by ``doc/arch/DEPENDENCY_RULES.md``.
 Secrets: headers are never included in exception messages or ``repr``.
 """
 
+import http.cookiejar
 import json
 import time
 import urllib.error
@@ -60,6 +61,14 @@ class HttpJsonClient:
     base_url: str
     timeout: float = 120.0
     headers: Dict[str, str] = field(default_factory=dict, repr=False)
+    #: Keep cookies between requests (session-cookie APIs such as Superset).
+    cookies: bool = False
+    _opener: Any = field(default=None, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        handlers = [urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())] \
+            if self.cookies else []
+        self._opener = urllib.request.build_opener(*handlers)
 
     def url(self, path: str) -> str:
         """Join the base URL and a path without doubling slashes."""
@@ -98,7 +107,7 @@ class HttpJsonClient:
         start = time.perf_counter()
 
         try:
-            with urllib.request.urlopen(request, timeout=timeout or self.timeout) as response:
+            with self._opener.open(request, timeout=timeout or self.timeout) as response:
                 raw = response.read()
                 status = response.status
         except urllib.error.HTTPError as exc:

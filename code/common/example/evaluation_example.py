@@ -1,5 +1,8 @@
 """Example usage of evaluation tool adapters."""
 
+# Examples follow the same register-and-try pattern on purpose.
+# pylint: disable=duplicate-code
+
 import tempfile
 
 from ai_platform.common.evaluation.evaluation_registry import get_registry

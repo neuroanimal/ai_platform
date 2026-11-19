@@ -1,22 +1,30 @@
+"""CrewAI adapter.
+
+Configuration: ``crew`` - a ``crewai.Crew`` built with CrewAI's API (agents,
+tasks, process). ``execute({"input": {...}})`` calls
+``crew.kickoff(inputs=input)``; ``output`` is ``CrewOutput.raw``.
+
+Not verified against an installed CrewAI here (the package was not
+installed when this was written); unit tests drive it with a stand-in
+object. Previously a stub echoing the task; the class name and the
+FrameworkAdapter methods are unchanged.
+"""
+
 from typing import Any, Dict
-from ai_platform.common.framework.base import FrameworkAdapter
 
-class CrewAIAdapter(FrameworkAdapter):
-    """CrewAI framework adapter."""
+from ai_platform.common.framework.framework_support import (
+    FrameworkBase,
+    task_input,
+)
 
-    def __init__(self):
-        self.initialized = False
-        self.crew = None
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.crew = config.get("crew_name", "default")
-        self.initialized = True
+class CrewAIAdapter(FrameworkBase):
+    """Runs a CrewAI crew."""
 
-    def execute(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return {"framework": "CrewAI", "crew": self.crew, "result": task}
+    FRAMEWORK = "CrewAI"
 
-    def shutdown(self) -> None:
-        self.initialized = False
-        self.crew = None
+    def _run(self, task: Dict[str, Any]):
+        target = self._needs('crew', 'a crewai.Crew')
+        value = task_input(task)
+        result = target.kickoff(inputs=value if isinstance(value, dict) else {"input": value})
+        return getattr(result, "raw", str(result)), result

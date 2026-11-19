@@ -1,17 +1,26 @@
-from typing import Any, Dict
-from ai_platform.common.scientific_tool.base import ScientificToolAdapter
+"""Wolfram Mathematica / Wolfram Engine adapter.
 
-class MathematicaAdapter(ScientificToolAdapter):
-    def __init__(self):
-        self.connected = False
+Runs a script with ``wolframscript -code <script>`` (separate process per call, see
+``script_tool_support.py``) and returns its standard output.
 
-    def connect(self, config: Dict[str, Any]) -> None:
-        self.connected = True
+Works with Mathematica or the free Wolfram Engine (activated licence
+required). Not verified here (no Wolfram installation).
 
-    def execute(self, script: str, **kwargs) -> Any:
-        if not self.connected:
-            raise RuntimeError("Not connected")
-        return {"tool": "Mathematica", "result": "computed"}
+Previously a stub returning a fabricated result; the class name and the
+ScientificToolAdapter methods are unchanged.
+"""
 
-    def disconnect(self) -> None:
-        self.connected = False
+from typing import List
+
+from ai_platform.common.scientific_tool.script_tool_support import ScriptToolAdapter
+
+
+class MathematicaAdapter(ScriptToolAdapter):
+    """Wolfram Mathematica / Wolfram Engine scripts."""
+
+    TOOLS = ["wolframscript"]
+    HINT = 'install Wolfram Engine or Mathematica'
+
+    def command(self, script: str) -> List[str]:
+        """wolframscript -code <script>"""
+        return [self.executable, "-code", script]

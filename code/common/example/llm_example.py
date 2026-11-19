@@ -8,6 +8,9 @@ is reported as skipped with the reason.
     python -m ai_platform.common.example.llm_example
 """
 
+# Examples follow the same register-and-try pattern on purpose.
+# pylint: disable=duplicate-code
+
 import os
 
 from ai_platform.common.llm.llm_exception import LLMError

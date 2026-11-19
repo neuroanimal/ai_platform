@@ -1,28 +1,30 @@
+"""Haystack adapter.
+
+Configuration: ``pipeline`` - a Haystack 2.x ``Pipeline`` (components
+connected with Haystack's API). ``execute({"input": {component: {param: value}}})``
+calls ``pipeline.run(input)``; ``output`` is the result dict.
+(For retrieval-augmented QA see ``common/rag/haystack_rag_adapter.py``.)
+
+Not verified against an installed Haystack here (the package was not
+installed when this was written); unit tests drive it with a stand-in
+object. Previously a stub echoing the task; the class name and the
+FrameworkAdapter methods are unchanged.
+"""
+
 from typing import Any, Dict
-from ai_platform.common.framework.base import FrameworkAdapter
 
-class HaystackAdapter(FrameworkAdapter):
-    def __init__(self):
-        self.initialized = False
-        self.pipeline_config = {}
-        self.documents_processed = 0
+from ai_platform.common.framework.framework_support import (
+    FrameworkBase,
+    task_input,
+)
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.pipeline_config = config.get("pipeline", {})
-        self.initialized = True
 
-    def execute(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        self.documents_processed += 1
-        return {
-            "framework": "Haystack",
-            "pipeline": self.pipeline_config.get("type", "default"),
-            "documents_processed": self.documents_processed,
-            "result": task
-        }
+class HaystackAdapter(FrameworkBase):
+    """Runs a Haystack pipeline."""
 
-    def shutdown(self) -> None:
-        self.initialized = False
-        self.pipeline_config = {}
-        self.documents_processed = 0
+    FRAMEWORK = "Haystack"
+
+    def _run(self, task: Dict[str, Any]):
+        target = self._needs('pipeline', 'a haystack.Pipeline')
+        result = target.run(task_input(task))
+        return result, result

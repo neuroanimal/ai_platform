@@ -1,5 +1,8 @@
 """Example usage of RAG stack adapters."""
 
+# Examples follow the same register-and-try pattern on purpose.
+# pylint: disable=duplicate-code
+
 from ai_platform.common.rag.native_rag_adapter import NativeRAGAdapter, RAGError
 from ai_platform.common.rag.rag_registry import get_registry
 from ai_platform.common.rag.llamaindex_adapter import LlamaIndexAdapter

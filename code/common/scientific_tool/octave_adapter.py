@@ -1,17 +1,24 @@
-from typing import Any, Dict
-from ai_platform.common.scientific_tool.base import ScientificToolAdapter
+"""GNU Octave adapter.
 
-class OctaveAdapter(ScientificToolAdapter):
-    def __init__(self):
-        self.connected = False
+Runs a script with ``octave-cli --quiet --no-window-system --eval <script>``
+(separate process per call, see
+``script_tool_support.py``) and returns its standard output.
 
-    def connect(self, config: Dict[str, Any]) -> None:
-        self.connected = True
+Previously a stub returning a fabricated result; the class name and the
+ScientificToolAdapter methods are unchanged.
+"""
 
-    def execute(self, script: str, **kwargs) -> Any:
-        if not self.connected:
-            raise RuntimeError("Not connected")
-        return {"tool": "Octave", "result": "computed"}
+from typing import List
 
-    def disconnect(self) -> None:
-        self.connected = False
+from ai_platform.common.scientific_tool.script_tool_support import ScriptToolAdapter
+
+
+class OctaveAdapter(ScriptToolAdapter):
+    """GNU Octave scripts."""
+
+    TOOLS = ["octave-cli", "octave"]
+    HINT = 'install GNU Octave'
+
+    def command(self, script: str) -> List[str]:
+        """octave-cli --quiet --no-window-system --eval <script>"""
+        return [self.executable, "--quiet", "--no-window-system", "--eval", script]

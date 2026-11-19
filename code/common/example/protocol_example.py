@@ -1,44 +1,69 @@
-"""Example usage of protocol adapters."""
+"""Example usage of protocol (MCP, ACP, A2A) adapters.
 
-from ai_platform.common.protocol.protocol_registry import get_registry
-from ai_platform.common.protocol.mcp_adapter import MCPAdapter
-from ai_platform.common.protocol.acp_adapter import ACPAdapter
+Registers every adapter and exercises each one with a small, real
+operation - MCP against a tiny stdio server started from
+this example. Nothing is fabricated: an adapter whose tool, server or
+package is not available here is reported as skipped with the reason.
+
+    python -m ai_platform.common.example.protocol_example
+"""
+
+# Examples follow the same register-and-try pattern on purpose.
+# pylint: disable=duplicate-code
+
+import os
+import sys
+import tempfile
+
 from ai_platform.common.protocol.a2a_adapter import A2AAdapter
+from ai_platform.common.protocol.acp_adapter import ACPAdapter
+from ai_platform.common.protocol.mcp_adapter import MCPAdapter
+from ai_platform.common.protocol.mcp_adapter import ProtocolError
+from ai_platform.common.protocol.protocol_registry import get_registry
+
 
 def main():
-    # Get registry
+    """Register all adapters and exercise the usable ones."""
     registry = get_registry()
 
-    # Register protocols
-    registry.register("mcp", MCPAdapter)
-    registry.register("acp", ACPAdapter)
-    registry.register("a2a", A2AAdapter)
+    tools = {
+        "mcp": MCPAdapter,
+        "acp": ACPAdapter,
+        "a2a": A2AAdapter,
+    }
 
-    print(f"Registered protocols: {registry.list()}")
+    for name, adapter_class in tools.items():
+        registry.register(name, adapter_class)
 
-    # MCP example
-    print("\n=== MCP Example ===")
-    mcp = registry.get("mcp")
-    mcp.connect({"endpoint": "localhost:8080"})
-    result = mcp.send({"type": "context", "model": "gpt-4"})
-    print(f"MCP send: {result}")
-    mcp.disconnect()
+    print(f"Registered {len(tools)}: {registry.list()}\n")
 
-    # ACP example
-    print("\n=== ACP Example ===")
-    acp = registry.get("acp")
-    acp.connect({"agents": ["agent1", "agent2"]})
-    result = acp.send({"type": "broadcast", "message": "hello"})
-    print(f"ACP send: {result}")
-    acp.disconnect()
+    server_code = (
+        "from mcp.server.mcpserver import MCPServer\n"
+        "server = MCPServer('example')\n"
+        "@server.tool()\n"
+        "def multiply(a: int, b: int) -> int:\n"
+        "    return a * b\n"
+        "server.run()\n")
+    with tempfile.TemporaryDirectory() as tmp:
+        script = os.path.join(tmp, "server.py")
+        with open(script, "w", encoding="utf-8") as handle:
+            handle.write(server_code)
+        configs = {"mcp": {"command": sys.executable, "args": [script]},
+                   "acp": {"url": "http://127.0.0.1:8000"},
+                   "a2a": {"url": "http://127.0.0.1:9999"}}
+        messages = {"mcp": {"method": "tools/call",
+                            "params": {"name": "multiply", "arguments": {"a": 17, "b": 23}}},
+                    "acp": {"text": "17*23"}, "a2a": {"text": "17*23"}}
+        for name in tools:
+            adapter = registry.get(name)
+            try:
+                adapter.connect(configs[name])
+                print(f"{name:5} OK      {str(adapter.send(messages[name]))[:90]}")
+            except ProtocolError as exc:
+                print(f"{name:5} skipped {type(exc).__name__}: {str(exc)[:80]}")
+            finally:
+                adapter.disconnect()
 
-    # A2A example
-    print("\n=== A2A Example ===")
-    a2a = registry.get("a2a")
-    a2a.connect({"peer_id": "agent-123"})
-    result = a2a.send({"type": "direct", "data": "task"})
-    print(f"A2A send: {result}")
-    a2a.disconnect()
 
 if __name__ == "__main__":
     main()

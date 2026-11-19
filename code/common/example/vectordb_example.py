@@ -1,5 +1,8 @@
 """Example usage of vector database adapters."""
 
+# Examples follow the same register-and-try pattern on purpose.
+# pylint: disable=duplicate-code
+
 from ai_platform.common.vectordb.vector_store_support import VectorDBError
 from ai_platform.common.vectordb.vectordb_registry import get_registry
 from ai_platform.common.vectordb.chromadb_adapter import ChromaDBAdapter

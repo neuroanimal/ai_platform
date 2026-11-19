@@ -1,21 +1,18 @@
-from typing import Any, Dict
-from ai_platform.common.latex.base import LaTeXAdapter
+"""TikZ adapter.
 
-class TikZAdapter(LaTeXAdapter):
-    def __init__(self):
-        self.initialized = False
+Body is TikZ code drawn inside ``tikzpicture``.
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.initialized = True
+Uses the shared toolchain base (``latex_toolchain_support.py``): ``render``
+returns a complete standalone document, ``compile`` runs latexmk/pdflatex
+for real. Previously a stub that compiled nothing; the class name and the
+LaTeXAdapter methods are unchanged.
+"""
 
-    def render(self, content: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"\\begin{{tikzpicture}}\n{content}\n\\end{{tikzpicture}}"
+from ai_platform.common.latex.latex_toolchain_support import LaTeXDocumentAdapter
 
-    def compile(self, source: str, output_path: str) -> None:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
 
-    def shutdown(self) -> None:
-        self.initialized = False
+class TikZAdapter(LaTeXDocumentAdapter):
+    """TikZ pictures."""
+
+    PACKAGES = ["tikz"]
+    ENVIRONMENT = ("\\begin{tikzpicture}", "\\end{tikzpicture}")

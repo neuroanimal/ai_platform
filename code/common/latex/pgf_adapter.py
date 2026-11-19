@@ -1,21 +1,19 @@
-from typing import Any, Dict
-from ai_platform.common.latex.base import LaTeXAdapter
+"""PGF (basic layer) adapter.
 
-class PGFAdapter(LaTeXAdapter):
-    def __init__(self):
-        self.initialized = False
+Body is PGF basic-layer code drawn inside ``pgfpicture`` (``\\pgfpathmoveto``,
+``\\pgfusepath`` ...).
 
-    def initialize(self, config: Dict[str, Any]) -> None:
-        self.initialized = True
+Uses the shared toolchain base (``latex_toolchain_support.py``): ``render``
+returns a complete standalone document, ``compile`` runs latexmk/pdflatex
+for real. Previously a stub that compiled nothing; the class name and the
+LaTeXAdapter methods are unchanged.
+"""
 
-    def render(self, content: str, **kwargs) -> str:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
-        return f"\\begin{{pgfpicture}}\n{content}\n\\end{{pgfpicture}}"
+from ai_platform.common.latex.latex_toolchain_support import LaTeXDocumentAdapter
 
-    def compile(self, source: str, output_path: str) -> None:
-        if not self.initialized:
-            raise RuntimeError("Not initialized")
 
-    def shutdown(self) -> None:
-        self.initialized = False
+class PGFAdapter(LaTeXDocumentAdapter):
+    """PGF basic-layer pictures."""
+
+    PACKAGES = ["pgf"]
+    ENVIRONMENT = ("\\begin{pgfpicture}", "\\end{pgfpicture}")

@@ -1,17 +1,25 @@
-from typing import Any, Dict
-from ai_platform.common.scientific_tool.base import ScientificToolAdapter
+"""SageMath adapter.
 
-class SageMathAdapter(ScientificToolAdapter):
-    def __init__(self):
-        self.connected = False
+Runs a script with ``sage -c <script>`` (separate process per call, see
+``script_tool_support.py``) and returns its standard output.
 
-    def connect(self, config: Dict[str, Any]) -> None:
-        self.connected = True
+Not verified here (no SageMath installation).
 
-    def execute(self, script: str, **kwargs) -> Any:
-        if not self.connected:
-            raise RuntimeError("Not connected")
-        return {"tool": "SageMath", "result": "computed"}
+Previously a stub returning a fabricated result; the class name and the
+ScientificToolAdapter methods are unchanged.
+"""
 
-    def disconnect(self) -> None:
-        self.connected = False
+from typing import List
+
+from ai_platform.common.scientific_tool.script_tool_support import ScriptToolAdapter
+
+
+class SageMathAdapter(ScriptToolAdapter):
+    """SageMath scripts."""
+
+    TOOLS = ["sage"]
+    HINT = 'install SageMath'
+
+    def command(self, script: str) -> List[str]:
+        """sage -c <script>"""
+        return [self.executable, "-c", script]

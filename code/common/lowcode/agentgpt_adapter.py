@@ -1,22 +1,40 @@
+"""AgentGPT adapter - not implemented, on purpose.
+
+AgentGPT (reworkd) is a web application, not a workflow platform with a
+deployment API; to the best of the author's knowledge it is also no longer
+maintained.
+
+Instead of returning fabricated ids and results (what the earlier stub
+did), every method raises ``NotImplementedError``. Working alternatives:
+``N8nAdapter``, ``FlowiseAdapter``, ``LangFlowAdapter``.
+
+The class name is kept so that registries and imports do not break.
+"""
+
 from typing import Any, Dict
+
 from ai_platform.common.lowcode.base import LowCodeAdapter
 
+_MESSAGE = (
+    "AgentGPTAdapter is not implemented: AgentGPT is a web app without a workflow API. "
+    "Use N8nAdapter, FlowiseAdapter or LangFlowAdapter instead."
+)
+
+
 class AgentGPTAdapter(LowCodeAdapter):
-    def __init__(self):
-        self.connected = False
+    """Placeholder that refuses to pretend; see the module docstring."""
 
     def connect(self, config: Dict[str, Any]) -> None:
-        self.connected = True
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def deploy_workflow(self, workflow: Dict[str, Any]) -> str:
-        if not self.connected:
-            raise RuntimeError("Not connected")
-        return f"agentgpt-workflow-{workflow.get('name', 'default')}"
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def execute_workflow(self, workflow_id: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        if not self.connected:
-            raise RuntimeError("Not connected")
-        return {"platform": "AgentGPT", "workflow_id": workflow_id, "status": "completed"}
+        """Not implemented."""
+        raise NotImplementedError(_MESSAGE)
 
     def disconnect(self) -> None:
-        self.connected = False
+        """Nothing to release."""
