@@ -13,7 +13,7 @@ renders it as HTML or Markdown. Three views:
 - ``warmup``: per model - load + first answer time.
 
 Outcome groups are taken from the status prefix, so new checker statuses
-fall into the right group without changes here.
+and human verdicts (``human_correct`` ...) fall into the right group.
 """
 
 import statistics
@@ -24,13 +24,13 @@ GROUPS = ("correct", "incorrect", "partial", "manual_review")
 
 
 def outcome_group(status: str) -> str:
-    """Map a screening status to one of GROUPS."""
-    if status.startswith("candidate_correct"):
-        return "correct"
-    if status.startswith("candidate_incorrect"):
-        return "incorrect"
-    if status.startswith("candidate_partial"):
-        return "partial"
+    """Map a screening status (rule ``candidate_*`` or ``human_*``) to one of GROUPS.
+
+    A human ``unclear`` stays in manual_review.
+    """
+    for group in ("correct", "incorrect", "partial"):
+        if status.startswith((f"candidate_{group}", f"human_{group}")):
+            return group
     return "manual_review"
 
 

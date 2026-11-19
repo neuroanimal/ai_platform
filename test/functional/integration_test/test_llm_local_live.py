@@ -118,3 +118,19 @@ def test_semantic_rag_with_local_embeddings():
     for question, expected in questions.items():
         assert rag.retrieve(question)[0]["document_id"] == expected, question
     rag.shutdown()
+
+
+@pytest.mark.parametrize("adapter_cls,url,model", [
+    (LocalAIAdapter, LOCALAI_URLS[-1], LOCALAI_MODEL),
+    (OllamaAdapter, OLLAMA_URL, OLLAMA_MODEL),
+])
+def test_streaming_live(adapter_cls, url, model):
+    from ai_platform.common.llm.openai_compatible_adapter import (  # pylint: disable=import-outside-toplevel
+        collect_stream,
+    )
+    llm = ready(adapter_cls(), url, model)
+    chunks = list(llm.stream_chat([{"role": "user", "content": "Policz od 1 do 5."}]))
+    llm.shutdown()
+    result = collect_stream(iter(chunks))
+    assert len(chunks) > 2, "answer arrived in one piece - not streamed"
+    assert result.text.strip() and result.finish_reason in ("stop", "length")

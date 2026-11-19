@@ -3,7 +3,8 @@ Native RAG pipeline: chunk -> embed -> vector store -> retrieve -> LLM.
 
 Built only on this platform's own ports, so every part is replaceable:
 
-    embedder      any ``Embedder`` (default ``HashingEmbedder``)
+    embedder      any ``Embedder`` or a spec string such as "ollama:bge-m3"
+                  (default ``HashingEmbedder``)
     vector_store  any ``VectorDBAdapter`` (default in-memory ``SQLiteAdapter``)
     llm           any ``LLMAdapter`` with ``chat_completion`` (optional; without
                   it ``query`` returns retrieval results only, answer = None)
@@ -29,7 +30,7 @@ import re
 from typing import Any, Dict, List, Optional
 
 from ai_platform.common.rag.base import RAGAdapter
-from ai_platform.common.rag.embedder import Embedder, HashingEmbedder
+from ai_platform.common.rag.embedder import Embedder, HashingEmbedder, create_embedder
 
 DEFAULT_PROMPT = (
     "Answer the question using only the context below. If the context does "
@@ -103,7 +104,9 @@ class NativeRAGAdapter(RAGAdapter):
 
     def _setup(self, config: Dict[str, Any]) -> None:
         """Backend hook: wire the embedder and connect the vector store."""
-        self.embedder = config.get("embedder") or HashingEmbedder()
+        embedder = config.get("embedder") or HashingEmbedder()
+        # A string is an embedder spec, e.g. "ollama:bge-m3" (see create_embedder).
+        self.embedder = create_embedder(embedder) if isinstance(embedder, str) else embedder
         self.vector_store = config.get("vector_store")
         if self.vector_store is None:
             from ai_platform.common.vectordb.sqlite_adapter import (  # pylint: disable=import-outside-toplevel

@@ -17,7 +17,7 @@ LLMAdapter methods are unchanged.
 from typing import Dict, List
 
 from ai_platform.common.llm.chat_result import ChatResult
-from ai_platform.common.llm.llm_exception import LLMResponseError
+from ai_platform.common.llm.llm_exception import LLMError, LLMResponseError
 from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
 
 _FINISH_REASONS = {
@@ -69,3 +69,7 @@ class CohereAdapter(OpenAICompatibleAdapter):
             elapsed_seconds=response.elapsed_seconds,
             raw=data,
         )
+
+    def stream_chat(self, messages, **kwargs):
+        """Not available yet: this provider streams with its own event format."""
+        raise LLMError("CohereAdapter: streaming is not implemented yet; use chat_completion()")

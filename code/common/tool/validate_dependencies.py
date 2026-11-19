@@ -141,9 +141,23 @@ def find_violations(base_dir: str = ".") -> List[str]:
         os.chdir(previous)
 
 
+def repository_root() -> str:
+    """The source tree this module belongs to, else the current directory.
+
+    Running from another directory used to scan nothing and report success.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+    return root if os.path.isdir(os.path.join(root, "code", "common")) else os.getcwd()
+
+
 def main():
-    """Print violations; exit 1 when there are any."""
-    all_violations = find_violations()
+    """Print violations; exit 1 when there are any, 2 when there is nothing to scan."""
+    root = repository_root()
+    if not any(os.path.isdir(os.path.join(root, d)) for d in SCAN_DIRS):
+        print(f"No code directories found under {root}; nothing was checked.")
+        sys.exit(2)
+    all_violations = find_violations(root)
 
     if all_violations:
         print("Dependency violations found:")

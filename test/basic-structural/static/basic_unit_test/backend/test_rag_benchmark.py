@@ -66,3 +66,54 @@ def test_cli_writes_three_files(tmp_path, capsys):
     report = json.loads(out.read_text(encoding="utf-8"))
     assert report["results"][0]["status"] == "PASS"
     assert out.with_suffix(".html").read_text(encoding="utf-8").count("<table>") == 3
+
+
+def test_create_embedder_specs():
+    from ai_platform.common.rag.embedder import (  # pylint: disable=import-outside-toplevel
+        OpenAICompatibleEmbedder,
+        create_embedder,
+    )
+    assert isinstance(create_embedder("hashing:64"), HashingEmbedder)
+    assert create_embedder("hashing:64").dimension == 64
+    ollama = create_embedder("ollama:bge-m3", ollama_url="http://h:1")
+    assert isinstance(ollama, OpenAICompatibleEmbedder) and ollama.model == "bge-m3"
+    assert create_embedder("openai-compatible:http://x:2|m").model == "m"
+    for bad in ("ollama", "nope:x", "openai-compatible:http://x"):
+        with pytest.raises(EmbeddingError):
+            create_embedder(bad)
+
+
+def test_qa_evaluator_closed_book_vs_rag():
+    from ai_platform.backend.domain_layer.business_logic.rag_benchmark.qa_sets import (  # pylint: disable=import-outside-toplevel
+        get_qa_set,
+    )
+    from ai_platform.backend.service_layer.macro.rag_benchmark.qa_evaluator import (  # pylint: disable=import-outside-toplevel
+        evaluate_qa,
+    )
+    from ai_platform.common.llm.chat_result import ChatResult  # pylint: disable=import-outside-toplevel
+
+    class ContextReader:
+        """Answers with the context's first passage (RAG) or 'nie wiem' (closed book)."""
+
+        def chat_completion(self, messages, **_):
+            """Echo the first passage when a context is present."""
+            prompt = messages[0]["content"]
+            if "[1] " in prompt:
+                return ChatResult(text=prompt.split("[1] ", 1)[1].split("\n")[0], model="r",
+                                  finish_reason="stop", elapsed_seconds=0.1)
+            return ChatResult(text="Nie wiem.", model="r", finish_reason="stop",
+                              elapsed_seconds=0.1)
+
+        def shutdown(self):
+            """Nothing to release."""
+
+    qa_set = get_qa_set("bilingual_qa")
+    report = evaluate_qa(qa_set, ["reader"], lambda m: ContextReader(), HashingEmbedder(512),
+                         embedder_name="hashing", top_k=3)
+    assert len(report["results"]) == 2 * len(qa_set.items)
+    by = {(s["mode"], s["questions"]): s for s in report["summary"]}
+    assert by[("closed_book", "all")]["correct"] == 0
+    assert by[("rag", "all")]["correct"] > 0  # the echo passes wherever retrieval hit
+    rag_rows = [r for r in report["results"] if r["mode"] == "rag"]
+    assert all(len(r["retrieved"]) == 3 for r in rag_rows)
+    assert 0.0 <= report["retrieval_hit_rate"] <= 1.0

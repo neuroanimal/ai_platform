@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Iterator, Mapping, Optional
 
 
 class HttpJsonError(Exception):
@@ -124,3 +124,32 @@ class HttpJsonClient:
             raise HttpDecodeError(f"Invalid JSON from {url}: {raw[:200]!r}") from exc
 
         return HttpJsonResponse(decoded, status, elapsed)
+
+    def stream_lines(self, method: str, path: str,
+                     payload: Optional[Mapping[str, Any]] = None,
+                     timeout: Optional[float] = None) -> Iterator[str]:
+        """Send a JSON request and yield the response body line by line (decoded).
+
+        For streaming APIs: Server-Sent Events (OpenAI ``stream: true``) and
+        newline-delimited JSON (Ollama native). Errors are raised as for
+        ``request``; the connection is closed when the generator is exhausted
+        or closed.
+        """
+        url = self.url(path)
+        headers = {"Accept": "text/event-stream, application/x-ndjson, application/json",
+                   **self.headers}
+        data = None
+        if payload is not None:
+            data = json.dumps(payload).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        request = urllib.request.Request(url, data=data, headers=headers, method=method)
+        try:
+            response = self._opener.open(request, timeout=timeout or self.timeout)
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            raise HttpStatusError(url, exc.code, body) from exc
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+            raise HttpConnectionError(f"Cannot reach {url}: {exc}") from exc
+        with response:
+            for raw in response:
+                yield raw.decode("utf-8", errors="replace").rstrip("\r\n")

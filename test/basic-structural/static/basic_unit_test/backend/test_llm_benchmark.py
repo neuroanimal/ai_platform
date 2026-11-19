@@ -196,3 +196,67 @@ def test_merge_reports():
         merge_reports([a, a])
     with pytest.raises(ValueError, match="repeats"):
         merge_reports([a, runner.run(task_set, ["c"], languages=["pl"], repeats=2)])
+
+
+def test_review_round_trip_through_spreadsheet(tmp_path):
+    from ai_platform.backend.service_layer.macro.llm_benchmark.review_service import (  # pylint: disable=import-outside-toplevel
+        ReviewError,
+        apply_reviews,
+        review_items,
+    )
+    from ai_platform.backend.ui_layer.cli.review_workbook import (  # pylint: disable=import-outside-toplevel
+        read_review_workbook,
+        write_review_workbook,
+    )
+    answers = {"17": "17 * 23 = 391", "112": "Nie wiem.", "Mruczek": "Tak, Mruczek jest ssakiem.",
+               "USD/PLN": "To zależy."}
+    report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, answers)).run(
+        get_task_set("bilingual_reasoning@2"), ["m"], languages=["pl"], repeats=1)
+    screening = screen_benchmark_report(report)
+    items = review_items(report, screening, sample_decided=1, seed=1)
+    statuses = [i["automatic_status"] for i in items]
+    assert statuses.count("manual_review") == 2 and len(items) == 3
+
+    path = tmp_path / "review.xlsx"
+    write_review_workbook(items, str(path))
+    rows = read_review_workbook(str(path))
+    assert [r["key"] for r in rows] == [i["key"] for i in items]
+    verdicts = {"manual_review": "incorrect"}
+    for row in rows:
+        row["verdict"] = verdicts.get(row["automatic_status"], "correct")
+
+    reviewed = apply_reviews(screening, rows, reviewer="t")
+    summary = reviewed["human_review"]
+    assert summary["applied"] == 3 and summary["agreement"]["agreement_rate"] == 1.0
+    assert summary["agreement"]["manual_review_resolved"] == 2
+    statuses = [r["automatic_assessment"]["answer_screening"]["status"]
+                for r in reviewed["results"]]
+    assert statuses.count("human_incorrect") == 2
+    # summaries count human verdicts in the right groups
+    from ai_platform.backend.service_layer.macro.llm_benchmark.benchmark_summary import (  # pylint: disable=import-outside-toplevel
+        summarize_benchmark,
+    )
+    row = summarize_benchmark(report, reviewed)["models"][0]
+    assert row["incorrect"] == 2 and row["manual_review"] == 0
+
+    rows[0]["key"] = "other|run"
+    with pytest.raises(ReviewError, match="does not match"):
+        apply_reviews(screening, rows)
+    rows[0]["key"], rows[0]["verdict"] = items[0]["key"], "maybe"
+    with pytest.raises(ReviewError, match="verdict"):
+        apply_reviews(screening, rows)
+
+
+def test_cli_review_export_and_import(tmp_path):
+    report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {})).run(
+        get_task_set("bilingual_reasoning@2"), ["m"], languages=["en"], repeats=1)
+    source = tmp_path / "r.json"
+    source.write_text(json.dumps(report), encoding="utf-8")
+    assert llm_benchmark_cli.main(["review-export", str(source)]) == 1  # no screening yet
+    assert llm_benchmark_cli.main(["screen", str(source)]) == 0
+    assert llm_benchmark_cli.main(["review-export", str(source)]) == 0
+    workbook = tmp_path / "r_review.xlsx"
+    assert workbook.exists()
+    assert llm_benchmark_cli.main(["review-import", str(source), str(workbook)]) == 0
+    reviewed = json.loads((tmp_path / "r_screening_reviewed.json").read_text(encoding="utf-8"))
+    assert reviewed["human_review"]["applied"] == 0  # nothing filled in

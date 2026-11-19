@@ -37,3 +37,16 @@ class ChatResult:
             "elapsed_seconds": round(self.elapsed_seconds, 3),
             "metrics": self.metrics,
         }
+
+
+@dataclass
+class StreamChunk:
+    """One increment of a streamed answer.
+
+    ``text`` is the new text (may be empty); the last chunk carries
+    ``finish_reason`` and, where the server reports it, ``usage``.
+    """
+
+    text: str
+    finish_reason: Optional[str] = None
+    usage: Dict[str, Any] = field(default_factory=dict)

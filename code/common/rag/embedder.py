@@ -66,7 +66,8 @@ class HashingEmbedder(Embedder):
 class OpenAICompatibleEmbedder(Embedder):
     """Embeddings from an OpenAI-compatible ``/v1/embeddings`` endpoint."""
 
-    def __init__(self, base_url: str, model: str, *, api_key: Optional[str] = None,
+    def __init__(self, base_url: str, model: str, *,  # pylint: disable=too-many-arguments
+                 api_key: Optional[str] = None,
                  api_key_env: Optional[str] = None, api_prefix: str = "/v1",
                  timeout: float = 120.0, batch_size: int = 64) -> None:
         key = api_key or (os.environ.get(api_key_env) if api_key_env else None)
@@ -110,3 +111,35 @@ class SentenceTransformerEmbedder(Embedder):
     def embed(self, texts: Sequence[str]) -> List[List[float]]:
         """Encode with normalized embeddings (cosine-ready)."""
         return self._model.encode(list(texts), normalize_embeddings=True).tolist()
+
+
+DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
+DEFAULT_LOCALAI_URL = "http://127.0.0.1:8081"
+
+
+def create_embedder(spec: str, ollama_url: str = DEFAULT_OLLAMA_URL,
+                    localai_url: str = DEFAULT_LOCALAI_URL) -> Embedder:
+    """Build an embedder from a short name.
+
+    ``hashing[:<dim>]``, ``ollama:<model>``, ``localai:<model>``, ``st:<model>``
+    (sentence-transformers), or ``openai-compatible:<base_url>|<model>``.
+    For Polish or cross-lingual text prefer a multilingual model such as
+    ``ollama:bge-m3`` (see the retrieval benchmark).
+    """
+    kind, _, rest = str(spec).partition(":")
+    if kind == "hashing":
+        return HashingEmbedder(int(rest) if rest else 512)
+    if not rest:
+        raise EmbeddingError(f"embedder spec {spec!r} needs a model after ':'")
+    if kind == "ollama":
+        return OpenAICompatibleEmbedder(ollama_url, rest)
+    if kind == "localai":
+        return OpenAICompatibleEmbedder(localai_url, rest)
+    if kind == "st":
+        return SentenceTransformerEmbedder(rest)
+    if kind == "openai-compatible":
+        base_url, _, model = rest.partition("|")
+        if not model:
+            raise EmbeddingError("use openai-compatible:<base_url>|<model>")
+        return OpenAICompatibleEmbedder(base_url, model)
+    raise EmbeddingError(f"unknown embedder kind {kind!r} in {spec!r}")

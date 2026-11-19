@@ -22,16 +22,19 @@ Configuration keys accepted by ``initialize()``:
     require_api_key  override REQUIRES_API_KEY, e.g. False for a local
                   server that speaks a hosted provider's protocol
 
+``stream_chat()`` streams the answer as ``StreamChunk`` objects (SSE).
+
 Every keyword argument of ``chat()`` / ``chat_completion()`` that is not a
 known option is forwarded verbatim into the request body, so server-specific
 parameters (``top_p``, ``seed``, ``stop`` ...) need no adapter change.
 """
 
+import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from ai_platform.common.llm.base import LLMAdapter
-from ai_platform.common.llm.chat_result import ChatResult
+from ai_platform.common.llm.chat_result import ChatResult, StreamChunk
 from ai_platform.common.llm.llm_exception import (
     LLMConfigurationError,
     LLMConnectionError,
@@ -158,6 +161,46 @@ class OpenAICompatibleAdapter(LLMAdapter):
         return self._parse_chat_response(response.data, payload["model"],
                                          response.elapsed_seconds, allow_empty)
 
+    def stream_chat(self, messages: List[Dict[str, str]], **kwargs) -> Iterator[StreamChunk]:
+        """Stream one chat completion (``stream: true``, Server-Sent Events).
+
+        Yields ``StreamChunk`` objects as text arrives; the final chunk has the
+        ``finish_reason`` (and ``usage`` if the server sends it - requested with
+        ``stream_options.include_usage``, which some servers ignore).
+        ``collect_stream`` turns the chunks back into a ``ChatResult``.
+        """
+        client = self._require_client()
+        payload = self._build_payload(messages, kwargs)
+        payload["stream"] = True
+        payload.setdefault("stream_options", {"include_usage": True})
+        try:
+            for line in client.stream_lines("POST", self._path("/chat/completions"), payload):
+                if not line.startswith("data:"):
+                    continue
+                data = line[5:].strip()
+                if data == "[DONE]":
+                    return
+                chunk = self._parse_stream_event(data)
+                if chunk is not None:
+                    yield chunk
+        except HttpConnectionError as exc:
+            raise LLMConnectionError(f"{self.PROVIDER}: {exc}") from exc
+        except HttpStatusError as exc:
+            raise LLMRequestError(f"{self.PROVIDER}: {exc}", exc.status) from exc
+
+    def _parse_stream_event(self, data: str) -> Optional[StreamChunk]:
+        try:
+            event = json.loads(data)
+        except json.JSONDecodeError as exc:
+            raise LLMResponseError(f"{self.PROVIDER}: bad stream event {data[:200]!r}") from exc
+        choices = event.get("choices") or []
+        usage = event.get("usage") or {}
+        if not choices:
+            return StreamChunk("", None, usage) if usage else None
+        choice = choices[0]
+        delta = choice.get("delta") or {}
+        return StreamChunk(delta.get("content") or "", choice.get("finish_reason"), usage)
+
     def list_models(self) -> List[str]:
         """Return model ids served by the endpoint (``GET /v1/models``)."""
         client = self._require_client()
@@ -251,3 +294,15 @@ class OpenAICompatibleAdapter(LLMAdapter):
             elapsed_seconds=elapsed,
             raw=data,
         )
+
+
+def collect_stream(chunks: Iterator[StreamChunk], model: str = "",
+                   elapsed_seconds: float = 0.0) -> ChatResult:
+    """Join streamed chunks into one ChatResult."""
+    text, finish_reason, usage = [], None, {}
+    for chunk in chunks:
+        text.append(chunk.text)
+        finish_reason = chunk.finish_reason or finish_reason
+        usage = chunk.usage or usage
+    return ChatResult(text="".join(text), model=model, finish_reason=finish_reason,
+                      usage=usage, elapsed_seconds=elapsed_seconds)

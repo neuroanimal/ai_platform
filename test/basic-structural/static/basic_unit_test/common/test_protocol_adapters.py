@@ -33,8 +33,15 @@ MCP_SERVER = textwrap.dedent('''
 ''')
 
 
-@pytest.mark.skipif(not importlib.util.find_spec("mcp.server.mcpserver"),
-                    reason="mcp 2.x not installed")
+def has_module(name):
+    """find_spec for dotted names raises when the parent package is missing."""
+    try:
+        return importlib.util.find_spec(name) is not None
+    except ModuleNotFoundError:
+        return False
+
+
+@pytest.mark.skipif(not has_module("mcp.server.mcpserver"), reason="mcp 2.x not installed")
 def test_mcp_stdio_roundtrip(tmp_path):
     script = tmp_path / "server.py"
     script.write_text(MCP_SERVER, encoding="utf-8")

@@ -116,6 +116,7 @@ def test_sqlite_rejects_sql_identifier_injection():
         SQLiteAdapter().connect({"table": "x; DROP TABLE y"})
 
 
+@pytest.mark.skipif(not importlib.util.find_spec("faiss"), reason="faiss not installed")
 def test_faiss_persistence_roundtrip(tmp_path):
     path = str(tmp_path / "index.faiss")
     db = FAISSAdapter()

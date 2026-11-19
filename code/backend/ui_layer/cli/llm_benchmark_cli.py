@@ -9,6 +9,12 @@ Command line for the LLM benchmark (integrates config/test_env tests 28-30).
     python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli report results/report.json
     python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli merge a.json b.json \\
         --output ab.json
+    python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli review-export results/r.json \\
+        --sample-decided 20                 # -> results/r_review.xlsx
+    python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli review-import results/r.json \\
+        results/r_review.xlsx --reviewer greg  # -> results/r_screening_reviewed.json
+    python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli report results/r.json \\
+        --screening results/r_screening_reviewed.json
 
 Former test_env scripts as commands:
 
@@ -35,6 +41,15 @@ from typing import Dict, List, Optional
 from ai_platform.backend.service_layer.macro.llm_benchmark.task_set_service import (
     get_task_set,
     list_task_sets,
+)
+from ai_platform.backend.service_layer.macro.llm_benchmark.review_service import (
+    ReviewError,
+    apply_reviews,
+    review_items,
+)
+from ai_platform.backend.ui_layer.cli.review_workbook import (
+    read_review_workbook,
+    write_review_workbook,
 )
 from ai_platform.backend.service_layer.macro.llm_benchmark.benchmark_summary import (
     summarize_benchmark,
@@ -161,6 +176,47 @@ def command_merge(args) -> int:
     return 0
 
 
+def _load_report_and_screening(args):
+    source = Path(args.input)
+    report = json.loads(source.read_text(encoding="utf-8"))
+    screening_file = Path(args.screening) if args.screening else screening_path(source)
+    if not screening_file.exists():
+        raise ReviewError(f"no screening at {screening_file}; run 'screen' first")
+    return source, report, json.loads(screening_file.read_text(encoding="utf-8"))
+
+
+def command_review_export(args) -> int:
+    """Write the review spreadsheet (manual_review items + a decided sample)."""
+    try:
+        source, report, screening = _load_report_and_screening(args)
+    except ReviewError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    items = review_items(report, screening, sample_decided=args.sample_decided, seed=args.seed)
+    target = Path(args.output) if args.output else source.with_name(source.stem + "_review.xlsx")
+    write_review_workbook(items, str(target))
+    print(target.resolve())
+    print(f"{len(items)} items ({sum(i['automatic_status'] == 'manual_review' for i in items)} "
+          "manual review)", file=sys.stderr)
+    return 0
+
+
+def command_review_import(args) -> int:
+    """Apply a filled-in review spreadsheet to the screening."""
+    try:
+        source, _, screening = _load_report_and_screening(args)
+        reviewed = apply_reviews(screening, read_review_workbook(args.workbook),
+                                 reviewer=args.reviewer)
+    except ReviewError as exc:
+        print(f"cannot import: {exc}", file=sys.stderr)
+        return 1
+    target = Path(args.output) if args.output else \
+        source.with_name(source.stem + "_screening_reviewed.json")
+    print(write_json(reviewed, target))
+    print(json.dumps(reviewed["human_review"], indent=2), file=sys.stderr)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Argument parser with list / run / screen subcommands."""
     parser = argparse.ArgumentParser(prog="llm_benchmark", description=__doc__.splitlines()[1])
@@ -203,6 +259,23 @@ def build_parser() -> argparse.ArgumentParser:
     merge.add_argument("inputs", nargs="+")
     merge.add_argument("--output", required=True)
     merge.set_defaults(func=command_merge)
+
+    export = sub.add_parser("review-export", help="spreadsheet for human review")
+    export.add_argument("input")
+    export.add_argument("--screening", default=None)
+    export.add_argument("--sample-decided", type=int, default=0,
+                        help="also include N random records the rules decided")
+    export.add_argument("--seed", type=int, default=0)
+    export.add_argument("--output", default=None)
+    export.set_defaults(func=command_review_export)
+
+    imp = sub.add_parser("review-import", help="apply a filled-in review spreadsheet")
+    imp.add_argument("input")
+    imp.add_argument("workbook")
+    imp.add_argument("--screening", default=None)
+    imp.add_argument("--reviewer", default=None)
+    imp.add_argument("--output", default=None)
+    imp.set_defaults(func=command_review_import)
     return parser
 
 

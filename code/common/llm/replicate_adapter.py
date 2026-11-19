@@ -24,7 +24,7 @@ from typing import Any, Dict, List
 
 from ai_platform.common.llm.anthropic_adapter import split_system
 from ai_platform.common.llm.chat_result import ChatResult
-from ai_platform.common.llm.llm_exception import LLMRequestError, LLMResponseError
+from ai_platform.common.llm.llm_exception import LLMError, LLMRequestError, LLMResponseError
 from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter
 
 _TERMINAL = {"succeeded", "failed", "canceled"}
@@ -126,3 +126,7 @@ class ReplicateAdapter(OpenAICompatibleAdapter):
                 )
             prediction = self._call(client.get, url[len(client.base_url.rstrip("/")):]).data or {}
         return prediction
+
+    def stream_chat(self, messages, **kwargs):
+        """Not available yet: this provider streams with its own event format."""
+        raise LLMError("ReplicateAdapter: streaming is not implemented yet; use chat_completion()")

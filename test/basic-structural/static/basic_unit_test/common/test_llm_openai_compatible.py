@@ -201,3 +201,44 @@ def test_ollama_native_chat_maps_options_and_metrics():
     assert result.metrics["load_seconds"] == pytest.approx(1.0)
     assert result.metrics["tokens_per_second"] == pytest.approx(20.0)
     assert result.usage["total_tokens"] == 30
+
+
+def sse(*events):
+    """Server-Sent Events body from dict events, terminated with [DONE]."""
+    import json as _json  # pylint: disable=import-outside-toplevel
+    lines = [f"data: {_json.dumps(e)}\n\n" for e in events] + ["data: [DONE]\n\n"]
+    return "".join(lines).encode()
+
+
+def test_stream_chat_yields_deltas_and_final_reason():
+    from ai_platform.common.llm.openai_compatible_adapter import (  # pylint: disable=import-outside-toplevel
+        collect_stream,
+    )
+    body = sse({"choices": [{"delta": {"role": "assistant"}, "finish_reason": None}]},
+               {"choices": [{"delta": {"content": "39"}, "finish_reason": None}]},
+               {"choices": [{"delta": {"content": "1"}, "finish_reason": "stop"}]},
+               {"choices": [], "usage": {"total_tokens": 7}})
+    with FakeJsonServer({CHAT: (200, body)}) as server:
+        llm = make(OpenAICompatibleAdapter, server.url)
+        chunks = list(llm.stream_chat([{"role": "user", "content": "17*23"}]))
+        result = collect_stream(iter(chunks), model="m")
+    assert [c.text for c in chunks] == ["", "39", "1", ""]
+    assert result.text == "391" and result.finish_reason == "stop"
+    assert result.usage == {"total_tokens": 7}
+    assert server.requests[0]["body"]["stream"] is True
+
+
+def test_stream_chat_http_error():
+    with FakeJsonServer({CHAT: (404, {"error": "no model"})}) as server:
+        llm = make(OpenAICompatibleAdapter, server.url)
+        with pytest.raises(LLMRequestError):
+            list(llm.stream_chat([{"role": "user", "content": "x"}]))
+
+
+def test_providers_with_other_stream_formats_refuse():
+    from ai_platform.common.llm.anthropic_adapter import AnthropicAdapter  # pylint: disable=import-outside-toplevel
+    from ai_platform.common.llm.llm_exception import LLMError  # pylint: disable=import-outside-toplevel
+    llm = AnthropicAdapter()
+    llm.initialize({"base_url": "http://x", "model": "m", "api_key": "k"})
+    with pytest.raises(LLMError, match="streaming"):
+        llm.stream_chat([{"role": "user", "content": "x"}])
