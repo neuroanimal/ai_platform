@@ -56,10 +56,17 @@ BILINGUAL_REASONING_V2 = [
 ]
 
 def _task(task_id, category, checker, pl, en):
-    """Compact task definition: pl/en are (prompt, expected) pairs."""
+    """Compact task definition: pl/en are (prompt, expected[, rejected]) tuples."""
+    def lang(spec):
+        return {"prompt": spec[0], "expected": spec[1],
+                "rejected": list(spec[2]) if len(spec) > 2 else []}
     return {"id": task_id, "category": category, "checker": checker,
-            "languages": {"pl": {"prompt": pl[0], "expected": pl[1]},
-                          "en": {"prompt": en[0], "expected": en[1]}}}
+            "languages": {"pl": lang(pl), "en": lang(en)}}
+
+
+_PL_DAYS = ["poniedziałek", "poniedziałku", "wtorek", "wtorku", "środa", "środę", "środy",
+            "czwartek", "czwartku", "piątek", "piątku", "niedziela", "niedzielę", "niedzieli"]
+_EN_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Sunday"]
 
 
 # v3 = v2 plus 12 short tasks with one checkable answer each. Expected values
@@ -95,14 +102,15 @@ BILINGUAL_REASONING_V3 = BILINGUAL_REASONING_V2 + [
           ("Czy liczba 0,7 jest większa od liczby 0,65?", "Tak"),
           ("Is the number 0.7 greater than 0.65?", "Yes")),
     _task("capital_city", "knowledge", "phrase",
-          ("Jaka jest stolica Australii?", "Canberra|Canberze|Canberry"),
-          ("What is the capital of Australia?", "Canberra")),
+          ("Jaka jest stolica Australii?", "Canberra|Canberze|Canberry",
+           ["Sydney", "Melbourne", "Sydnej"]),
+          ("What is the capital of Australia?", "Canberra", ["Sydney", "Melbourne"])),
     _task("weekday", "knowledge", "phrase",
-          ("Jaki dzień tygodnia był 1 stycznia 2000 roku?", "sobota|sobotę|soboty"),
-          ("What day of the week was 1 January 2000?", "Saturday")),
+          ("Jaki dzień tygodnia był 1 stycznia 2000 roku?", "sobota|sobotę|soboty", _PL_DAYS),
+          ("What day of the week was 1 January 2000?", "Saturday", _EN_DAYS)),
     _task("plural_form", "language", "phrase",
-          ("Podaj liczbę mnogą rzeczownika 'pies'.", "psy"),
-          ("What is the plural of the noun 'mouse'?", "mice")),
+          ("Podaj liczbę mnogą rzeczownika 'pies'.", "psy", ["piesy", "piesi", "pieski"]),
+          ("What is the plural of the noun 'mouse'?", "mice", ["mouses", "meese"])),
 ]
 
 _REGISTRY: Dict[str, TaskSet] = {}

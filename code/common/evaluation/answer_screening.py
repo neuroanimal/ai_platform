@@ -55,6 +55,11 @@ first sentence does not decide - "the answer is yes", "odpowiedź: nie",
 \\boxed{Yes}, or a sentence that starts with yes/no near the end. Restating
 conclusions ("so 0.7 is greater") still go to manual review: inferring yes/no
 from them would need language understanding the rules do not have.
+
+Changes in 4.8: ``phrase`` accepts ``rejected`` phrases - typical wrong
+answers listed with the task ("Sydney" for the capital of Australia, the
+other weekdays). Found without the expected phrase -> 'incorrect'; found
+together with it -> manual review (the answer may be contrasting them).
 """
 
 # One branch per outcome keeps each rule readable next to its message.
@@ -62,9 +67,9 @@ from them would need language understanding the rules do not have.
 
 import re
 from collections import Counter, defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-VERSION = "4.7"
+VERSION = "4.8"
 
 Verdict = Tuple[str, str]
 Checker = Callable[[Dict[str, Any]], Verdict]
@@ -482,19 +487,29 @@ def explicit_final_answer(text: str, language: str) -> Optional[str]:
     return kinds.pop() if len(kinds) == 1 else None
 
 
-def check_phrase(answer: str, expected: str) -> Verdict:
+def check_phrase(answer: str, expected: str, rejected: Sequence[str] = ()) -> Verdict:
     """Screen a short factual answer: one of the '|'-separated phrases must occur.
 
     A missing phrase goes to manual review, not 'incorrect' - the answer may
-    use a synonym, an inflected form or another spelling.
+    use a synonym, an inflected form or another spelling - unless one of the
+    ``rejected`` phrases (known wrong answers) occurs instead.
     """
     options = [normalize(o) for o in str(expected).split("|") if o.strip()]
     if not options:
         return "manual_review", "No expected phrase."
     text = normalize(answer)
-    found = [o for o in options if re.search(rf"(?<!\w){re.escape(o)}(?!\w)", text)]
+
+    def occurring(phrases):
+        return [p for p in phrases if re.search(rf"(?<!\w){re.escape(p)}(?!\w)", text)]
+
+    found = occurring(options)
+    wrong = occurring([normalize(r) for r in rejected or () if str(r).strip()])
+    if found and wrong:
+        return "manual_review", f"Expected {found[0]!r} and known wrong {wrong[0]!r} both occur."
     if found:
         return "candidate_correct", f"Expected phrase found: {found[0]!r}."
+    if wrong:
+        return "candidate_incorrect", f"Known wrong answer {wrong[0]!r} found, expected {options}."
     return "manual_review", f"None of {options} found; may be phrased differently."
 
 
@@ -512,7 +527,8 @@ CHECKERS: Dict[str, Checker] = {
     "numeric": lambda r: check_numeric(r.get("answer", ""), r.get("expected", "")),
     "yes_no": lambda r: check_yes_no(r.get("answer", ""), r.get("expected", ""),
                                      r.get("language", "")),
-    "phrase": lambda r: check_phrase(r.get("answer", ""), r.get("expected", "")),
+    "phrase": lambda r: check_phrase(r.get("answer", ""), r.get("expected", ""),
+                                     r.get("rejected") or ()),
 }
 
 #: test_id -> checker for reports written before records named their checker.

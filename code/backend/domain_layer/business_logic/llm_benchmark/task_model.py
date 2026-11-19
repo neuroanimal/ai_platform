@@ -23,6 +23,8 @@ class LocalizedPrompt:
 
     prompt: str
     expected: str
+    #: Known wrong answers the screening may mark 'incorrect' (phrase checker).
+    rejected: Sequence[str] = ()
 
 
 @dataclass(frozen=True)
@@ -77,7 +79,8 @@ def task_from_dict(data: Dict) -> BenchmarkTask:
     try:
         return BenchmarkTask(
             task_id=data["id"], category=data.get("category", ""), checker=data.get("checker"),
-            languages={lang: LocalizedPrompt(v["prompt"], v.get("expected", ""))
+            languages={lang: LocalizedPrompt(v["prompt"], v.get("expected", ""),
+                                             tuple(v.get("rejected", ())))
                        for lang, v in data["languages"].items()})
     except (KeyError, TypeError) as exc:
         raise TaskSetError(f"invalid task definition {data!r}: {exc}") from exc

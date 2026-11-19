@@ -1,10 +1,12 @@
 """
 Spreadsheet for human review of benchmark answers (Excel .xlsx, openpyxl).
 
-One row per item from ``review_service.review_items``. ``Rule verdict`` is the
+One row per item from ``review_service.review_items``. Column order:
+context, ``Rule verdict``, ``LLM verdict`` (the judge, if a judgement file
+was given), ``Human verdict`` (drop-down), ``Comment``, ``LLM reason``. ``Rule verdict`` is the
 automatic screening in the same vocabulary as the human verdict (correct /
 incorrect / partial, or manual_review when the rules did not decide); the
-``Verdict`` column next to it has a drop-down for the person's judgement
+``Human verdict`` column has a drop-down for the person's judgement
 (correct / incorrect / partial / unclear); everything else is context.
 Hidden columns ``index`` and ``key`` let the import check that the file
 belongs to the screening it is applied to - do not edit them.
@@ -22,8 +24,9 @@ COLUMNS = [  # (field, header, width)
     ("test_id", "Task", 22), ("language", "Lang", 6), ("run_index", "Run", 5),
     ("prompt", "Question", 40), ("expected", "Expected", 22), ("answer", "Answer", 80),
     ("automatic_status", "Rule status", 26), ("evidence", "Rule evidence", 40),
-    ("automatic_verdict", "Rule verdict", 14),
-    ("verdict", "Verdict", 12), ("comment", "Comment", 30),
+    ("automatic_verdict", "Rule verdict", 14), ("llm_verdict", "LLM verdict", 12),
+    ("verdict", "Human verdict", 13), ("comment", "Comment", 30),
+    ("llm_reason", "LLM reason", 50),
 ]
 HIDDEN = ("index", "key")
 
@@ -74,6 +77,7 @@ def read_review_workbook(path: str) -> List[Dict[str, Any]]:
     # Columns are found by header, so sheets written before a column was added
     # (or with columns moved by the reviewer) still import.
     by_header = {header: field for field, header, _ in COLUMNS}
+    by_header["Verdict"] = "verdict"  # header of sheets written before 2026-11-19 14:00
     positions = {by_header[h]: i for i, h in enumerate(headers) if h in by_header}
     missing = {"index", "key", "verdict"} - set(positions)
     if missing:

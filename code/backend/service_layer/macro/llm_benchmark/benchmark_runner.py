@@ -103,7 +103,8 @@ class LLMBenchmarkRunner:  # pylint: disable=too-few-public-methods
         localized = task.prompt(language)
         base = {"model": model, "test_id": task.task_id, "checker": task.checker,
                 "category": task.category, "language": language, "run_index": run_index,
-                "prompt": localized.prompt, "expected": localized.expected}
+                "prompt": localized.prompt, "expected": localized.expected,
+                "rejected": list(localized.rejected)}
         try:
             result = llm.chat_completion([{"role": "user", "content": localized.prompt}])
         except LLMError as exc:

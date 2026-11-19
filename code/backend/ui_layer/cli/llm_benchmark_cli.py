@@ -13,6 +13,8 @@ Command line for the LLM benchmark (integrates config/test_env tests 28-30).
         --sample-decided 20                 # -> results/r_review.xlsx
     python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli review-import results/r.json \\
         results/r_review.xlsx --reviewer greg  # -> results/r_screening_reviewed.json
+    python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli judge results/r.json \\
+        --provider anthropic --model <model id>   # -> results/r_judge.json (ANTHROPIC_API_KEY)
     python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli report results/r.json \\
         --screening results/r_screening_reviewed.json
 
@@ -42,6 +44,14 @@ from ai_platform.backend.service_layer.macro.llm_benchmark.task_set_service impo
     get_task_set,
     list_task_sets,
 )
+from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (
+    judge_agreement,
+    judge_report,
+    judgement_columns,
+)
+from ai_platform.common.llm.bedrock_adapter import BedrockAdapter
+from ai_platform.common.llm.google_adapter import GoogleAdapter
+from ai_platform.common.llm.llm_exception import LLMError
 from ai_platform.backend.service_layer.macro.llm_benchmark.review_service import (
     ReviewError,
     apply_reviews,
@@ -78,6 +88,10 @@ PROVIDERS = {
     "openai": OpenAIAdapter,
     "anthropic": AnthropicAdapter,
 }
+#: Judges: remote providers recommended (a strong model), local ones work too.
+JUDGE_PROVIDERS = {"anthropic": AnthropicAdapter, "openai": OpenAIAdapter,
+                   "google": GoogleAdapter, "bedrock": BedrockAdapter,
+                   "openai-compatible": OpenAICompatibleAdapter, "ollama": OllamaAdapter}
 DEFAULT_MODELS = ["qwen25-05b-localai", "qwen25-15b-localai", "bielik-15b-localai"]
 
 
@@ -194,6 +208,15 @@ def command_review_export(args) -> int:
         return 1
     items = review_items(report, screening, sample_decided=args.sample_decided, seed=args.seed,
                          include_all=args.all)
+    judgements_file = Path(args.judge) if args.judge else judge_path(source)
+    if judgements_file.exists():
+        judgement_columns(json.loads(judgements_file.read_text(encoding="utf-8")), items)
+    if args.carry_over:
+        previous = {row["key"]: row for row in read_review_workbook(args.carry_over)}
+        for item in items:
+            old = previous.get(item["key"]) or {}
+            item["verdict"] = old.get("verdict") or ""
+            item["comment"] = old.get("comment") or ""
     target = Path(args.output) if args.output else source.with_name(source.stem + "_review.xlsx")
     write_review_workbook(items, str(target))
     print(target.resolve())
@@ -218,7 +241,40 @@ def command_review_import(args) -> int:
     return 0
 
 
-def build_parser() -> argparse.ArgumentParser:
+def judge_path(report_path: Path) -> Path:
+    """<report>_judge.json next to the report."""
+    return report_path.with_name(report_path.stem + "_judge.json")
+
+
+def command_judge(args) -> int:
+    """Ask a (remote) LLM for a verdict on every answer; resumable."""
+    source = Path(args.input)
+    report = json.loads(source.read_text(encoding="utf-8"))
+    target = Path(args.output) if args.output else judge_path(source)
+    existing = json.loads(target.read_text(encoding="utf-8")) if target.exists() else None
+    judge = JUDGE_PROVIDERS[args.provider]()
+    config = {"model": args.model, "temperature": 0, "max_tokens": 200, "timeout": 120}
+    if args.base_url:
+        config["base_url"] = args.base_url
+    if args.api_key_env:
+        config["api_key_env"] = args.api_key_env
+    try:
+        judge.initialize(config)
+        data = judge_report(report, judge, f"{args.provider}:{args.model}", existing=existing,
+                            workers=args.workers, progress=lambda m: print(m, file=sys.stderr),
+                            save=lambda d: write_json(d, target))
+    except (LLMError, ValueError) as exc:
+        print(f"cannot judge: {exc}", file=sys.stderr)
+        return 1
+    print(write_json(data, target))
+    reviewed = source.with_name(source.stem + "_screening_reviewed.json")
+    if reviewed.exists():
+        agreement = judge_agreement(data, json.loads(reviewed.read_text(encoding="utf-8")))
+        print(f"agreement with human verdicts: {json.dumps(agreement)}", file=sys.stderr)
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:  # pylint: disable=too-many-statements
     """Argument parser with list / run / screen subcommands."""
     parser = argparse.ArgumentParser(prog="llm_benchmark", description=__doc__.splitlines()[1])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -268,6 +324,20 @@ def build_parser() -> argparse.ArgumentParser:
                         help="also include N random records the rules decided")
     export.add_argument("--seed", type=int, default=0)
     export.add_argument("--all", action="store_true", help="every record (complete sheet)")
+    export.add_argument("--judge", default=None,
+                        help="judgement file (default <report>_judge.json if present)")
+    export.add_argument("--carry-over", default=None,
+                        help="earlier filled-in sheet whose human verdicts are copied over")
+
+    judge = sub.add_parser("judge", help="LLM-as-judge verdict for every answer (resumable)")
+    judge.add_argument("input")
+    judge.add_argument("--provider", choices=sorted(JUDGE_PROVIDERS), required=True)
+    judge.add_argument("--model", required=True)
+    judge.add_argument("--base-url", default=None)
+    judge.add_argument("--api-key-env", default=None)
+    judge.add_argument("--workers", type=int, default=4)
+    judge.add_argument("--output", default=None)
+    judge.set_defaults(func=command_judge)
     export.add_argument("--output", default=None)
     export.set_defaults(func=command_review_export)
 

@@ -263,3 +263,76 @@ def test_cli_review_export_and_import(tmp_path):
     assert llm_benchmark_cli.main(["review-import", str(source), str(workbook)]) == 0
     reviewed = json.loads((tmp_path / "r_screening_reviewed.json").read_text(encoding="utf-8"))
     assert reviewed["human_review"]["applied"] == 0  # nothing filled in
+
+
+def test_rejected_phrases_and_old_report_enrichment():
+    from ai_platform.common.evaluation import answer_screening as s  # pylint: disable=import-outside-toplevel
+    assert s.check_phrase("Stolicą jest Sydney.", "Canberra", ["Sydney"])[0] == "candidate_incorrect"
+    assert s.check_phrase("Nie Sydney, lecz Canberra.", "Canberra", ["Sydney"])[0] == "manual_review"
+    assert s.check_phrase("Nie wiem.", "Canberra", ["Sydney"])[0] == "manual_review"
+    old = {"task_set": "bilingual_reasoning", "task_set_version": "3", "results": [
+        {"model": "m", "test_id": "capital_city", "language": "pl", "run_index": 0,
+         "checker": "phrase", "expected": "Canberra|Canberze|Canberry", "status": "PASS",
+         "answer": "Australijska stolica jest Sydney.", "finish_reason": "stop"}]}
+    row = screen_benchmark_report(old)["results"][0]
+    assert row["automatic_assessment"]["answer_screening"]["status"] == "candidate_incorrect"
+
+
+def test_llm_judge_resumable_and_agreement(tmp_path):
+    from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (  # pylint: disable=import-outside-toplevel
+        judge_agreement,
+        judge_report,
+        judgement_columns,
+        parse_judgement,
+    )
+    from ai_platform.backend.service_layer.macro.llm_benchmark.review_service import (  # pylint: disable=import-outside-toplevel
+        apply_reviews,
+        review_items,
+    )
+    from ai_platform.backend.ui_layer.cli.review_workbook import (  # pylint: disable=import-outside-toplevel
+        read_review_workbook,
+        write_review_workbook,
+    )
+    assert parse_judgement('ok {"verdict": "Correct", "reason": "391"}')["verdict"] == "correct"
+    assert parse_judgement("no json")["verdict"] is None
+
+    class Judge:
+        """Says correct when the answer contains the expected text."""
+        calls = 0
+
+        def chat_completion(self, messages, **_):
+            """Judge by substring."""
+            Judge.calls += 1
+            prompt = messages[0]["content"]
+            expected = prompt.split("EXPECTED:\n")[1].split("\n")[0]
+            answer = prompt.split("ANSWER:\n")[1]
+            verdict = "correct" if expected.split("|")[0] in answer else "incorrect"
+            return ChatResult(text=json.dumps({"verdict": verdict, "reason": "r"}), model="j")
+
+    answers = {"17": "17 * 23 = 391", "Mruczek": "Nie wiem."}
+    report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, answers)).run(
+        get_task_set("bilingual_reasoning@2"), ["m"], languages=["pl"], repeats=1)
+    saved = []
+    data = judge_report(report, Judge(), "fake:judge", workers=2, save=saved.append)
+    assert len(data["judgements"]) == 4 and saved
+    calls = Judge.calls
+    judge_report(report, Judge(), "fake:judge", existing=data)  # resume: nothing left
+    assert Judge.calls == calls
+    with pytest.raises(ValueError):
+        judge_report(report, Judge(), "other:judge", existing=data)
+
+    screening = screen_benchmark_report(report)
+    items = review_items(report, screening, include_all=True)
+    judgement_columns(data, items)
+    path = tmp_path / "r.xlsx"
+    write_review_workbook(items, str(path))
+    from openpyxl import load_workbook  # pylint: disable=import-outside-toplevel
+    headers = [c.value for c in load_workbook(path).active[1]]
+    assert headers.index("Rule verdict") + 1 == headers.index("LLM verdict") \
+        == headers.index("Human verdict") - 1
+    rows = read_review_workbook(str(path))
+    assert rows[0]["llm_verdict"] in ("correct", "incorrect")
+    for row in rows:
+        row["verdict"] = row["llm_verdict"]
+    agreement = judge_agreement(data, apply_reviews(screening, rows))
+    assert agreement["agreement_rate"] == 1.0 and agreement["compared"] == 4
