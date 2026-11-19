@@ -192,7 +192,8 @@ def command_review_export(args) -> int:
     except ReviewError as exc:
         print(exc, file=sys.stderr)
         return 1
-    items = review_items(report, screening, sample_decided=args.sample_decided, seed=args.seed)
+    items = review_items(report, screening, sample_decided=args.sample_decided, seed=args.seed,
+                         include_all=args.all)
     target = Path(args.output) if args.output else source.with_name(source.stem + "_review.xlsx")
     write_review_workbook(items, str(target))
     print(target.resolve())
@@ -266,6 +267,7 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--sample-decided", type=int, default=0,
                         help="also include N random records the rules decided")
     export.add_argument("--seed", type=int, default=0)
+    export.add_argument("--all", action="store_true", help="every record (complete sheet)")
     export.add_argument("--output", default=None)
     export.set_defaults(func=command_review_export)
 

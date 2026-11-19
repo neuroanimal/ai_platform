@@ -216,6 +216,9 @@ def test_review_round_trip_through_spreadsheet(tmp_path):
     items = review_items(report, screening, sample_decided=1, seed=1)
     statuses = [i["automatic_status"] for i in items]
     assert statuses.count("manual_review") == 2 and len(items) == 3
+    everything = review_items(report, screening, include_all=True)
+    assert [i["index"] for i in everything] == list(range(4))
+    assert {i["automatic_verdict"] for i in everything} == {"correct", "manual_review"}
 
     path = tmp_path / "review.xlsx"
     write_review_workbook(items, str(path))

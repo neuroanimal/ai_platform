@@ -46,8 +46,12 @@ def automatic_group(status: str) -> str:
 
 
 def review_items(report: Dict[str, Any], screening: Dict[str, Any],
-                 sample_decided: int = 0, seed: int = 0) -> List[Dict[str, Any]]:
-    """Items for human review: all manual_review records plus a decided sample."""
+                 sample_decided: int = 0, seed: int = 0,
+                 include_all: bool = False) -> List[Dict[str, Any]]:
+    """Items for human review: all manual_review records plus a decided sample.
+
+    ``include_all`` returns every record (a complete review sheet).
+    """
     raw, screened = report.get("results", []), screening.get("results", [])
     if len(raw) != len(screened):
         raise ReviewError("screening does not belong to this report (record counts differ)")
@@ -60,10 +64,14 @@ def review_items(report: Dict[str, Any], screening: Dict[str, Any],
             "run_index": record.get("run_index"), "prompt": record.get("prompt", ""),
             "expected": record.get("expected", ""), "answer": record.get("answer", ""),
             "finish_reason": record.get("finish_reason"),
-            "automatic_status": assessment["status"], "evidence": assessment["evidence"],
+            "automatic_status": assessment["status"],
+            "automatic_verdict": automatic_group(assessment["status"]),
+            "evidence": assessment["evidence"],
             "verdict": "", "comment": "",
         }
         (manual if assessment["status"] == "manual_review" else decided).append(item)
+    if include_all:
+        return sorted(manual + decided, key=lambda item: item["index"])
     sample = random.Random(seed).sample(decided, min(sample_decided, len(decided)))
     return sorted(manual + sample, key=lambda item: item["index"])
 

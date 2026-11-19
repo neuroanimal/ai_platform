@@ -1,10 +1,13 @@
 """
 Spreadsheet for human review of benchmark answers (Excel .xlsx, openpyxl).
 
-One row per item from ``review_service.review_items``. The ``verdict``
-column has a drop-down (correct / incorrect / partial / unclear); everything
-else is context. Hidden columns ``index`` and ``key`` let the import check
-that the file belongs to the screening it is applied to - do not edit them.
+One row per item from ``review_service.review_items``. ``Rule verdict`` is the
+automatic screening in the same vocabulary as the human verdict (correct /
+incorrect / partial, or manual_review when the rules did not decide); the
+``Verdict`` column next to it has a drop-down for the person's judgement
+(correct / incorrect / partial / unclear); everything else is context.
+Hidden columns ``index`` and ``key`` let the import check that the file
+belongs to the screening it is applied to - do not edit them.
 """
 
 from typing import Any, Dict, List
@@ -19,6 +22,7 @@ COLUMNS = [  # (field, header, width)
     ("test_id", "Task", 22), ("language", "Lang", 6), ("run_index", "Run", 5),
     ("prompt", "Question", 40), ("expected", "Expected", 22), ("answer", "Answer", 80),
     ("automatic_status", "Rule status", 26), ("evidence", "Rule evidence", 40),
+    ("automatic_verdict", "Rule verdict", 14),
     ("verdict", "Verdict", 12), ("comment", "Comment", 30),
 ]
 HIDDEN = ("index", "key")
@@ -67,11 +71,16 @@ def read_review_workbook(path: str) -> List[Dict[str, Any]]:
     sheet = load_workbook(path, read_only=True, data_only=True).active
     rows = sheet.iter_rows(values_only=True)
     headers = list(next(rows, []))
-    expected = [header for _, header, _ in COLUMNS]
-    if headers[:len(expected)] != expected:
-        raise ReviewError(f"{path}: not a review sheet written by this tool (header {headers})")
-    fields = [field for field, _, _ in COLUMNS]
-    return [dict(zip(fields, row)) for row in rows if row and row[0] is not None]
+    # Columns are found by header, so sheets written before a column was added
+    # (or with columns moved by the reviewer) still import.
+    by_header = {header: field for field, header, _ in COLUMNS}
+    positions = {by_header[h]: i for i, h in enumerate(headers) if h in by_header}
+    missing = {"index", "key", "verdict"} - set(positions)
+    if missing:
+        raise ReviewError(f"{path}: not a review sheet written by this tool "
+                          f"(missing columns {sorted(missing)})")
+    return [{field: row[i] for field, i in positions.items()}
+            for row in rows if row and row[positions["index"]] is not None]
 
 
 def _cell(value: Any) -> Any:
