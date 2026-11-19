@@ -59,21 +59,38 @@ adapter.shutdown()
 
 **Examples:** `python -m ai_platform.common.example.ml_example`
 
-### 🧠 Large Language Models (11 Providers)
+### 🧠 Large Language Models (17 Adapters)
 
-**Supported:** OpenAI, Anthropic, Google Gemini, Cohere, Mistral, HuggingFace, AWS Bedrock, Azure OpenAI, Ollama, Together AI, Replicate
+**Supported:** local OpenAI-compatible servers (LocalAI, Ollama, vLLM, llama.cpp), OpenAI, Azure OpenAI, Anthropic, Google Gemini, Cohere, Mistral, DeepSeek, xAI Grok, Together AI, Qwen (DashScope), Hugging Face, Replicate, AWS Bedrock, Phi.
+Every adapter sends real requests; details and verification status: `code/common/llm/README.md`.
 
 ```python
-from ai_platform.common.llm.openai_adapter import OpenAIAdapter
+from ai_platform.common.llm.localai_adapter import LocalAIAdapter
 
-llm = OpenAIAdapter()
-llm.initialize({"model": "gpt-4", "api_key": "your-key"})
-response = llm.generate("Explain quantum computing")
-print(response)
+llm = LocalAIAdapter()
+llm.initialize({"base_url": "http://127.0.0.1:8081", "model": "bielik-15b-localai",
+                "temperature": 0, "max_tokens": 256})
+result = llm.chat_completion([{"role": "user", "content": "Ile wynosi 17 razy 23?"}])
+print(result.text, result.finish_reason)
 llm.shutdown()
 ```
 
 **Examples:** `python -m ai_platform.common.example.llm_example`
+
+### 📏 LLM Benchmark
+
+Task sets (`backend/domain_layer/business_logic/llm_benchmark/`), runner and
+answer screening (`backend/service_layer/macro/llm_benchmark/`,
+`common/evaluation/answer_screening.py`), command line:
+
+```bash
+python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli list
+python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli run --provider localai \
+    --base-url http://127.0.0.1:8081 --models qwen25-05b-localai bielik-15b-localai --screen
+python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli screen results/<report>.json
+```
+
+Screening is a rule-based pre-assessment (`is_final_judgement: false`), not a verdict.
 
 ### 📚 RAG (Retrieval-Augmented Generation) (8 Stacks)
 
@@ -338,14 +355,21 @@ python -m ai_platform.common.example.framework_example
 ## Testing
 
 ```bash
-# Run all tests
-pytest test/
+# Run all tests (--import-mode=importlib: test directories have hyphens)
+pytest --import-mode=importlib test/
 
-# Run ML integration tests
-pytest test/functional/integration_test/test_ml_adapters.py
+# Unit tests of adapters, screening and benchmark (no servers needed)
+pytest --import-mode=importlib test/basic-structural/
 
-# Run specific test
-pytest test/functional/integration_test/test_yaml_processing.py -v
+# Live tests: skipped automatically when LocalAI/Ollama are not running
+pytest --import-mode=importlib test/functional/integration_test/test_llm_local_live.py \
+    test/non-functional/performance_test/test_llm_benchmark_live.py
+
+# Architecture rule (layer imports, doc/arch/DEPENDENCY_RULES.md)
+pytest --import-mode=importlib test/basic-structural/white-box/architecture_rule/
+
+# Environment checks (standalone scripts, one process each)
+python test/non-functional/compatibility_test/environment/run_env_checks.py
 ```
 
 ## Registry Pattern

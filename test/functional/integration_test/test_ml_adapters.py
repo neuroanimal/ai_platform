@@ -2,15 +2,15 @@
 
 import pytest
 import numpy as np
-from code.common.ml.scikitlearn_adapter import ScikitLearnAdapter
-from code.common.ml.xgboost_adapter import XGBoostAdapter
-from code.common.ml.lightgbm_adapter import LightGBMAdapter
-from code.common.ml.catboost_adapter import CatBoostAdapter
-from code.common.ml.pytorch_adapter import PyTorchAdapter
-from code.common.ml.tensorflow_adapter import TensorFlowAdapter
-from code.common.ml.keras_adapter import KerasAdapter
-from code.common.ml.jax_adapter import JAXAdapter
-from code.common.ml.mxnet_adapter import MXNetAdapter
+from ai_platform.common.ml.scikitlearn_adapter import ScikitLearnAdapter
+from ai_platform.common.ml.xgboost_adapter import XGBoostAdapter
+from ai_platform.common.ml.lightgbm_adapter import LightGBMAdapter
+from ai_platform.common.ml.catboost_adapter import CatBoostAdapter
+from ai_platform.common.ml.pytorch_adapter import PyTorchAdapter
+from ai_platform.common.ml.tensorflow_adapter import TensorFlowAdapter
+from ai_platform.common.ml.keras_adapter import KerasAdapter
+from ai_platform.common.ml.jax_adapter import JAXAdapter
+from ai_platform.common.ml.mxnet_adapter import MXNetAdapter
 
 @pytest.fixture
 def sample_data():
@@ -43,6 +43,7 @@ def test_xgboost_adapter(sample_data):
     adapter.shutdown()
 
 def test_lightgbm_adapter(sample_data):
+    pytest.importorskip("lightgbm")  # optional framework, not installed everywhere
     X, y = sample_data
     adapter = LightGBMAdapter()
     adapter.initialize({"params": {"num_leaves": 31}})
@@ -54,6 +55,7 @@ def test_lightgbm_adapter(sample_data):
     adapter.shutdown()
 
 def test_catboost_adapter(sample_data):
+    pytest.importorskip("catboost")  # optional framework, not installed everywhere
     X, y = sample_data
     adapter = CatBoostAdapter()
     adapter.initialize({"params": {"iterations": 10, "verbose": False}})
@@ -109,6 +111,7 @@ def test_jax_adapter(sample_data):
     adapter.shutdown()
 
 def test_mxnet_adapter(sample_data):
+    pytest.importorskip("mxnet")  # optional framework, not installed everywhere
     X, y = sample_data
     adapter = MXNetAdapter()
     adapter.initialize({"layers": [10, 16, 1]})

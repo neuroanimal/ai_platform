@@ -4,8 +4,8 @@ Integrated from uncomment project with improvements
 """
 import re
 from typing import Dict, Any, Optional, List
-from common.handler.trace_handler import TraceHandler
-from common.handler.path_handler import PathHandler
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.path_handler import PathHandler
 
 
 class StructureNode:

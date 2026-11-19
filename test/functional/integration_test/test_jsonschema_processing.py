@@ -5,8 +5,8 @@ import os
 import json
 import tempfile
 import unittest
-from code.common.tool.jsonschema_reorder import JSONSchemaReorder
-from code.common.engine.jsonschema_processing_engine import JSONSchemaProcessingEngine
+from ai_platform.common.tool.jsonschema_reorder import JSONSchemaReorder
+from ai_platform.common.engine.jsonschema_processing_engine import JSONSchemaProcessingEngine
 
 
 class TestJSONSchemaProcessing(unittest.TestCase):

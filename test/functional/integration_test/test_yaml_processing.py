@@ -4,8 +4,8 @@ Test for AI Platform YAML Processing Integration
 import os
 import tempfile
 import unittest
-from code.common.tool.yaml_uncommenter import YAMLUncommenter
-from code.common.engine.yaml_processing_engine import YAMLProcessingEngine
+from ai_platform.common.tool.yaml_uncommenter import YAMLUncommenter
+from ai_platform.common.engine.yaml_processing_engine import YAMLProcessingEngine
 
 
 class TestYAMLProcessing(unittest.TestCase):

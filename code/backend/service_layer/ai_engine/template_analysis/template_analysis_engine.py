@@ -4,9 +4,9 @@ Integrated from uncomment project with improvements
 """
 import re
 from typing import List, Dict, Optional, Any
-from common.handler.trace_handler import TraceHandler
-from common.handler.path_handler import PathHandler
-from backend.service_layer.ai_engine.structure_analysis.structure_analysis_engine import StructureAnalysisEngine
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.path_handler import PathHandler
+from ai_platform.backend.service_layer.ai_engine.structure_analysis.structure_analysis_engine import StructureAnalysisEngine
 
 
 class TemplateLine:

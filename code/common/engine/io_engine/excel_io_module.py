@@ -8,8 +8,8 @@ from openpyxl import load_workbook
 from typing import Dict, Any, List, Optional, Tuple
 import warnings
 
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, FormatProcessingError
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError
 
 
 class ExcelIOModule:

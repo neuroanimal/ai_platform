@@ -5,8 +5,8 @@ Optimal integration from additional_codes_part_1
 import json
 from typing import Dict, Any, List, Optional, Union
 
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, FormatProcessingError
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError
 
 
 class JSONSchemaUtilities:

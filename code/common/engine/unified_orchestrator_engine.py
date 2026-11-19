@@ -6,10 +6,10 @@ import os
 from typing import Dict, Any, Optional, List
 from enum import Enum
 
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, BaseEngineError
-from backend.service_layer.format_processing.yaml.yaml_processing_service import YAMLProcessingService
-from backend.service_layer.schema_processing.jsonschema_processing_service import JSONSchemaProcessingService
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, BaseEngineError
+from ai_platform.backend.service_layer.format_processing.yaml.yaml_processing_service import YAMLProcessingService
+from ai_platform.backend.service_layer.schema_processing.jsonschema_processing_service import JSONSchemaProcessingService
 
 
 class ProcessingMode(Enum):

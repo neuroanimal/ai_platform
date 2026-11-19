@@ -7,8 +7,8 @@ from typing import Dict, Any, Optional
 import io
 import os
 
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, FormatProcessingError
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError
 
 
 class YAMLIOModule:

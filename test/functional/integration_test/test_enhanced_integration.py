@@ -12,10 +12,10 @@ import json
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from backend.service_layer.format_processing.conversion.format_conversion_service import FormatConversionService
-from common.engine.io_engine.excel_io_module import ExcelIOModule
-from backend.service_layer.format_processing.json.json_schema_utilities import JSONSchemaUtilities
-from common.handler.trace_handler import TraceHandler
+from ai_platform.backend.service_layer.format_processing.conversion.format_conversion_service import FormatConversionService
+from ai_platform.common.engine.io_engine.excel_io_module import ExcelIOModule
+from ai_platform.backend.service_layer.format_processing.json.json_schema_utilities import JSONSchemaUtilities
+from ai_platform.common.handler.trace_handler import TraceHandler
 
 
 class TestEnhancedIntegration(unittest.TestCase):

@@ -7,7 +7,9 @@ compatibility with a real release or service.
 """
 
 import importlib.util
+import json
 import math
+import subprocess
 import sys
 import types
 
@@ -128,19 +130,31 @@ def test_mlflow_logs_metrics(tmp_path):
     assert run.data.params["n_examples"] == "3"
 
 
+TENSORBOARD_SCRIPT = """
+import json, sys
+from ai_platform.common.evaluation.tensorboard_adapter import TensorBoardAdapter
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+log_dir = sys.argv[1]
+ev = TensorBoardAdapter()
+ev.initialize({"log_dir": log_dir, "metrics": ["contains"]})
+ev.evaluate(["17 razy 23 to 391.", "x", "12%"], ["391", "y", "12%"])
+ev.evaluate(["391"], ["391"])
+ev.shutdown()
+acc = EventAccumulator(log_dir)
+acc.Reload()
+print(json.dumps([e.value for e in acc.Scalars("eval/contains")]))
+"""
+
+
 @pytest.mark.skipif(not importlib.util.find_spec("torch"), reason="torch not installed")
 def test_tensorboard_writes_scalars(tmp_path):
-    from tensorboard.backend.event_processing.event_accumulator import (  # pylint: disable=import-outside-toplevel
-        EventAccumulator,
-    )
-    ev = TensorBoardAdapter()
-    ev.initialize({"log_dir": str(tmp_path), "metrics": ["contains"]})
-    ev.evaluate(PRED, REF)
-    ev.evaluate(PRED[:1], REF[:1])
-    ev.shutdown()
-    acc = EventAccumulator(str(tmp_path))
-    acc.Reload()
-    values = [e.value for e in acc.Scalars("eval/contains")]
+    """Runs in a subprocess: importing tensorboard loads TensorFlow, and TensorFlow
+    followed by PyTorch training in one process segfaults in this environment
+    (seen with test_ml_adapters.py::test_pytorch_adapter)."""
+    completed = subprocess.run([sys.executable, "-c", TENSORBOARD_SCRIPT, str(tmp_path)],
+                               capture_output=True, text=True, timeout=300, check=False)
+    assert completed.returncode == 0, completed.stderr[-2000:]
+    values = json.loads(completed.stdout.strip().splitlines()[-1])
     assert values == pytest.approx([2 / 3, 1.0])
 
 

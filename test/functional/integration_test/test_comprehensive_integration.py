@@ -12,9 +12,9 @@ from typing import Dict, Any
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from common.engine.unified_orchestrator_engine import UnifiedOrchestratorEngine, ProcessingMode
-from backend.service_layer.format_processing.yaml.yaml_processing_service import YAMLProcessingService
-from common.handler.trace_handler import TraceHandler
+from ai_platform.common.engine.unified_orchestrator_engine import UnifiedOrchestratorEngine, ProcessingMode
+from ai_platform.backend.service_layer.format_processing.yaml.yaml_processing_service import YAMLProcessingService
+from ai_platform.common.handler.trace_handler import TraceHandler
 
 
 class TestComprehensiveIntegration(unittest.TestCase):

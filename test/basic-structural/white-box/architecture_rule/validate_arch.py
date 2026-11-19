@@ -4,7 +4,7 @@ Runs the dependency validator from common/tool.
 """
 
 import unittest
-from code.common.tool.validate_dependencies import main as validate_main
+from ai_platform.common.tool.validate_dependencies import main as validate_main
 
 class TestArchitectureRules(unittest.TestCase):
     def test_dependencies(self):

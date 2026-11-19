@@ -8,11 +8,11 @@ import pandas as pd
 from typing import Dict, Any, Optional, Union
 from pathlib import Path
 
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, FormatProcessingError
-from common.engine.io_engine.yaml_io_module import YAMLIOModule
-from common.engine.io_engine.json_io_module import JSONIOModule
-from common.engine.io_engine.excel_io_module import ExcelIOModule
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError
+from ai_platform.common.engine.io_engine.yaml_io_module import YAMLIOModule
+from ai_platform.common.engine.io_engine.json_io_module import JSONIOModule
+from ai_platform.common.engine.io_engine.excel_io_module import ExcelIOModule
 
 
 class FormatConversionService:

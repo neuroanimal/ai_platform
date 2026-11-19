@@ -3,7 +3,7 @@ Error Handler - Unified error management system
 Integrated from uncomment project with enhancements
 """
 from typing import Optional, Dict, Any
-from common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.trace_handler import TraceHandler
 
 
 class BaseEngineError(Exception):

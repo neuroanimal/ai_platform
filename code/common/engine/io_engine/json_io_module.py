@@ -6,8 +6,8 @@ import json
 import os
 from typing import Dict, Any, List, Optional
 
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, FormatProcessingError
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError
 
 
 class JSONIOModule:

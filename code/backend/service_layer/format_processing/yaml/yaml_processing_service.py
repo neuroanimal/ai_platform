@@ -4,14 +4,14 @@ Combines rule-based and AI approaches for comprehensive YAML processing
 """
 import os
 from typing import Dict, Any, List, Optional, Tuple
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, FormatProcessingError
-from common.handler.path_handler import PathHandler
-from common.engine.io_engine.yaml_io_module import YAMLIOModule
-from common.engine.io_engine.json_io_module import JSONIOModule
-from common.engine.io_engine.helm_io_module import HelmIOModule
-from backend.service_layer.ai_engine.structure_analysis.structure_analysis_engine import StructureAnalysisEngine
-from backend.service_layer.ai_engine.template_analysis.template_analysis_engine import TemplateAnalysisEngine
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError
+from ai_platform.common.handler.path_handler import PathHandler
+from ai_platform.common.engine.io_engine.yaml_io_module import YAMLIOModule
+from ai_platform.common.engine.io_engine.json_io_module import JSONIOModule
+from ai_platform.common.engine.io_engine.helm_io_module import HelmIOModule
+from ai_platform.backend.service_layer.ai_engine.structure_analysis.structure_analysis_engine import StructureAnalysisEngine
+from ai_platform.backend.service_layer.ai_engine.template_analysis.template_analysis_engine import TemplateAnalysisEngine
 
 
 class YAMLProcessingService:

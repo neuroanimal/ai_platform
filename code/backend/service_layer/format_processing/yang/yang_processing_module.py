@@ -8,8 +8,8 @@ import subprocess
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, FormatProcessingError
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError
 
 
 class YANGProcessingModule:

@@ -11,9 +11,9 @@ import json
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from backend.service_layer.format_processing.yang.yang_processing_module import YANGProcessingModule
-from backend.service_layer.format_processing.validation.validation_service import ValidationService
-from common.handler.trace_handler import TraceHandler
+from ai_platform.backend.service_layer.format_processing.yang.yang_processing_module import YANGProcessingModule
+from ai_platform.backend.service_layer.format_processing.validation.validation_service import ValidationService
+from ai_platform.common.handler.trace_handler import TraceHandler
 
 
 class TestUltimateIntegration(unittest.TestCase):

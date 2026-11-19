@@ -9,10 +9,10 @@ from typing import Dict, Any, Optional
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from common.engine.unified_orchestrator_engine import UnifiedOrchestratorEngine, ProcessingMode
-from backend.service_layer.format_processing.conversion.format_conversion_service import FormatConversionService
-from common.engine.io_engine.excel_io_module import ExcelIOModule
-from common.handler.trace_handler import TraceHandler
+from ai_platform.common.engine.unified_orchestrator_engine import UnifiedOrchestratorEngine, ProcessingMode
+from ai_platform.backend.service_layer.format_processing.conversion.format_conversion_service import FormatConversionService
+from ai_platform.common.engine.io_engine.excel_io_module import ExcelIOModule
+from ai_platform.common.handler.trace_handler import TraceHandler
 
 
 class EnhancedUnifiedCLI:

@@ -8,10 +8,10 @@ import subprocess
 from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 
-from common.handler.trace_handler import TraceHandler
-from common.handler.error_handler import ErrorHandler, FormatProcessingError
-from common.engine.io_engine.json_io_module import JSONIOModule
-from common.engine.io_engine.yaml_io_module import YAMLIOModule
+from ai_platform.common.handler.trace_handler import TraceHandler
+from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError
+from ai_platform.common.engine.io_engine.json_io_module import JSONIOModule
+from ai_platform.common.engine.io_engine.yaml_io_module import YAMLIOModule
 
 
 class ValidationService:

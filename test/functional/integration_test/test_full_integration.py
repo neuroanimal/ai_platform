@@ -8,9 +8,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from code.backend.service_layer.yaml_processing.yaml_processing_service import YAMLProcessingService
-from code.backend.service_layer.schema_processing.jsonschema_processing_service import JSONSchemaProcessingService
-from code.common.engine.unified_processing_engine import UnifiedProcessingEngine
+from ai_platform.backend.service_layer.yaml_processing.yaml_processing_service import YAMLProcessingService
+from ai_platform.backend.service_layer.schema_processing.jsonschema_processing_service import JSONSchemaProcessingService
+from ai_platform.common.engine.unified_processing_engine import UnifiedProcessingEngine
 
 
 class TestFullIntegration(unittest.TestCase):
