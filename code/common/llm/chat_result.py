@@ -1,11 +1,32 @@
 """Structured result of one chat completion."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
-class ChatResult:
+class ToolCall:
+    """A function call requested by the model.
+
+    ``arguments`` is the decoded JSON object; ``arguments_error`` is set (and
+    ``arguments`` empty) when the model produced arguments that are not a JSON
+    object - the agent loop reports that back to the model instead of crashing.
+    """
+
+    call_id: str
+    name: str
+    arguments: Dict[str, Any] = field(default_factory=dict)
+    raw_arguments: str = ""
+    arguments_error: Optional[str] = None
+
+    def to_message(self) -> Dict[str, Any]:
+        """OpenAI ``tool_calls`` entry for an assistant message."""
+        return {"id": self.call_id, "type": "function",
+                "function": {"name": self.name, "arguments": self.raw_arguments}}
+
+
+@dataclass
+class ChatResult:  # pylint: disable=too-many-instance-attributes
     """Answer of one chat completion with the metadata benchmarks need.
 
     ``finish_reason`` follows the OpenAI convention: ``"stop"`` for a
@@ -21,6 +42,8 @@ class ChatResult:
     elapsed_seconds: float = 0.0
     metrics: Dict[str, float] = field(default_factory=dict)
     raw: Any = field(default=None, repr=False)
+    #: Function calls requested by the model (OpenAI tools protocol).
+    tool_calls: List[ToolCall] = field(default_factory=list)
 
     @property
     def truncated(self) -> bool:
@@ -36,6 +59,8 @@ class ChatResult:
             "usage": self.usage,
             "elapsed_seconds": round(self.elapsed_seconds, 3),
             "metrics": self.metrics,
+            "tool_calls": [{"id": c.call_id, "name": c.name, "arguments": c.arguments,
+                            "arguments_error": c.arguments_error} for c in self.tool_calls],
         }
 
 

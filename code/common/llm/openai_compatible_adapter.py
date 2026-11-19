@@ -22,6 +22,9 @@ Configuration keys accepted by ``initialize()``:
     require_api_key  override REQUIRES_API_KEY, e.g. False for a local
                   server that speaks a hosted provider's protocol
 
+Tools: pass ``tools=[...]`` (OpenAI function-tool schemas) to
+``chat_completion``; requested calls come back in ``ChatResult.tool_calls``.
+
 ``stream_chat()`` streams the answer as ``StreamChunk`` objects (SSE).
 
 Every keyword argument of ``chat()`` / ``chat_completion()`` that is not a
@@ -34,7 +37,7 @@ import os
 from typing import Any, Dict, Iterator, List, Optional
 
 from ai_platform.common.llm.base import LLMAdapter
-from ai_platform.common.llm.chat_result import ChatResult, StreamChunk
+from ai_platform.common.llm.chat_result import ChatResult, StreamChunk, ToolCall
 from ai_platform.common.llm.llm_exception import (
     LLMConfigurationError,
     LLMConnectionError,
@@ -268,6 +271,9 @@ class OpenAICompatibleAdapter(LLMAdapter):
         if not isinstance(messages, list) or not messages:
             raise LLMConfigurationError("messages must be a non-empty list")
         for message in messages:
+            # Assistant messages that only call tools may carry content None.
+            if isinstance(message, dict) and message.get("tool_calls"):
+                continue
             if not isinstance(message, dict) or "role" not in message or "content" not in message:
                 raise LLMConfigurationError(
                     f"each message needs 'role' and 'content', got: {message!r}"
@@ -278,12 +284,14 @@ class OpenAICompatibleAdapter(LLMAdapter):
         try:
             choice = data["choices"][0]
             text = choice["message"].get("content") or ""
+            tool_calls = parse_tool_calls(choice["message"].get("tool_calls") or [])
         except (KeyError, IndexError, TypeError, AttributeError) as exc:
             raise LLMResponseError(
                 f"{self.PROVIDER}: unexpected response shape: {str(data)[:300]}"
             ) from exc
 
-        if not allow_empty and not text.strip():
+        # An answer that only calls tools is not empty.
+        if not allow_empty and not text.strip() and not tool_calls:
             raise LLMResponseError(f"{self.PROVIDER}: model {model!r} returned an empty answer")
 
         return ChatResult(
@@ -293,6 +301,7 @@ class OpenAICompatibleAdapter(LLMAdapter):
             usage=data.get("usage") or {},
             elapsed_seconds=elapsed,
             raw=data,
+            tool_calls=tool_calls,
         )
 
 
@@ -306,3 +315,27 @@ def collect_stream(chunks: Iterator[StreamChunk], model: str = "",
         usage = chunk.usage or usage
     return ChatResult(text="".join(text), model=model, finish_reason=finish_reason,
                       usage=usage, elapsed_seconds=elapsed_seconds)
+
+
+def parse_tool_calls(entries: List[Dict[str, Any]]) -> List[ToolCall]:
+    """OpenAI ``message.tool_calls`` -> ToolCall objects (bad JSON arguments kept, flagged)."""
+    calls = []
+    for number, entry in enumerate(entries):
+        function = entry.get("function") or {}
+        raw = function.get("arguments")
+        if isinstance(raw, dict):  # some servers send an object instead of a JSON string
+            raw_text, arguments, error = json.dumps(raw), raw, None
+        else:
+            raw_text, arguments, error = str(raw or ""), {}, None
+            try:
+                decoded = json.loads(raw_text) if raw_text.strip() else {}
+                if isinstance(decoded, dict):
+                    arguments = decoded
+                else:
+                    error = "arguments are not a JSON object"
+            except json.JSONDecodeError as exc:
+                error = f"arguments are not valid JSON: {exc}"
+        calls.append(ToolCall(call_id=str(entry.get("id") or f"call_{number}"),
+                              name=str(function.get("name") or ""), arguments=arguments,
+                              raw_arguments=raw_text, arguments_error=error))
+    return calls

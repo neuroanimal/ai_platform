@@ -1,0 +1,11 @@
+# Multilingual embedding model for RAG (Polish and cross-lingual retrieval).
+# GGUF copied from Ollama's bge-m3 blob (same weights, f16) on 2026-11-19.
+# Picked up from --models-path at LocalAI start; no change to
+# localai-models-test29.yaml needed.
+name: bge-m3-localai
+backend: llama-cpp
+embeddings: true
+parameters:
+  model: bge-m3/bge-m3.gguf
+context_size: 2048
+threads: 8
