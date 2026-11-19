@@ -149,7 +149,13 @@ def _validate_sentence_token_order(
 
     ordered_sentences = sorted(
         analysis.sentences,
-        key=lambda sentence: sentence.sequence_number,
+        # key=lambda sentence: sentence.sequence_number,
+        key=lambda sentence: (
+            sentence.sequence_number is None,
+            sentence.sequence_number
+            if sentence.sequence_number is not None
+            else 0,
+        ),
     )
 
     sequence_numbers = [

@@ -1,0 +1,2633 @@
+{
+  "$defs": {
+    "ActorType": {
+      "enum": [
+        "human",
+        "model",
+        "rule",
+        "system",
+        "external_tool",
+        "unknown"
+      ],
+      "title": "ActorType",
+      "type": "string"
+    },
+    "AnalysisLayer": {
+      "enum": [
+        "segmentation",
+        "morphology",
+        "lexicon",
+        "phrase_structure",
+        "dependency_syntax",
+        "constituency_syntax",
+        "clause_structure",
+        "semantics",
+        "discourse",
+        "pragmatics",
+        "dialectology",
+        "diachrony",
+        "other"
+      ],
+      "title": "AnalysisLayer",
+      "type": "string"
+    },
+    "AnalysisStatus": {
+      "enum": [
+        "draft",
+        "completed",
+        "partial",
+        "failed",
+        "reviewed",
+        "adjudicated"
+      ],
+      "title": "AnalysisStatus",
+      "type": "string"
+    },
+    "AnnotationHypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "alternative_to_hypothesis_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alternative To Hypothesis Id"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hypothesis_id": {
+          "minLength": 1,
+          "title": "Hypothesis Id",
+          "type": "string"
+        },
+        "interpretation": {
+          "additionalProperties": true,
+          "title": "Interpretation",
+          "type": "object"
+        },
+        "layer": {
+          "$ref": "#/$defs/AnalysisLayer"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "status": {
+          "$ref": "#/$defs/HypothesisStatus",
+          "default": "proposed"
+        },
+        "target_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Id"
+        }
+      },
+      "required": [
+        "hypothesis_id",
+        "layer",
+        "interpretation"
+      ],
+      "title": "AnnotationHypothesis",
+      "type": "object"
+    },
+    "Clause": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/TextAnchor"
+        },
+        "clause_id": {
+          "minLength": 1,
+          "title": "Clause Id",
+          "type": "string"
+        },
+        "clause_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clause Type"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "embedded_clause_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Embedded Clause Ids",
+          "type": "array"
+        },
+        "is_finite": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Is Finite"
+        },
+        "is_main_clause": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Is Main Clause"
+        },
+        "predicate_token_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Predicate Token Ids",
+          "type": "array"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provider_native": {
+          "additionalProperties": true,
+          "title": "Provider Native",
+          "type": "object"
+        },
+        "subject_token_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Subject Token Ids",
+          "type": "array"
+        },
+        "syntactic_function": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SyntacticFunction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "clause_id",
+        "anchor"
+      ],
+      "title": "Clause",
+      "type": "object"
+    },
+    "Confidence": {
+      "additionalProperties": false,
+      "properties": {
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Explanation"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "scale": {
+          "$ref": "#/$defs/ConfidenceScale",
+          "default": "unspecified"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "title": "Confidence",
+      "type": "object"
+    },
+    "ConfidenceScale": {
+      "enum": [
+        "probability",
+        "normalized_score",
+        "ordinal",
+        "unspecified"
+      ],
+      "title": "ConfidenceScale",
+      "type": "string"
+    },
+    "ConstituencyNode": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/TextAnchor"
+        },
+        "child_node_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Child Node Ids",
+          "type": "array"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "node_id": {
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        },
+        "parent_node_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Node Id"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scheme": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scheme"
+        },
+        "token_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Token Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "node_id",
+        "label",
+        "anchor"
+      ],
+      "title": "ConstituencyNode",
+      "type": "object"
+    },
+    "CoreferenceChain": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Canonical Reference"
+        },
+        "chain_id": {
+          "minLength": 1,
+          "title": "Chain Id",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "entity_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entity Type"
+        },
+        "mention_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Mention Ids",
+          "type": "array"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "chain_id"
+      ],
+      "title": "CoreferenceChain",
+      "type": "object"
+    },
+    "CoreferenceMention": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/TextAnchor"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "grammatical_form": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grammatical Form"
+        },
+        "mention_id": {
+          "minLength": 1,
+          "title": "Mention Id",
+          "type": "string"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "referent_description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Referent Description"
+        }
+      },
+      "required": [
+        "mention_id",
+        "anchor"
+      ],
+      "title": "CoreferenceMention",
+      "type": "object"
+    },
+    "DependencyLayer": {
+      "enum": [
+        "universal_dependencies",
+        "language_specific",
+        "provider_native",
+        "project_defined"
+      ],
+      "title": "DependencyLayer",
+      "type": "string"
+    },
+    "DependencyRelation": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "dependent_token_id": {
+          "title": "Dependent Token Id",
+          "type": "string"
+        },
+        "head_token_id": {
+          "title": "Head Token Id",
+          "type": "string"
+        },
+        "layer": {
+          "$ref": "#/$defs/DependencyLayer"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "relation": {
+          "title": "Relation",
+          "type": "string"
+        },
+        "relation_id": {
+          "minLength": 1,
+          "title": "Relation Id",
+          "type": "string"
+        },
+        "scheme": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scheme"
+        },
+        "subtype": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtype"
+        },
+        "syntactic_function": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SyntacticFunction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "relation_id",
+        "head_token_id",
+        "dependent_token_id",
+        "relation",
+        "layer"
+      ],
+      "title": "DependencyRelation",
+      "type": "object"
+    },
+    "DiscourseAnnotation": {
+      "additionalProperties": false,
+      "description": "Discourse-level annotations associated with one analysis.",
+      "properties": {
+        "cohesion_features": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Cohesion Features",
+          "type": "array"
+        },
+        "coreference_chains": {
+          "items": {
+            "$ref": "#/$defs/CoreferenceChain"
+          },
+          "title": "Coreference Chains",
+          "type": "array"
+        },
+        "coreference_mentions": {
+          "items": {
+            "$ref": "#/$defs/CoreferenceMention"
+          },
+          "title": "Coreference Mentions",
+          "type": "array"
+        },
+        "discourse_properties": {
+          "additionalProperties": true,
+          "title": "Discourse Properties",
+          "type": "object"
+        },
+        "relations": {
+          "items": {
+            "$ref": "#/$defs/DiscourseRelation"
+          },
+          "title": "Relations",
+          "type": "array"
+        },
+        "speakers": {
+          "items": {
+            "$ref": "#/$defs/SpeakerProfile"
+          },
+          "title": "Speakers",
+          "type": "array"
+        },
+        "speech_acts": {
+          "items": {
+            "$ref": "#/$defs/SpeechAct"
+          },
+          "title": "Speech Acts",
+          "type": "array"
+        }
+      },
+      "title": "DiscourseAnnotation",
+      "type": "object"
+    },
+    "DiscourseRelation": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "native_relation_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Relation Label"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "relation_id": {
+          "minLength": 1,
+          "title": "Relation Id",
+          "type": "string"
+        },
+        "relation_type": {
+          "$ref": "#/$defs/DiscourseRelationType"
+        },
+        "scheme": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scheme"
+        },
+        "source_segment_id": {
+          "title": "Source Segment Id",
+          "type": "string"
+        },
+        "target_segment_id": {
+          "title": "Target Segment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "relation_id",
+        "source_segment_id",
+        "target_segment_id",
+        "relation_type"
+      ],
+      "title": "DiscourseRelation",
+      "type": "object"
+    },
+    "DiscourseRelationType": {
+      "enum": [
+        "elaboration",
+        "contrast",
+        "cause",
+        "consequence",
+        "condition",
+        "temporal",
+        "explanation",
+        "background",
+        "sequence",
+        "other",
+        "unknown"
+      ],
+      "title": "DiscourseRelationType",
+      "type": "string"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "description": "Evidence supporting an annotation or interpretation.",
+      "properties": {
+        "anchors": {
+          "items": {
+            "$ref": "#/$defs/TextAnchor"
+          },
+          "title": "Anchors",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Evidence",
+      "type": "object"
+    },
+    "HypothesisStatus": {
+      "enum": [
+        "proposed",
+        "accepted",
+        "rejected",
+        "alternative",
+        "unresolved"
+      ],
+      "title": "HypothesisStatus",
+      "type": "string"
+    },
+    "LanguageContext": {
+      "additionalProperties": false,
+      "description": "Language identification with optional temporal and regional scope.",
+      "properties": {
+        "dialect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dialect"
+        },
+        "historical_stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Historical Stage"
+        },
+        "language_code": {
+          "minLength": 2,
+          "title": "Language Code",
+          "type": "string"
+        },
+        "linguistic_register": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Linguistic Register"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        },
+        "script": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Script"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid From"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "language_code"
+      ],
+      "title": "LanguageContext",
+      "type": "object"
+    },
+    "MorphologicalFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "language_specific": {
+          "default": false,
+          "title": "Language Specific",
+          "type": "boolean"
+        },
+        "scheme": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scheme"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "value"
+      ],
+      "title": "MorphologicalFeature",
+      "type": "object"
+    },
+    "NLPAnalysis": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_id": {
+          "minLength": 1,
+          "title": "Analysis Id",
+          "type": "string"
+        },
+        "clauses": {
+          "items": {
+            "$ref": "#/$defs/Clause"
+          },
+          "title": "Clauses",
+          "type": "array"
+        },
+        "completed_layers": {
+          "items": {
+            "$ref": "#/$defs/AnalysisLayer"
+          },
+          "title": "Completed Layers",
+          "type": "array"
+        },
+        "constituency": {
+          "items": {
+            "$ref": "#/$defs/ConstituencyNode"
+          },
+          "title": "Constituency",
+          "type": "array"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "dependencies": {
+          "items": {
+            "$ref": "#/$defs/DependencyRelation"
+          },
+          "title": "Dependencies",
+          "type": "array"
+        },
+        "discourse": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DiscourseAnnotation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "hypotheses": {
+          "items": {
+            "$ref": "#/$defs/AnnotationHypothesis"
+          },
+          "title": "Hypotheses",
+          "type": "array"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "phrases": {
+          "items": {
+            "$ref": "#/$defs/Phrase"
+          },
+          "title": "Phrases",
+          "type": "array"
+        },
+        "predicate_arguments": {
+          "items": {
+            "$ref": "#/$defs/PredicateArgument"
+          },
+          "title": "Predicate Arguments",
+          "type": "array"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProviderMetadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sentences": {
+          "items": {
+            "$ref": "#/$defs/Sentence"
+          },
+          "title": "Sentences",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/AnalysisStatus",
+          "default": "draft"
+        },
+        "text_version_id": {
+          "title": "Text Version Id",
+          "type": "string"
+        },
+        "tokens": {
+          "items": {
+            "$ref": "#/$defs/Token"
+          },
+          "title": "Tokens",
+          "type": "array"
+        },
+        "unavailable_layers": {
+          "items": {
+            "$ref": "#/$defs/AnalysisLayer"
+          },
+          "title": "Unavailable Layers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "analysis_id",
+        "document_id",
+        "text_version_id"
+      ],
+      "title": "NLPAnalysis",
+      "type": "object"
+    },
+    "NLPDocument": {
+      "additionalProperties": false,
+      "description": "Canonical document container.",
+      "properties": {
+        "document_id": {
+          "minLength": 1,
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "primary_text_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Text Version Id"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceDescriptor"
+        },
+        "text_versions": {
+          "items": {
+            "$ref": "#/$defs/TextVersion"
+          },
+          "title": "Text Versions",
+          "type": "array"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "required": [
+        "document_id",
+        "source"
+      ],
+      "title": "NLPDocument",
+      "type": "object"
+    },
+    "OffsetUnit": {
+      "enum": [
+        "codepoint",
+        "utf8_byte",
+        "grapheme_cluster"
+      ],
+      "title": "OffsetUnit",
+      "type": "string"
+    },
+    "PartOfSpeech": {
+      "enum": [
+        "noun",
+        "proper_noun",
+        "verb",
+        "adjective",
+        "adverb",
+        "pronoun",
+        "determiner",
+        "numeral",
+        "adposition",
+        "conjunction",
+        "particle",
+        "interjection",
+        "auxiliary",
+        "other",
+        "unknown"
+      ],
+      "title": "PartOfSpeech",
+      "type": "string"
+    },
+    "Phrase": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/TextAnchor"
+        },
+        "child_phrase_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Child Phrase Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "grammatical_features": {
+          "additionalProperties": true,
+          "title": "Grammatical Features",
+          "type": "object"
+        },
+        "head_token_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Head Token Id"
+        },
+        "phrase_id": {
+          "minLength": 1,
+          "title": "Phrase Id",
+          "type": "string"
+        },
+        "phrase_type": {
+          "$ref": "#/$defs/PhraseType"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provider_native": {
+          "additionalProperties": true,
+          "title": "Provider Native",
+          "type": "object"
+        },
+        "syntactic_function": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SyntacticFunction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "token_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Token Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "phrase_id",
+        "phrase_type",
+        "anchor"
+      ],
+      "title": "Phrase",
+      "type": "object"
+    },
+    "PhraseType": {
+      "enum": [
+        "NP",
+        "VP-0",
+        "VP-1",
+        "VP-2",
+        "VP-3",
+        "AP",
+        "AdvP",
+        "PP",
+        "Clause",
+        "Other"
+      ],
+      "title": "PhraseType",
+      "type": "string"
+    },
+    "PredicateArgument": {
+      "additionalProperties": false,
+      "properties": {
+        "argument_id": {
+          "minLength": 1,
+          "title": "Argument Id",
+          "type": "string"
+        },
+        "argument_phrase_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Argument Phrase Id"
+        },
+        "argument_token_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Argument Token Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "predicate_token_id": {
+          "title": "Predicate Token Id",
+          "type": "string"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "role_label_native": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role Label Native"
+        },
+        "role_scheme": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role Scheme"
+        },
+        "semantic_role": {
+          "$ref": "#/$defs/SemanticRole"
+        }
+      },
+      "required": [
+        "argument_id",
+        "predicate_token_id",
+        "semantic_role"
+      ],
+      "title": "PredicateArgument",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "description": "Who or what produced an annotation, and under which conditions.",
+      "properties": {
+        "actor_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actor Id"
+        },
+        "actor_type": {
+          "$ref": "#/$defs/ActorType",
+          "default": "unknown"
+        },
+        "configuration": {
+          "additionalProperties": true,
+          "title": "Configuration",
+          "type": "object"
+        },
+        "method": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Method"
+        },
+        "model_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Id"
+        },
+        "model_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Revision"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "provider_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Id"
+        },
+        "provider_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Version"
+        },
+        "source_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "timestamp": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timestamp"
+        }
+      },
+      "title": "Provenance",
+      "type": "object"
+    },
+    "ProviderMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "configuration": {
+          "additionalProperties": true,
+          "title": "Configuration",
+          "type": "object"
+        },
+        "hardware": {
+          "additionalProperties": true,
+          "title": "Hardware",
+          "type": "object"
+        },
+        "language_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language Code"
+        },
+        "model_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Id"
+        },
+        "model_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Revision"
+        },
+        "provider_id": {
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "provider_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Version"
+        },
+        "raw_output": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Output"
+        },
+        "raw_output_reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Output Reference"
+        },
+        "runtime_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Seconds"
+        }
+      },
+      "required": [
+        "provider_id"
+      ],
+      "title": "ProviderMetadata",
+      "type": "object"
+    },
+    "SegmentType": {
+      "enum": [
+        "document",
+        "section",
+        "chapter",
+        "paragraph",
+        "heading",
+        "footnote",
+        "caption",
+        "table_cell",
+        "other"
+      ],
+      "title": "SegmentType",
+      "type": "string"
+    },
+    "SemanticRole": {
+      "enum": [
+        "agent",
+        "patient",
+        "theme",
+        "experiencer",
+        "stimulus",
+        "recipient",
+        "beneficiary",
+        "instrument",
+        "location",
+        "source",
+        "goal",
+        "cause",
+        "time",
+        "manner",
+        "other",
+        "unknown"
+      ],
+      "title": "SemanticRole",
+      "type": "string"
+    },
+    "Sentence": {
+      "additionalProperties": false,
+      "description": "Sentence-level unit in a particular text version.",
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/TextAnchor"
+        },
+        "clause_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Clause Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "is_complete": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Is Complete"
+        },
+        "language_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language Code"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sentence_id": {
+          "minLength": 1,
+          "title": "Sentence Id",
+          "type": "string"
+        },
+        "sentence_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SentenceType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sequence_number": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sequence Number"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "token_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Token Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sentence_id",
+        "anchor",
+        "text"
+      ],
+      "title": "Sentence",
+      "type": "object"
+    },
+    "SentenceType": {
+      "enum": [
+        "declarative",
+        "interrogative",
+        "imperative",
+        "exclamative",
+        "fragment",
+        "other",
+        "unknown"
+      ],
+      "title": "SentenceType",
+      "type": "string"
+    },
+    "SourceDescriptor": {
+      "additionalProperties": false,
+      "description": "Description of the original source, not merely its extracted text.",
+      "properties": {
+        "author": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author"
+        },
+        "creator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Creator"
+        },
+        "date_created": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date Created"
+        },
+        "date_range_end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date Range End"
+        },
+        "date_range_start": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date Range Start"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "repository": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repository"
+        },
+        "shelfmark": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shelfmark"
+        },
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_type": {
+          "title": "Source Type",
+          "type": "string"
+        },
+        "speaker": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uri"
+        }
+      },
+      "required": [
+        "source_id",
+        "source_type"
+      ],
+      "title": "SourceDescriptor",
+      "type": "object"
+    },
+    "SpeakerProfile": {
+      "additionalProperties": false,
+      "description": "A description of a speaker, distinct from document authorship.",
+      "properties": {
+        "display_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Display Name"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "linguistic_profile": {
+          "additionalProperties": true,
+          "title": "Linguistic Profile",
+          "type": "object"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "sociolinguistic_profile": {
+          "additionalProperties": true,
+          "title": "Sociolinguistic Profile",
+          "type": "object"
+        },
+        "speaker_id": {
+          "minLength": 1,
+          "title": "Speaker Id",
+          "type": "string"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid From"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "speaker_id"
+      ],
+      "title": "SpeakerProfile",
+      "type": "object"
+    },
+    "SpeechAct": {
+      "additionalProperties": false,
+      "properties": {
+        "act_type": {
+          "title": "Act Type",
+          "type": "string"
+        },
+        "addressee_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Addressee Ids",
+          "type": "array"
+        },
+        "anchor": {
+          "$ref": "#/$defs/TextAnchor"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "discourse_function": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Discourse Function"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "explicitness": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Explicitness"
+        },
+        "illocutionary_force": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Illocutionary Force"
+        },
+        "intended_effect": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Intended Effect"
+        },
+        "propositional_content": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Propositional Content"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "speaker_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker Id"
+        },
+        "speech_act_id": {
+          "minLength": 1,
+          "title": "Speech Act Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "speech_act_id",
+        "anchor",
+        "act_type"
+      ],
+      "title": "SpeechAct",
+      "type": "object"
+    },
+    "SyntacticFunction": {
+      "enum": [
+        "subject",
+        "direct_object",
+        "indirect_object",
+        "predicate",
+        "attribute",
+        "adjunct",
+        "complement",
+        "modifier",
+        "coordinate",
+        "other",
+        "unknown"
+      ],
+      "title": "SyntacticFunction",
+      "type": "string"
+    },
+    "TextAnchor": {
+      "additionalProperties": false,
+      "description": "A reference to a span in one immutable text version.",
+      "properties": {
+        "quoted_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quoted Text"
+        },
+        "span": {
+          "$ref": "#/$defs/TextSpan"
+        },
+        "text_version_id": {
+          "minLength": 1,
+          "title": "Text Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text_version_id",
+        "span"
+      ],
+      "title": "TextAnchor",
+      "type": "object"
+    },
+    "TextRepresentation": {
+      "enum": [
+        "diplomatic",
+        "normalized",
+        "editorial",
+        "transliterated",
+        "translated",
+        "ocr_raw",
+        "htr_raw",
+        "other"
+      ],
+      "title": "TextRepresentation",
+      "type": "string"
+    },
+    "TextSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "parent_segment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Segment Id"
+        },
+        "segment_id": {
+          "minLength": 1,
+          "title": "Segment Id",
+          "type": "string"
+        },
+        "segment_type": {
+          "$ref": "#/$defs/SegmentType"
+        },
+        "sequence_number": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sequence Number"
+        },
+        "span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSpan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "segment_id",
+        "segment_type",
+        "text"
+      ],
+      "title": "TextSegment",
+      "type": "object"
+    },
+    "TextSpan": {
+      "additionalProperties": false,
+      "description": "Half-open interval [start, end) in a specific text version.",
+      "properties": {
+        "end": {
+          "minimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "offset_unit": {
+          "$ref": "#/$defs/OffsetUnit",
+          "default": "codepoint"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "TextSpan",
+      "type": "object"
+    },
+    "TextVersion": {
+      "additionalProperties": false,
+      "description": "An immutable textual representation of a source document.",
+      "properties": {
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "derived_from_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Derived From Version Id"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LanguageContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "representation": {
+          "$ref": "#/$defs/TextRepresentation"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/TextSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "text_version_id": {
+          "minLength": 1,
+          "title": "Text Version Id",
+          "type": "string"
+        },
+        "transformation_description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transformation Description"
+        }
+      },
+      "required": [
+        "text_version_id",
+        "representation",
+        "text"
+      ],
+      "title": "TextVersion",
+      "type": "object"
+    },
+    "Token": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/TextAnchor"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Confidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "is_punctuation": {
+          "default": false,
+          "title": "Is Punctuation",
+          "type": "boolean"
+        },
+        "is_stopword": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Is Stopword"
+        },
+        "lemma": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lemma"
+        },
+        "morphology": {
+          "items": {
+            "$ref": "#/$defs/MorphologicalFeature"
+          },
+          "title": "Morphology",
+          "type": "array"
+        },
+        "multiword_token_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Multiword Token Id"
+        },
+        "normalized_form": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normalized Form"
+        },
+        "pos_scheme": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pos Scheme"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provider_native": {
+          "additionalProperties": true,
+          "title": "Provider Native",
+          "type": "object"
+        },
+        "sentence_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sentence Id"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "token_id": {
+          "minLength": 1,
+          "title": "Token Id",
+          "type": "string"
+        },
+        "upos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PartOfSpeech"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "xpos": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Xpos"
+        }
+      },
+      "required": [
+        "token_id",
+        "anchor",
+        "text"
+      ],
+      "title": "Token",
+      "type": "object"
+    }
+  },
+  "description": "Combined JSON Schema package for canonical NLP models.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/NLPDocument"
+    },
+    {
+      "$ref": "#/$defs/NLPAnalysis"
+    }
+  ],
+  "title": "NLP Canonical Model Bundle"
+}
