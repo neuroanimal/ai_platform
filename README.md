@@ -91,6 +91,23 @@ python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli screen results/<rep
 ```
 
 Screening is a rule-based pre-assessment (`is_final_judgement: false`), not a verdict.
+`report` writes HTML and Markdown comparison tables; `merge` combines runs made
+with identical settings. Task sets: `bilingual_reasoning` (v3, 16 tasks, default)
+and `bilingual_reasoning@2` (4 tasks).
+
+### 🔎 Retrieval Benchmark
+
+Compares embedders on a small bilingual corpus (hit@k, MRR, recall, per query
+direction such as pl->en):
+
+```bash
+python -m ai_platform.backend.ui_layer.cli.rag_benchmark_cli run \
+    --embedders hashing ollama:nomic-embed-text ollama:bge-m3 \
+    --output results/retrieval.json        # also writes .html and .md
+```
+
+For Polish or cross-lingual RAG use a multilingual embedder (e.g. `bge-m3`);
+English-centric embedders and the lexical `hashing` embedder fail across languages.
 
 ### 📚 RAG (Retrieval-Augmented Generation) (8 Stacks)
 

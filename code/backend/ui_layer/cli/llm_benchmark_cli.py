@@ -176,7 +176,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--task-set", default="bilingual_reasoning")
     run.add_argument("--languages", nargs="+", default=None)
     run.add_argument("--repeats", type=int, default=3)
-    run.add_argument("--max-tokens", type=int, default=384)
+    # 768: at 384 verbose models (Bielik 11B in Polish: 9 of 12 answers) were cut
+    # off before their conclusion, measuring the limit rather than the model.
+    run.add_argument("--max-tokens", type=int, default=768)
     run.add_argument("--temperature", type=float, default=0.0)
     run.add_argument("--timeout", type=float, default=300.0)
     run.add_argument("--no-warmup", action="store_true")

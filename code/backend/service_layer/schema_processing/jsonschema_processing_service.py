@@ -148,8 +148,12 @@ class JSONSchemaProcessingService:
             if reference_path and os.path.exists(reference_path):
                 reference = self._load_reference_maybe(reference_path)
 
-            # Reorder schema
-            result = self.reorder_schema(schema, reference, **kwargs)
+            # Reorder schema. Only reorder options are forwarded: callers such as
+            # batch processing pass global options (e.g. system_size) meant for
+            # other file types, which reorder_schema does not accept.
+            options = {k: kwargs[k] for k in ("sort_keywords", "merge_leaf_properties")
+                       if k in kwargs}
+            result = self.reorder_schema(schema, reference, **options)
 
             # Save to output file if specified
             if output_path:

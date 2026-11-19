@@ -124,6 +124,28 @@ class FormatConversionService:
 
         return format_map.get(suffix, 'unknown')
 
+    def validate_conversion(self, input_path: str, output_path: str) -> bool:
+        """Check that a JSON<->YAML conversion preserved the data.
+
+        Both files are parsed and their data compared for equality. Used by
+        ``enhanced_unified_cli --validate``, which called this method before it
+        existed. Other format pairs (Excel -> CSV) cannot be compared this way
+        and return False with a trace message rather than a false PASS.
+        """
+        readers = {"json": self.json_io.read_file, "yaml": self.yaml_io.read_file}
+        source, target = self._detect_format(input_path), self._detect_format(output_path)
+        if source not in readers or target not in readers:
+            self.tracer.error(f"Cannot validate a {source} -> {target} conversion")
+            return False
+        try:
+            equal = readers[source](input_path) == readers[target](output_path)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            ErrorHandler.handle(e, self.tracer, "Conversion validation")
+            return False
+        if not equal:
+            self.tracer.error(f"Converted data differs: {input_path} vs {output_path}")
+        return equal
+
     def get_summary(self) -> Dict[str, Any]:
         """Get conversion summary"""
         return {

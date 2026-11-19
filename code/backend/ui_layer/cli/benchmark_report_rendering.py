@@ -45,7 +45,8 @@ def _header(summary: Dict[str, Any]) -> List[str]:
             f"Task/model cells whose runs disagree: {summary['inconsistent_runs']}"]
 
 
-def _html_table(caption: str, columns: Sequence, rows: Iterable[Dict[str, Any]]) -> str:
+def html_table(caption: str, columns: Sequence, rows: Iterable[Dict[str, Any]]) -> str:
+    """Accessible HTML table: caption, column headers, first column as row header."""
     esc = html.escape
     head = "".join(f'<th scope="col">{esc(title)}</th>' for _, title in columns)
     body = []
@@ -76,18 +77,19 @@ thead th {{ background: #e8e8e8; }}
 <h1>{esc(title)}</h1>
 <p class="caveat">{esc(CAVEAT)}</p>
 <ul>{header}</ul>
-{_html_table("Models by screening outcome", MODEL_COLUMNS, summary["models"])}
-{_html_table("Warm-up (model load + first answer)", WARMUP_COLUMNS, summary["warmup"])}
-{_html_table("Outcome per task, language and model", TASK_COLUMNS, summary["tasks"])}
+{html_table("Models by screening outcome", MODEL_COLUMNS, summary["models"])}
+{html_table("Warm-up (model load + first answer)", WARMUP_COLUMNS, summary["warmup"])}
+{html_table("Outcome per task, language and model", TASK_COLUMNS, summary["tasks"])}
 </body></html>
 """
 
 
-def _md_table(columns: Sequence, rows: Iterable[Dict[str, Any]]) -> str:
+def md_table(columns: Sequence, rows: Iterable[Dict[str, Any]]) -> str:
+    """Markdown table (pipes in values escaped)."""
     lines = ["| " + " | ".join(title for _, title in columns) + " |",
              "|" + "---|" * len(columns)]
     for row in rows:
-        lines.append("| " + " | ".join(_cell(row.get(key)).replace("|", "\\|")
+        lines.append("| " + " | ".join(" ".join(_cell(row.get(key)).split()).replace("|", "\\|")
                                        for key, _ in columns) + " |")
     return "\n".join(lines)
 
@@ -96,8 +98,8 @@ def render_markdown(summary: Dict[str, Any], title: str = "LLM benchmark") -> st
     """Markdown version of the same tables."""
     parts = [f"# {title}", "", f"> {CAVEAT}", ""]
     parts += [f"- {line}" for line in _header(summary)]
-    parts += ["", "## Models by screening outcome", "", _md_table(MODEL_COLUMNS, summary["models"]),
-              "", "## Warm-up", "", _md_table(WARMUP_COLUMNS, summary["warmup"]),
+    parts += ["", "## Models by screening outcome", "", md_table(MODEL_COLUMNS, summary["models"]),
+              "", "## Warm-up", "", md_table(WARMUP_COLUMNS, summary["warmup"]),
               "", "## Outcome per task, language and model", "",
-              _md_table(TASK_COLUMNS, summary["tasks"]), ""]
+              md_table(TASK_COLUMNS, summary["tasks"]), ""]
     return "\n".join(parts)

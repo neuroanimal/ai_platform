@@ -3,6 +3,7 @@ Enhanced YAML Processing Service - AI-integrated YAML processing
 Combines rule-based and AI approaches for comprehensive YAML processing
 """
 import os
+import re
 from typing import Dict, Any, List, Optional, Tuple
 from ai_platform.common.handler.trace_handler import TraceHandler
 from ai_platform.common.handler.error_handler import ErrorHandler, FormatProcessingError

@@ -2,6 +2,7 @@
 Unified Orchestrator Engine - Master orchestrator for all processing modes
 Integrates rule-based, AI-based, and hybrid processing approaches
 """
+import json
 import os
 from typing import Dict, Any, Optional, List
 from enum import Enum
@@ -37,7 +38,9 @@ class UnifiedOrchestratorEngine:
 
         # Initialize processing services
         self.yaml_service = YAMLProcessingService(product, version)
-        self.jsonschema_service = JSONSchemaProcessingService(product, version)
+        # JSONSchemaProcessingService takes one optional config dict (not
+        # product/version like the YAML service); product/version are traced above.
+        self.jsonschema_service = JSONSchemaProcessingService(self.config.get("schema"))
 
         # Processing statistics
         self.stats = {
@@ -121,12 +124,18 @@ class UnifiedOrchestratorEngine:
             self.stats["json_operations"] += 1
 
             # Process with JSON Schema service
+            # File-level operations of JSONSchemaProcessingService: reorder_from_files
+            # works on paths; validate/analyze take the loaded schema.
             if operation == "reorder":
-                success = self.jsonschema_service.reorder_schema(input_path, output_path, **kwargs)
+                result = self.jsonschema_service.reorder_from_files(
+                    input_path, kwargs.pop("reference_path", None), output_path, **kwargs)
+                success = bool(result.get("success"))
             elif operation == "validate":
-                success = self.jsonschema_service.validate_schema(input_path)
+                validation = self.jsonschema_service.validate_schema_structure(
+                    self._load_json(input_path))
+                success = bool(validation.get("valid"))
             elif operation == "analyze":
-                analysis = self.jsonschema_service.analyze_schema_complexity(input_path)
+                analysis = self.jsonschema_service.get_schema_info(self._load_json(input_path))
                 success = analysis is not None
             else:
                 raise BaseEngineError(f"Unknown JSON Schema operation: {operation}")
@@ -144,6 +153,12 @@ class UnifiedOrchestratorEngine:
             self.stats["failed_operations"] += 1
             ErrorHandler.handle(e, self.tracer, "JSON Schema processing")
             return False
+
+    @staticmethod
+    def _load_json(path: str) -> Dict[str, Any]:
+        """Read a JSON file (UTF-8)."""
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
 
     def run_ml_analysis_workflow(self, input_path: str, output_dir: str,
                                 mrcf_path: Optional[str] = None,

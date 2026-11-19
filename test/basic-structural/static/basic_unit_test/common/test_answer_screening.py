@@ -160,3 +160,58 @@ def test_screen_report_summary():
                for r in analysis["results"])
     with pytest.raises(ValueError):
         s.screen_report({})
+
+
+@pytest.mark.parametrize("answer,expected,status", [
+    ("4 jabłka to 12 zł, 2 gruszki to 10 zł. Razem: **22 zł**.", "22",
+     "candidate_correct_result_only"),
+    ("Odpowiedź: 24 zł", "22", "candidate_incorrect"),
+    ("Reszta wynosi 2.", "2", "candidate_correct_result_only"),
+    ("The answer is 32.", "32", "candidate_correct_result_only"),
+    ("100 = 7 × 14 + 2, so the remainder is 2", "2", "candidate_correct_result_only"),
+    ("Wynik to 25, a po poprawce wynik to 30.", "30", "candidate_correct_result_only"),
+    ("Wynik to 30, ale ostatecznie wynik to 25.", "30", "manual_review"),
+    ("Hmm.", "30", "manual_review"),
+    (r"\boxed{2500}", "2500", "candidate_correct_result_only"),
+    # 4.6 regressions from real v3 answers
+    ("2.5 kilometres is equal to 2,500 metres.", "2500", "candidate_correct_result_only"),
+    ("2,5 km to 2 500 m.", "2500", "candidate_correct_result_only"),
+    ("2,5 kilometrów wynosi 1,25 metrów.", "2500", "candidate_incorrect"),
+    ("100 ÷ 7 = 14 with a remainder of 2.", "2", "manual_review"),
+    ("Litera \"a\" występuje w słowie \"banan\" dwa razy.", "2", "candidate_correct_result_only"),
+    ("W słowie \"banan\" litera \"a\" występuje 3 razy.", "2", "candidate_incorrect"),
+    ("The letter a occurs three times in banana.", "3", "candidate_correct_result_only"),
+])
+def test_numeric(answer, expected, status):
+    assert s.check_numeric(answer, expected)[0] == status
+
+
+@pytest.mark.parametrize("answer,expected,language,status", [
+    ("Nie, wróbel nie jest ssakiem.", "Nie", "pl", "candidate_correct_conclusion"),
+    ("Tak, wróbel jest ssakiem.", "Nie", "pl", "candidate_incorrect_conclusion"),
+    ("Yes. 0.7 is greater than 0.65.", "Yes", "en", "candidate_correct_conclusion"),
+    ("It depends on the context.", "Yes", "en", "manual_review"),
+    ("Tak i nie.", "Tak", "pl", "manual_review"),
+    # 4.7: explicit final answers after reasoning (real answers)
+    ("Compare 0.7 and 0.65. 0.7 is greater. Therefore, the answer is yes, 0.7 is greater.",
+     "Yes", "en", "candidate_correct_conclusion"),
+    (r"Compare the numbers. Since 0.7 is greater, the answer is: \[ \boxed{\text{Yes}} \]",
+     "Yes", "en", "candidate_correct_conclusion"),
+    ("Przeanalizujmy przesłanki. Odpowiedź: nie, wróbel nie jest ssakiem.", "Nie", "pl",
+     "candidate_correct_conclusion"),
+    ("We compare. Therefore, 0.7 is indeed greater than 0.65.", "Yes", "en", "manual_review"),
+    ("Let us see. So, while a sparrow looks like a bird, it is indeed a mammal.", "No", "en",
+     "manual_review"),
+])
+def test_yes_no(answer, expected, language, status):
+    assert s.check_yes_no(answer, expected, language)[0] == status
+
+
+@pytest.mark.parametrize("answer,expected,status", [
+    ("Stolicą Australii jest Canberra.", "Canberra|Canberze", "candidate_correct"),
+    ("Pociąg przyjedzie o 17:15.", "17:15|17.15", "candidate_correct"),
+    ("Stolicą Australii jest Sydney.", "Canberra", "manual_review"),
+    ("To była sobota.", "sobota|sobotę", "candidate_correct"),
+])
+def test_phrase(answer, expected, status):
+    assert s.check_phrase(answer, expected)[0] == status

@@ -54,11 +54,14 @@ class ScriptedLLM:
 
 
 def test_builtin_task_set_and_validation():
-    task_set = get_task_set("bilingual_reasoning")
-    assert task_set is get_task_set("bilingual_reasoning@2")
+    task_set = get_task_set("bilingual_reasoning@2")
+    assert get_task_set("bilingual_reasoning") is get_task_set("bilingual_reasoning@3")
     assert task_set.languages == ["pl", "en"]
     assert {t.checker for t in task_set.tasks} == {
         "multiplication", "percentage", "syllogism", "currency_vs_cpi"}
+    v3 = get_task_set("bilingual_reasoning")
+    assert len(v3.tasks) == 16 and v3.languages == ["pl", "en"]
+    assert {t.checker for t in v3.tasks} >= {"numeric", "yes_no", "phrase"}
     with pytest.raises(TaskSetError):
         task_set.select(["de"])
     with pytest.raises(TaskSetError):
@@ -75,7 +78,7 @@ def test_runner_records_results_failures_and_shuts_down():
                                      fail_on=("USD/PLN",) if model == "b" else ())
         return created[model]
 
-    report = LLMBenchmarkRunner(factory).run(get_task_set("bilingual_reasoning"), ["a", "b"],
+    report = LLMBenchmarkRunner(factory).run(get_task_set("bilingual_reasoning@2"), ["a", "b"],
                                              languages=["pl"], repeats=2)
     assert report["schema"] == REPORT_SCHEMA
     assert report["warmup"]["a"]["status"] == "PASS"
@@ -95,16 +98,16 @@ def test_runner_records_results_failures_and_shuts_down():
 
 def test_runner_skips_model_whose_warmup_fails():
     report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {}, fail_on=("OK.",))).run(
-        get_task_set("bilingual_reasoning"), ["x"], repeats=1)
+        get_task_set("bilingual_reasoning@2"), ["x"], repeats=1)
     assert report["warmup"]["x"]["status"] == "FAIL" and report["results"] == []
 
 
 def test_runner_argument_validation():
     runner = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {}))
     with pytest.raises(ValueError):
-        runner.run(get_task_set("bilingual_reasoning"), [], repeats=1)
+        runner.run(get_task_set("bilingual_reasoning@2"), [], repeats=1)
     with pytest.raises(ValueError):
-        runner.run(get_task_set("bilingual_reasoning"), ["m"], repeats=0)
+        runner.run(get_task_set("bilingual_reasoning@2"), ["m"], repeats=0)
 
 
 def test_cli_run_and_screen_against_fake_server(tmp_path, capsys):
@@ -113,6 +116,7 @@ def test_cli_run_and_screen_against_fake_server(tmp_path, capsys):
         code = llm_benchmark_cli.main([
             "run", "--provider", "openai-compatible", "--base-url", server.url,
             "--models", "m", "--languages", "en", "--repeats", "1",
+            "--task-set", "bilingual_reasoning@2",
             "--output", str(tmp_path / "r.json"), "--screen"])
     assert code == 0
     written = capsys.readouterr().out.split()
@@ -147,7 +151,7 @@ def test_summary_and_rendering(tmp_path):
     answers = {"17": "17 * 23 = 391", "112": "12%", "Mruczek": "Tak, Mruczek jest ssakiem.",
                "USD/PLN": "Wzrost USD/PLN automatycznie powoduje wzrost CPI."}
     report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, answers)).run(
-        get_task_set("bilingual_reasoning"), ["<b>m&1</b>"], languages=["pl"], repeats=2,
+        get_task_set("bilingual_reasoning@2"), ["<b>m&1</b>"], languages=["pl"], repeats=2,
         metadata={"provider": "test", "endpoint": "mem"})
     summary = summarize_benchmark(report, screen_benchmark_report(report))
     row = summary["models"][0]
@@ -169,7 +173,7 @@ def test_summary_and_rendering(tmp_path):
 
 def test_cli_report_writes_html_and_markdown(tmp_path, capsys):
     report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {})).run(
-        get_task_set("bilingual_reasoning"), ["m"], languages=["en"], repeats=1)
+        get_task_set("bilingual_reasoning@2"), ["m"], languages=["en"], repeats=1)
     source = tmp_path / "r.json"
     source.write_text(json.dumps(report), encoding="utf-8")
     assert llm_benchmark_cli.main(["report", str(source)]) == 0
@@ -182,7 +186,7 @@ def test_merge_reports():
         merge_reports,
     )
     runner = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {}))
-    task_set = get_task_set("bilingual_reasoning")
+    task_set = get_task_set("bilingual_reasoning@2")
     a = runner.run(task_set, ["a"], languages=["pl"], repeats=1)
     b = runner.run(task_set, ["b"], languages=["pl"], repeats=1)
     merged = merge_reports([a, b])

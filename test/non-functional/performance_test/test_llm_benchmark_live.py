@@ -1,6 +1,6 @@
 """Live LLM benchmark smoke test (replaces config/test_env tests 28-30 as a test).
 
-Runs the built-in ``bilingual_reasoning`` task set once, in Polish, against
+Runs the built-in ``bilingual_reasoning`` task set (newest version) once, in Polish, against
 a local OpenAI-compatible server, and screens the answers. Skipped when the
 server or model is not available. Override with:
 
@@ -41,11 +41,11 @@ def test_bilingual_reasoning_live():
     probe = factory(MODEL)
     if not probe.health()["model_available"]:
         pytest.skip(f"{MODEL} not served at {URL}")
-    report = LLMBenchmarkRunner(factory).run(get_task_set("bilingual_reasoning"), [MODEL],
-                                             languages=["pl"], repeats=1)
+    task_set = get_task_set("bilingual_reasoning")
+    report = LLMBenchmarkRunner(factory).run(task_set, [MODEL], languages=["pl"], repeats=1)
     assert report["warmup"][MODEL]["status"] == "PASS"
-    assert [r["status"] for r in report["results"]] == ["PASS"] * 4
+    assert [r["status"] for r in report["results"]] == ["PASS"] * len(task_set.tasks)
     analysis = screen_benchmark_report(report)
-    assert analysis["summary"]["records"] == 4
+    assert analysis["summary"]["records"] == len(task_set.tasks)
     assert all(r["automatic_assessment"]["answer_screening"]["checker"]
                for r in analysis["results"])

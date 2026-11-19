@@ -1,6 +1,9 @@
 """
 Built-in benchmark task sets and their registry.
 
+``bilingual_reasoning`` v3 (the default name) adds 12 short tasks to v2;
+``bilingual_reasoning@2`` stays available for comparison with earlier runs.
+
 ``bilingual_reasoning`` v2 is the task set of
 ``config/test_env/test_30_bilingual_quality_v2/v3.py`` (v1 differs only in
 the "Mrruczek" spelling of the EN syllogism; screening accepts both).
@@ -52,6 +55,56 @@ BILINGUAL_REASONING_V2 = [
                              "increase in CPI.")}}},
 ]
 
+def _task(task_id, category, checker, pl, en):
+    """Compact task definition: pl/en are (prompt, expected) pairs."""
+    return {"id": task_id, "category": category, "checker": checker,
+            "languages": {"pl": {"prompt": pl[0], "expected": pl[1]},
+                          "en": {"prompt": en[0], "expected": en[1]}}}
+
+
+# v3 = v2 plus 12 short tasks with one checkable answer each. Expected values
+# for "phrase" list accepted spellings separated by "|".
+BILINGUAL_REASONING_V3 = BILINGUAL_REASONING_V2 + [
+    _task("word_problem", "mathematics", "numeric",
+          ("Jabłko kosztuje 3 zł, a gruszka 5 zł. Ile zapłacisz za 4 jabłka i 2 gruszki?", "22"),
+          ("An apple costs 3 PLN and a pear 5 PLN. How much do 4 apples and 2 pears cost?",
+           "22")),
+    _task("division_remainder", "mathematics", "numeric",
+          ("Jaka jest reszta z dzielenia 100 przez 7?", "2"),
+          ("What is the remainder when 100 is divided by 7?", "2")),
+    _task("percentage_of", "mathematics", "numeric",
+          ("Ile to jest 15% z 200?", "30"), ("What is 15% of 200?", "30")),
+    _task("unit_conversion", "mathematics", "numeric",
+          ("Ile metrów ma 2,5 kilometra?", "2500"), ("How many metres are 2.5 kilometres?",
+                                                      "2500")),
+    _task("number_sequence", "logic", "numeric",
+          ("Jaka liczba jest następna w ciągu: 2, 4, 8, 16?", "32"),
+          ("What is the next number in the sequence 2, 4, 8, 16?", "32")),
+    _task("letter_count", "language", "numeric",
+          ("Ile razy litera a występuje w słowie banan?", "2"),
+          ("How many times does the letter a occur in the word banana?", "3")),
+    _task("time_arithmetic", "mathematics", "phrase",
+          ("Pociąg odjeżdża o 14:45 i jedzie 2 godziny 30 minut. O której godzinie przyjedzie?",
+           "17:15|17.15"),
+          ("A train leaves at 14:45 and travels for 2 hours 30 minutes. When does it arrive?",
+           "17:15|17.15|5:15 pm|5:15 p.m.")),
+    _task("negated_syllogism", "logic", "yes_no",
+          ("Żaden ptak nie jest ssakiem. Wróbel jest ptakiem. Czy wróbel jest ssakiem?", "Nie"),
+          ("No bird is a mammal. A sparrow is a bird. Is a sparrow a mammal?", "No")),
+    _task("decimal_comparison", "mathematics", "yes_no",
+          ("Czy liczba 0,7 jest większa od liczby 0,65?", "Tak"),
+          ("Is the number 0.7 greater than 0.65?", "Yes")),
+    _task("capital_city", "knowledge", "phrase",
+          ("Jaka jest stolica Australii?", "Canberra|Canberze|Canberry"),
+          ("What is the capital of Australia?", "Canberra")),
+    _task("weekday", "knowledge", "phrase",
+          ("Jaki dzień tygodnia był 1 stycznia 2000 roku?", "sobota|sobotę|soboty"),
+          ("What day of the week was 1 January 2000?", "Saturday")),
+    _task("plural_form", "language", "phrase",
+          ("Podaj liczbę mnogą rzeczownika 'pies'.", "psy"),
+          ("What is the plural of the noun 'mouse'?", "mice")),
+]
+
 _REGISTRY: Dict[str, TaskSet] = {}
 
 
@@ -79,3 +132,11 @@ register_task_set(TaskSet(
     name="bilingual_reasoning", version="2",
     description="Arithmetic, percentage, syllogism and economics questions in Polish and English.",
     tasks=[task_from_dict(t) for t in BILINGUAL_REASONING_V2]))
+
+# "bilingual_reasoning" resolves to the newest version; reports name the version.
+_REGISTRY.pop("bilingual_reasoning")
+register_task_set(TaskSet(
+    name="bilingual_reasoning", version="3",
+    description=("v2 plus 12 short tasks: word problems, remainder, percentages, units, "
+                 "sequences, letter counting, time, negation, decimals, facts, plurals."),
+    tasks=[task_from_dict(t) for t in BILINGUAL_REASONING_V3]))
