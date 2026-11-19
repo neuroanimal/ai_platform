@@ -1,7 +1,7 @@
 """Unit tests of the integrated answer screening.
 
 Ported from config/test_env/test_30a_analysis_v4_2_selftest.py: the same
-46 cases (v4.1 cases, v4.2 regressions incl. the real qwen 0.5B "equals 85"
+46 cases (plus 4.3 regressions taken from real answers) (v4.1 cases, v4.2 regressions incl. the real qwen 0.5B "equals 85"
 answer, truncation and technical-failure handling), now as pytest cases
 against ``ai_platform.common.evaluation.answer_screening``.
 """
@@ -30,6 +30,14 @@ MULTIPLICATION = [
     ("12 * 10 = 120. 12 * 3 = 36. 120 + 36 = 156.", "156", "Ile wynosi 12 razy 13?",
      "candidate_correct_with_calculation"),
     ("17 * 23 = 391", "390", PL, "manual_review"),
+    # 4.3 regression: real qwen2.5:1.5b answer, a term of a chain is not a step
+    ("17 × 23 = (10 + 7) × (20 + 3) = 10 × 20 + 10 × 3 + 7 × 20 + 7 × 3 = 200 + 30 + 140 + 21 "
+     "= 340 + 51 = 391 So, 17 times 23 equals 391.", "391", EN,
+     "candidate_correct_with_calculation"),
+    # 4.4 regressions: LaTeX markup, and a chained right-hand side is no result claim
+    (r"\[ 17 \times 23 = 17 \times (20 + 3) = 340 + 51 = 391 \]", "391", PL,
+     "candidate_correct_with_calculation"),
+    (r"17 \times 23 = \boxed{391}", "391", PL, "candidate_correct_result_only"),
 ]
 
 PERCENTAGE = [
@@ -37,6 +45,10 @@ PERCENTAGE = [
     ("Wzrost wynosi 2%.", "candidate_incorrect"),
     ("Wzrost wynosi 12%, ale wcześniej obliczyłem 2%.", "manual_review"),
     ("Cena wzrosła o 12 procent.", "candidate_correct"),
+    # 4.3 regression: real qwen2.5:3b answer, "* 100%" is a factor
+    ("(12 zł / 100 zł) * 100% = 12% Zatem cena wzrosła o 12%.", "candidate_correct"),
+    ("Wzrost o 12%, a cena to 100% ceny bazowej plus 12%.", "manual_review"),
+    (r"\left( \frac{12}{100} \right) \times 100\% = 12\%", "candidate_correct"),
 ]
 
 SYLLOGISM = [

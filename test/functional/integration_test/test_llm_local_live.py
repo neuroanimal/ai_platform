@@ -78,3 +78,43 @@ def test_native_rag_with_local_llm():
     llm.shutdown()
     assert result["sources"][0]["document_id"] == "code"
     assert "4512" in result["answer"]
+
+
+EMBED_MODEL = os.environ.get("AI_PLATFORM_OLLAMA_EMBED_MODEL", "bge-m3")
+
+
+def test_semantic_rag_with_local_embeddings():
+    """Cross-lingual retrieval: Polish question, English documents, bge-m3 via Ollama.
+
+    The lexical HashingEmbedder cannot do this (no shared words), so the test
+    shows what a real embedding model adds to the native RAG pipeline.
+    """
+    from ai_platform.common.rag.embedder import (  # pylint: disable=import-outside-toplevel
+        EmbeddingError,
+        OpenAICompatibleEmbedder,
+    )
+    from ai_platform.common.rag.native_rag_adapter import (  # pylint: disable=import-outside-toplevel
+        NativeRAGAdapter,
+    )
+
+    embedder = OpenAICompatibleEmbedder(OLLAMA_URL, EMBED_MODEL)
+    try:
+        embedder.embed(["probe"])
+    except EmbeddingError as exc:
+        pytest.skip(f"embedding model {EMBED_MODEL!r} not available at {OLLAMA_URL}: {exc}")
+
+    rag = NativeRAGAdapter()
+    rag.initialize({"embedder": embedder, "top_k": 1})
+    rag.ingest([
+        {"id": "cpi", "text": "Consumer price inflation measures how prices of a basket of "
+                              "goods change over time."},
+        {"id": "fx", "text": "The USD/PLN exchange rate is the price of one US dollar in "
+                             "Polish zloty."},
+        {"id": "cat", "text": "Cats are small domesticated carnivorous mammals."},
+    ])
+    questions = {"Jak mierzy się wzrost cen towarów?": "cpi",
+                 "Ile złotych kosztuje dolar?": "fx",
+                 "Czy kot jest ssakiem?": "cat"}
+    for question, expected in questions.items():
+        assert rag.retrieve(question)[0]["document_id"] == expected, question
+    rag.shutdown()

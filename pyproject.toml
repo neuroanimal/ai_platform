@@ -63,11 +63,8 @@ requires = ["setuptools>=65.0", "pdm-backend >= 2.4.0"]
 build-backend = "setuptools.build_meta"
 # build-backend = "pdm.backend"
 
-[tool.setuptools]
-packages = ["ai_platform", "ai_platform.common", "ai_platform.backend"]
-
-[tool.setuptools.package-dir]
-ai_platform = "code"
+# Packages and package-dir are set in setup.py (discovered under code/,
+# installed as ai_platform).
 
 [tool.pdm]
 distribution = true

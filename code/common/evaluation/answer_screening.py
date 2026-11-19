@@ -23,6 +23,22 @@ written stays wrong.
 
 Standard library only; messages are English (the test_env original was
 Polish - the rules are the same).
+
+Changes in 4.3 (from reading the manual-review cases of the first 9-model
+Ollama run, 2026-11-19):
+
+- an equation inside a chain is no longer read as a step:
+  ``10 × 20 + ... + 7 × 3 = 200 + 30 + ...`` used to yield the false step
+  "7 × 3 = 200";
+- ``× 100%`` in a percentage formula is a factor, not a result:
+  ``(12 / 100) * 100% = 12%`` used to count as two percentages (12 and 100).
+
+Changes in 4.4: LaTeX markup is unwrapped before the rules run (39 of 264
+answers in the 11-model run used it): ``\\times`` / ``\\cdot`` become
+operators, ``12\\%`` a percentage, ``\\text{..}`` / ``\\boxed{..}`` their content,
+and ``\\[ \\]`` / ``\\( \\)`` / ``\\,`` disappear. Before, "17 \\times 23 = 391"
+was no multiplication and "= 12\\%" no percentage. A number followed by an
+operator no longer counts as a declared result ("17 × 23 = 17 × (20 + 3)").
 """
 
 # One branch per outcome keeps each rule readable next to its message.
@@ -32,7 +48,7 @@ import re
 from collections import Counter, defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-VERSION = "4.2"
+VERSION = "4.4"
 
 Verdict = Tuple[str, str]
 Checker = Callable[[Dict[str, Any]], Verdict]
@@ -44,8 +60,14 @@ RESULT_VERB = r"(?:=|equals|is|wynosi|daje|to|równa\s+się|gives)"
 # A number, optionally wrapped in markdown emphasis (**391**).
 NUMBER_AFTER = r"[\s*]*(\d+)(?![\d])"
 # Generic "a op b = c" equation (intermediate steps).
-EQUATION = re.compile(r"(?<![\d.])(\d+)\s*([*x×·+\-])\s*(\d+)\s*=\s*(\d+)(?![\d])")
+# The left operand must start the expression and the result must end it, so a
+# term of a longer chain ("... + 7 × 3 = 200 + 30") is not mistaken for a step.
+EQUATION = re.compile(
+    r"(?<![\d.])(?<![*x×·+\-]\s)(?<![*x×·+\-])(\d+)\s*([*x×·+\-])\s*(\d+)\s*=\s*(\d+)"
+    r"(?![\d])(?!\s*[*x×·+\-]\s*[\d(])")
 PERCENT = r"(\d+(?:\.\d+)?)\s*(?:%|procent\w*|percent)"
+# "× 100%" in a formula is a conversion factor, not a stated result.
+PERCENT_FACTOR = re.compile(r"[*x×·]\s*100\s*(?:%|procent\w*|percent)")
 
 # Predicate forms that cannot be derived from the expected value
 # (Polish case inflection).
@@ -55,9 +77,26 @@ PREDICATE_FORMS = {
 }
 
 
+_LATEX_REPLACEMENTS = (
+    (re.compile(r"\\(?:text|textbf|mathrm|boxed|mathbf)\s*\{([^{}]*)\}"), r"\1"),
+    (re.compile(r"\\times"), " × "),
+    (re.compile(r"\\cdot"), " · "),
+    (re.compile(r"\\%"), "%"),
+    (re.compile(r"\\[,;:! ]"), " "),
+    (re.compile(r"\\[\[\]()]"), " "),
+)
+
+
+def strip_latex(text: str) -> str:
+    """Unwrap the LaTeX markup models use for formulas (see 4.4 above)."""
+    for pattern, replacement in _LATEX_REPLACEMENTS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
 def normalize(text: Any) -> str:
-    """Lowercase, unify decimal comma, collapse whitespace."""
-    text = str(text or "").lower().replace(",", ".")
+    """Unwrap LaTeX, lowercase, unify decimal comma, collapse whitespace."""
+    text = strip_latex(str(text or "")).lower().replace(",", ".")
     return re.sub(r"\s+", " ", text).strip()
 
 
@@ -93,8 +132,10 @@ def find_result_claims(text: str, operands: Optional[Tuple[int, int]]) -> List[i
     if operands:
         a, b = operands
         for left, right in ((a, b), (b, a)):
+            # The number must end the right-hand side: in "17 × 23 = 17 × (20 + 3)"
+            # the 17 starts an expression and is no declared result.
             pattern = (rf"(?<![\d.]){left}\s*{MULT_OP}\s*{right}\s*\)?\s*"
-                       rf"{RESULT_VERB}{NUMBER_AFTER}")
+                       rf"{RESULT_VERB}{NUMBER_AFTER}(?!\s*(?:{MULT_OP}|[+\-=(]))")
             claims.extend(int(v) for v in re.findall(pattern, text))
     # "result: 391" - but not "Result: 17 * 23 = 391", where 17 starts an operation.
     generic = (r"(?:wynik\w*|result|answer|odpowiedź)\s*(?:is|to|jest|wynosi|:|=)?"
@@ -168,7 +209,8 @@ def check_percentage(answer: str, expected: str) -> Verdict:
     if not match:
         return "manual_review", "Unsupported expected-value format."
     expected_value = float(match.group(1))
-    found = sorted({float(v) for v in re.findall(PERCENT, normalize(answer))})
+    text = PERCENT_FACTOR.sub(" ", normalize(answer))
+    found = sorted({float(v) for v in re.findall(PERCENT, text)})
     if not found:
         return "manual_review", "No percentage found."
     if len(found) > 1:

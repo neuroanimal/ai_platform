@@ -6,6 +6,9 @@ Command line for the LLM benchmark (integrates config/test_env tests 28-30).
         --provider localai --base-url http://127.0.0.1:8081 \\
         --models qwen25-05b-localai bielik-15b-localai --repeats 3 --screen
     python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli screen results/report.json
+    python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli report results/report.json
+    python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli merge a.json b.json \\
+        --output ab.json
 
 Former test_env scripts as commands:
 
@@ -15,6 +18,7 @@ Former test_env scripts as commands:
     test_28_quality.py                run --languages pl --models qwen25-05b-localai
                                           qwen25-15b-localai --repeats 1
     test_30a_analysis_v4_2.py         screen <report>
+    (new)                             report <report>  -> <report>.html + <report>.md tables
 
 Writes JSON files only where told (``--output``, default ``./results``);
 prints progress to stderr and the written paths to stdout. Exit status 1
@@ -32,8 +36,16 @@ from ai_platform.backend.service_layer.macro.llm_benchmark.task_set_service impo
     get_task_set,
     list_task_sets,
 )
+from ai_platform.backend.service_layer.macro.llm_benchmark.benchmark_summary import (
+    summarize_benchmark,
+)
+from ai_platform.backend.ui_layer.cli.benchmark_report_rendering import (
+    render_html,
+    render_markdown,
+)
 from ai_platform.backend.service_layer.macro.llm_benchmark.benchmark_runner import (
     LLMBenchmarkRunner,
+    merge_reports,
 )
 from ai_platform.backend.service_layer.macro.llm_benchmark.screening_service import (
     screen_benchmark_report,
@@ -116,6 +128,39 @@ def command_screen(args) -> int:
     return 0
 
 
+def command_report(args) -> int:
+    """Write HTML and Markdown comparison tables for a report."""
+    source = Path(args.input)
+    report = json.loads(source.read_text(encoding="utf-8"))
+    screening_file = Path(args.screening) if args.screening else screening_path(source)
+    if screening_file.exists():
+        screening = json.loads(screening_file.read_text(encoding="utf-8"))
+    else:
+        screening = screen_benchmark_report(report, source=str(source.resolve()))
+    summary = summarize_benchmark(report, screening)
+    title = args.title or f"LLM benchmark - {source.stem}"
+    for extension, render in ((".html", render_html), (".md", render_markdown)):
+        target = source.with_suffix(extension) if not args.output_stem else \
+            Path(args.output_stem + extension)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(render(summary, title), encoding="utf-8")
+        print(target.resolve())
+    return 0
+
+
+def command_merge(args) -> int:
+    """Merge comparable reports into one file."""
+    reports = [json.loads(Path(p).read_text(encoding="utf-8")) for p in args.inputs]
+    try:
+        merged = merge_reports(reports)
+    except ValueError as exc:
+        print(f"cannot merge: {exc}", file=sys.stderr)
+        return 1
+    merged["merged_files"] = [str(Path(p).resolve()) for p in args.inputs]
+    print(write_json(merged, Path(args.output)))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Argument parser with list / run / screen subcommands."""
     parser = argparse.ArgumentParser(prog="llm_benchmark", description=__doc__.splitlines()[1])
@@ -143,6 +188,19 @@ def build_parser() -> argparse.ArgumentParser:
     screen.add_argument("input")
     screen.add_argument("--output", default=None)
     screen.set_defaults(func=command_screen)
+
+    report = sub.add_parser("report", help="HTML + Markdown comparison tables for a report")
+    report.add_argument("input")
+    report.add_argument("--screening", default=None,
+                        help="screening file (default <report>_screening.json, else computed)")
+    report.add_argument("--output-stem", default=None, help="path without extension")
+    report.add_argument("--title", default=None)
+    report.set_defaults(func=command_report)
+
+    merge = sub.add_parser("merge", help="merge reports of comparable runs")
+    merge.add_argument("inputs", nargs="+")
+    merge.add_argument("--output", required=True)
+    merge.set_defaults(func=command_merge)
     return parser
 
 
