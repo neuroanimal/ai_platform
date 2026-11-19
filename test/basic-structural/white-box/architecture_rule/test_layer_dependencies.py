@@ -1,11 +1,9 @@
 """Architecture rule: imports must respect doc/arch/DEPENDENCY_RULES.md.
 
 Runs ``ai_platform.common.tool.validate_dependencies`` over the code tree.
-Violations that existed before the validator worked are listed in
-``KNOWN_VIOLATIONS`` - they are architecture debt to remove (each needs a
-refactoring decision, e.g. moving the orchestrators from common/engine into
-backend), not accepted design. The test fails on any *new* violation and
-also when a known one disappears, so the list is kept honest.
+Accepted exceptions would be listed in ``KNOWN_VIOLATIONS`` (none since the
+orchestrators moved out of common). The test fails on any violation not in
+that list, and on listed ones that no longer exist, so the list stays honest.
 """
 
 import os
@@ -15,19 +13,11 @@ from ai_platform.common.tool.validate_dependencies import find_violations
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 
-# file -> imported module; common must not import backend.
-KNOWN_VIOLATIONS = {
-    ("code/common/engine/unified_orchestrator_engine.py",
-     "ai_platform.backend.service_layer.format_processing.yaml.yaml_processing_service"),
-    ("code/common/engine/unified_orchestrator_engine.py",
-     "ai_platform.backend.service_layer.schema_processing.jsonschema_processing_service"),
-    ("code/common/engine/unified_processing_engine.py",
-     "ai_platform.backend.service_layer.yaml_processing.yaml_processing_service"),
-    ("code/common/engine/unified_processing_engine.py",
-     "ai_platform.backend.service_layer.schema_processing.jsonschema_processing_service"),
-    ("code/common/tool/enhanced_unified_cli.py",
-     "ai_platform.backend.service_layer.format_processing.conversion.format_conversion_service"),
-}
+# file -> imported module. Empty since 2026-11-19: the orchestrators that made
+# common import backend were moved to backend/service_layer/macro/orchestration
+# and their CLIs to backend/ui_layer/cli. Add an entry here only together with
+# a decision to accept the debt.
+KNOWN_VIOLATIONS: set = set()
 
 LINE = re.compile(r"^(?P<file>[^:]+):\d+: (?:from (?P<a>\S+) import \.\.\.|import (?P<b>\S+)) not allowed$")
 

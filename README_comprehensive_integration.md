@@ -1,5 +1,7 @@
 # AI Platform - Comprehensive Integration Architecture
 
+> **Moved 2026-11-19:** `unified_orchestrator_engine.py` and `unified_processing_engine.py` are now in `code/backend/service_layer/macro/orchestration/`; `unified_cli.py`, `comprehensive_cli.py` and `enhanced_unified_cli.py` in `code/backend/ui_layer/cli/` (common may not import backend). The trees below show the earlier layout.
+
 ## Overview
 
 The AI Platform has been completely refactored to integrate the full functionality of the `uncomment` project with a well-organized, modular architecture. This integration combines rule-based processing, AI-enhanced analysis, and hybrid approaches for comprehensive YAML and JSON Schema processing.
@@ -111,7 +113,7 @@ python comprehensive_cli.py yaml validate input.yaml
 #### Programmatic Usage
 
 ```python
-from common.engine.unified_orchestrator_engine import UnifiedOrchestratorEngine, ProcessingMode
+from ai_platform.backend.service_layer.macro.orchestration.unified_orchestrator_engine import UnifiedOrchestratorEngine, ProcessingMode
 
 # Initialize orchestrator
 orchestrator = UnifiedOrchestratorEngine("MyProduct", "1.0")

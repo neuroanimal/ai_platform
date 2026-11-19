@@ -1,5 +1,7 @@
 # AI Platform - Full Integration
 
+> **Moved 2026-11-19:** `unified_orchestrator_engine.py` and `unified_processing_engine.py` are now in `code/backend/service_layer/macro/orchestration/`; `unified_cli.py`, `comprehensive_cli.py` and `enhanced_unified_cli.py` in `code/backend/ui_layer/cli/` (common may not import backend). The trees below show the earlier layout.
+
 All-purpose general and broad AI Platform with Traditional and Modern AI, NLP, OCR, ML, DL, LLM, GenAI, AI Agents.
 
 **Now with complete YAML and JSON Schema processing capabilities fully integrated.**
@@ -85,7 +87,7 @@ result = schema_service.reorder_from_files(
 Single interface combining both services:
 
 ```python
-from code.common.engine.unified_processing_engine import UnifiedProcessingEngine
+from ai_platform.backend.service_layer.macro.orchestration.unified_processing_engine import UnifiedProcessingEngine
 
 engine = UnifiedProcessingEngine()
 

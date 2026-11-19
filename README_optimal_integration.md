@@ -1,5 +1,7 @@
 # AI Platform - Optimal Integration Update
 
+> **Moved 2026-11-19:** `unified_orchestrator_engine.py` and `unified_processing_engine.py` are now in `code/backend/service_layer/macro/orchestration/`; `unified_cli.py`, `comprehensive_cli.py` and `enhanced_unified_cli.py` in `code/backend/ui_layer/cli/` (common may not import backend). The trees below show the earlier layout.
+
 ## Overview
 
 This update represents an **optimal integration** of additional functionality from `additional_codes_part_1`, focusing on the most valuable and reusable components while maintaining clean architecture.
@@ -67,26 +69,26 @@ ai_platform/code/
 
 ```bash
 # Extract tables from Excel to CSV
-python enhanced_unified_cli.py excel extract input.xlsx output_dir/
+python -m ai_platform.backend.ui_layer.cli.enhanced_unified_cli excel extract input.xlsx output_dir/
 
 # Validate Excel file
-python enhanced_unified_cli.py excel validate input.xlsx
+python -m ai_platform.backend.ui_layer.cli.enhanced_unified_cli excel validate input.xlsx
 
 # Get Excel file information
-python enhanced_unified_cli.py excel info input.xlsx
+python -m ai_platform.backend.ui_layer.cli.enhanced_unified_cli excel info input.xlsx
 ```
 
 ### Format Conversion
 
 ```bash
 # Convert JSON to YAML
-python enhanced_unified_cli.py convert data.json data.yaml
+python -m ai_platform.backend.ui_layer.cli.enhanced_unified_cli convert data.json data.yaml
 
 # Convert YAML to JSON
-python enhanced_unified_cli.py convert config.yaml config.json
+python -m ai_platform.backend.ui_layer.cli.enhanced_unified_cli convert config.yaml config.json
 
 # Convert Excel to CSV (with validation)
-python enhanced_unified_cli.py convert data.xlsx output_dir/ --validate
+python -m ai_platform.backend.ui_layer.cli.enhanced_unified_cli convert data.xlsx output_dir/ --validate
 ```
 
 ### Programmatic Usage
