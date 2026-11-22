@@ -28,6 +28,11 @@ from .validation import (
     validate_provider_response,
 )
 from .stanza_provider import StanzaPolishProvider
+from .lifecycle import (
+    NLPProviderLifecycle,
+    NLPProviderLifecycleSnapshot,
+    NLPProviderLifecycleState,
+)
 
 __all__ = [
     "ProviderCapabilities",
@@ -48,5 +53,8 @@ __all__ = [
     "validate_provider_request",
     "validate_provider_response",
     "StanzaPolishProvider",
+    "NLPProviderLifecycle",
+    "NLPProviderLifecycleSnapshot",
+    "NLPProviderLifecycleState",
 ]
 
