@@ -33,6 +33,13 @@ from .lifecycle import (
     NLPProviderLifecycleSnapshot,
     NLPProviderLifecycleState,
 )
+from .configuration import (
+    NLPExecutionDevice,
+    NLPProviderEngineConfig,
+    NLPModelConfig,
+    NLPRuntimeConfig,
+    NLPProviderConfiguration,
+)
 
 __all__ = [
     "ProviderCapabilities",
@@ -56,5 +63,10 @@ __all__ = [
     "NLPProviderLifecycle",
     "NLPProviderLifecycleSnapshot",
     "NLPProviderLifecycleState",
+    "NLPExecutionDevice",
+    "NLPProviderEngineConfig",
+    "NLPModelConfig",
+    "NLPRuntimeConfig",
+    "NLPProviderConfiguration",
 ]
 

@@ -14,7 +14,7 @@ Command line for the LLM benchmark (integrates config/test_env tests 28-30).
     python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli review-import results/r.json \\
         results/r_review.xlsx --reviewer greg  # -> results/r_screening_reviewed.json
     python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli judge results/r.json \\
-        --provider anthropic --model <model id>   # -> results/r_judge.json (ANTHROPIC_API_KEY)
+        --provider google --model <model id>   # -> results/r_judge_google-<model id>.json
     python -m ai_platform.backend.ui_layer.cli.llm_benchmark_cli report results/r.json \\
         --screening results/r_screening_reviewed.json
 
@@ -35,6 +35,7 @@ when no request produced an answer.
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -49,6 +50,7 @@ from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service imp
     judge_agreement,
     judge_report,
     judgement_columns,
+    judgement_counts,
     select_records,
 )
 from ai_platform.common.llm.bedrock_adapter import BedrockAdapter
@@ -210,7 +212,15 @@ def command_review_export(args) -> int:
         return 1
     items = review_items(report, screening, sample_decided=args.sample_decided, seed=args.seed,
                          include_all=args.all)
-    judgements_file = Path(args.judge) if args.judge else judge_path(source)
+    if args.judge:
+        judgements_file = Path(args.judge)
+    else:
+        found = sorted(source.parent.glob(source.stem + "_judge*.json"))
+        if len(found) > 1:
+            print("several judgement files, choose one with --judge: "
+                  + ", ".join(f.name for f in found), file=sys.stderr)
+            return 1
+        judgements_file = found[0] if found else judge_path(source)
     if judgements_file.exists():
         judgement_columns(json.loads(judgements_file.read_text(encoding="utf-8")), items)
     if args.carry_over:
@@ -243,16 +253,23 @@ def command_review_import(args) -> int:
     return 0
 
 
-def judge_path(report_path: Path) -> Path:
-    """<report>_judge.json next to the report."""
-    return report_path.with_name(report_path.stem + "_judge.json")
+def judge_path(report_path: Path, judge_name: Optional[str] = None) -> Path:
+    """<report>_judge_<judge>.json next to the report (<report>_judge.json without a name).
+
+    One file per judge, so several judges can be run on the same report.
+    """
+    if not judge_name:
+        return report_path.with_name(report_path.stem + "_judge.json")
+    slug = re.sub(r"[^A-Za-z0-9.]+", "-", judge_name).strip("-")
+    return report_path.with_name(f"{report_path.stem}_judge_{slug}.json")
 
 
-def command_judge(args) -> int:
+def command_judge(args) -> int:  # pylint: disable=too-many-locals
     """Ask a (remote) LLM for a verdict on every answer; resumable."""
     source = Path(args.input)
     report = json.loads(source.read_text(encoding="utf-8"))
-    target = Path(args.output) if args.output else judge_path(source)
+    judge_name = f"{args.provider}:{args.model}" if args.provider and args.model else None
+    target = Path(args.output) if args.output else judge_path(source, judge_name)
     existing = json.loads(target.read_text(encoding="utf-8")) if target.exists() else None
     screening_file = screening_path(source)
     screening = json.loads(screening_file.read_text(encoding="utf-8")) \
@@ -277,15 +294,20 @@ def command_judge(args) -> int:
         config["api_key_env"] = args.api_key_env
     try:
         judge.initialize(config)
-        data = judge_report(report, judge, f"{args.provider}:{args.model}", existing=existing,
+        data = judge_report(report, judge, judge_name, existing=existing,
                             workers=args.workers, screening=screening, scope=args.scope,
-                            batched=not args.one_per_prompt,
+                            batched=not args.one_per_prompt, pause=args.pause,
                             progress=lambda m: print(m, file=sys.stderr),
                             save=lambda d: write_json(d, target))
     except (LLMError, ValueError) as exc:
         print(f"cannot judge: {exc}", file=sys.stderr)
         return 1
     print(write_json(data, target))
+    counts = judgement_counts(data, report)
+    print(f"verdicts: {json.dumps(counts)}", file=sys.stderr)
+    if counts.get("pending"):
+        print(f"{counts['pending']} not judged (errors); run the same command again to retry them",
+              file=sys.stderr)
     reviewed = source.with_name(source.stem + "_screening_reviewed.json")
     if reviewed.exists():
         agreement = judge_agreement(data, json.loads(reviewed.read_text(encoding="utf-8")))
@@ -355,6 +377,8 @@ def build_parser() -> argparse.ArgumentParser:  # pylint: disable=too-many-state
     judge.add_argument("--base-url", default=None)
     judge.add_argument("--api-key-env", default=None)
     judge.add_argument("--workers", type=int, default=4)
+    judge.add_argument("--pause", type=float, default=0.0,
+                       help="seconds between rounds of --workers prompts (free-tier rate limits)")
     judge.add_argument("--scope", choices=["all", "undecided"], default="all",
                        help="'undecided' = only records the rules sent to manual review")
     judge.add_argument("--one-per-prompt", action="store_true",

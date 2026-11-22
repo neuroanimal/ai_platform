@@ -374,3 +374,34 @@ def test_llm_judge_batched_one_prompt_per_question():
     undecided = select_records(report, screening, {}, "undecided")
     assert all(screening["results"][report["results"].index(r)]["automatic_assessment"]
                ["answer_screening"]["status"] == "manual_review" for r in undecided)
+
+
+def test_llm_judge_stops_when_every_call_fails_and_files_per_judge(tmp_path):
+    from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (  # pylint: disable=import-outside-toplevel
+        judge_report,
+        judgement_counts,
+    )
+    from ai_platform.backend.ui_layer.cli.llm_benchmark_cli import judge_path  # pylint: disable=import-outside-toplevel
+    from ai_platform.common.llm.llm_exception import LLMRequestError  # pylint: disable=import-outside-toplevel
+
+    class QuotaJudge:
+        """Every call fails like an exhausted free-tier quota."""
+        calls = 0
+
+        def chat_completion(self, *_, **__):
+            """Raise HTTP 429."""
+            QuotaJudge.calls += 1
+            raise LLMRequestError("HTTP 429 quota exceeded", 429)
+
+    report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {"17": "391"})).run(
+        get_task_set("bilingual_reasoning@2"), ["a"], languages=["pl", "en"], repeats=1)
+    data = judge_report(report, QuotaJudge(), "fake:j", workers=2)
+    assert QuotaJudge.calls == 2  # first round only, not all 8 prompts
+    assert judgement_counts(data) == {"pending": 2}
+    assert judgement_counts(data, report) == {"pending": 8}
+    source = tmp_path / "r.json"
+    assert judge_path(source, "google:gemini-3.5-flash").name == \
+        "r_judge_google-gemini-3.5-flash.json"
+    assert judge_path(source, "openai-compatible:openai/gpt-oss-120b").name == \
+        "r_judge_openai-compatible-openai-gpt-oss-120b.json"
+    assert judge_path(source).name == "r_judge.json"

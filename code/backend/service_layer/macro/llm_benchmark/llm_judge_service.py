@@ -26,6 +26,7 @@ ground truth: ``judge_agreement`` measures it against the human verdicts.
 
 import json
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
@@ -89,6 +90,9 @@ EXPECTED:
 ANSWERS:
 {answers}
 """
+#: Extra output tokens per batch for "thinking" models (Gemini 3.x, gpt-oss): their
+#: hidden reasoning counts against max_tokens, and a cut reply loses the JSON array.
+THINKING_RESERVE = 4000
 #: Longest answer text sent to the judge (characters); longer ones are cut with a mark.
 MAX_ANSWER_CHARS = 3000
 
@@ -138,8 +142,9 @@ def batch_prompt(records: List[Dict[str, Any]]) -> str:
 def judge_batch(judge, records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Judgements for answers to one question, in the order of ``records``."""
     try:
-        reply = judge.chat_completion([{"role": "user", "content": batch_prompt(records)}],
-                                      temperature=0, max_tokens=80 * len(records) + 100)
+        reply = judge.chat_completion(
+            [{"role": "user", "content": batch_prompt(records)}],
+            temperature=0, max_tokens=120 * len(records) + THINKING_RESERVE)
     except LLMError as exc:
         error = {"verdict": None, "reason": f"judge error: {type(exc).__name__}: {exc}"}
         return [dict(error) for _ in records]
@@ -201,10 +206,15 @@ def estimate(records: List[Dict[str, Any]], batched: bool = True) -> Dict[str, A
 def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: disable=too-many-arguments,too-many-locals
                  existing: Optional[Dict[str, Any]] = None, workers: int = 4,
                  screening: Optional[Dict[str, Any]] = None, scope: str = "all",
-                 batched: bool = True,
+                 batched: bool = True, pause: float = 0.0,
                  progress: Callable[[str], None] = lambda m: None,
                  save: Callable[[Dict[str, Any]], None] = lambda d: None) -> Dict[str, Any]:
-    """Judge the records not yet judged; ``save`` is called after each round."""
+    """Judge the records not yet judged; ``save`` is called after each round.
+
+    ``pause`` seconds are waited between rounds (free tiers limit requests per
+    minute). A round in which every call failed stops the run - typically a
+    quota or key problem, which the remaining prompts would only repeat.
+    """
     data = existing or {"schema": JUDGE_SCHEMA, "judge": judge_name, "judgements": {}}
     if data.get("judge") != judge_name:
         raise ValueError(f"existing judgements are by {data.get('judge')!r}, not {judge_name!r}")
@@ -230,7 +240,28 @@ def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: d
             data["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
             save(data)
             progress(f"  {min(start + len(chunk), len(units))}/{len(units)} prompts")
+            failed = [done[record_key(r)] for unit in chunk for r in unit]
+            if all(str(j.get("reason", "")).startswith("judge error") for j in failed):
+                progress(f"stopped: every call in this round failed - {failed[0]['reason'][:300]}")
+                break
+            if pause and start + len(chunk) < len(units):
+                time.sleep(pause)
     return data
+
+
+def judgement_counts(data: Dict[str, Any],
+                     report: Optional[Dict[str, Any]] = None) -> Dict[str, int]:
+    """Verdict counts; not judged yet (after an error, or never tried) as 'pending'.
+
+    With ``report`` every record of the report is counted, judged or not.
+    """
+    table = data.get("judgements", {})
+    keys = [record_key(r) for r in report.get("results", [])] if report else list(table)
+    counts: Dict[str, int] = {}
+    for key in keys:
+        verdict = (table.get(key) or {}).get("verdict") or "pending"
+        counts[verdict] = counts.get(verdict, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def judge_agreement(judgements: Dict[str, Any], reviewed: Dict[str, Any]) -> Dict[str, Any]:
