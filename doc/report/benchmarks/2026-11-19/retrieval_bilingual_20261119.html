@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Retrieval: bilingual_retrieval@1, embedders compared (Ollama and LocalAI)</title><style>body{font-family:sans-serif;margin:2rem}table{border-collapse:collapse;margin:1.5rem 0}th,td{border:1px solid #999;padding:.3rem .6rem;text-align:left}caption{text-align:left;font-weight:bold}</style></head><body><h1>Retrieval: bilingual_retrieval@1, embedders compared (Ollama and LocalAI)</h1><p>16 queries on 12 documents: a quick, reproducible comparison, not a benchmark of general retrieval quality. Most queries are cross-lingual on purpose.</p><p>Retrieval set bilingual_retrieval@1: 12 documents, 16 queries, top_k 5, run 2026-11-19T10:44:28.230627+00:00</p><table>
+<caption>Embedders</caption>
+<thead><tr><th scope="col">Embedder</th><th scope="col">Status</th><th scope="col">Hit@1</th><th scope="col">Hit@3</th><th scope="col">MRR</th><th scope="col">Recall@5</th><th scope="col">Index s</th><th scope="col">s / query</th><th scope="col">Error</th></tr></thead>
+<tbody>
+<tr><th scope="row">hashing</th><td>PASS</td><td>0.25</td><td>0.438</td><td>0.349</td><td>0.5</td><td>0.002</td><td>0.0015</td><td></td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>PASS</td><td>0.25</td><td>0.438</td><td>0.348</td><td>0.562</td><td>1.012</td><td>0.0438</td><td></td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>PASS</td><td>0.938</td><td>1.0</td><td>0.969</td><td>1.0</td><td>3.572</td><td>0.0913</td><td></td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>PASS</td><td>0.938</td><td>1.0</td><td>0.969</td><td>1.0</td><td>9.16</td><td>1.2237</td><td></td></tr>
+</tbody>
+</table><table>
+<caption>By query direction</caption>
+<thead><tr><th scope="col">Embedder</th><th scope="col">Direction</th><th scope="col">Hit@1</th><th scope="col">Hit@3</th><th scope="col">MRR</th></tr></thead>
+<tbody>
+<tr><th scope="row">hashing</th><td>en-&gt;en</td><td>1.0</td><td>1.0</td><td>1.0</td></tr>
+<tr><th scope="row">hashing</th><td>en-&gt;pl</td><td>0.0</td><td>0.0</td><td>0.042</td></tr>
+<tr><th scope="row">hashing</th><td>pl-&gt;en</td><td>0.167</td><td>0.5</td><td>0.333</td></tr>
+<tr><th scope="row">hashing</th><td>pl-&gt;pl</td><td>0.5</td><td>1.0</td><td>0.667</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>en-&gt;en</td><td>1.0</td><td>1.0</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>en-&gt;pl</td><td>0.167</td><td>0.5</td><td>0.372</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>pl-&gt;en</td><td>0.0</td><td>0.0</td><td>0.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>pl-&gt;pl</td><td>0.5</td><td>1.0</td><td>0.667</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>en-&gt;en</td><td>1.0</td><td>1.0</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>en-&gt;pl</td><td>1.0</td><td>1.0</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>pl-&gt;en</td><td>0.833</td><td>1.0</td><td>0.917</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>pl-&gt;pl</td><td>1.0</td><td>1.0</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>en-&gt;en</td><td>1.0</td><td>1.0</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>en-&gt;pl</td><td>1.0</td><td>1.0</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>pl-&gt;en</td><td>0.833</td><td>1.0</td><td>0.917</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>pl-&gt;pl</td><td>1.0</td><td>1.0</td><td>1.0</td></tr>
+</tbody>
+</table><table>
+<caption>Every query</caption>
+<thead><tr><th scope="col">Embedder</th><th scope="col">Query</th><th scope="col">Direction</th><th scope="col">Text</th><th scope="col">Relevant</th><th scope="col">Retrieved (best first)</th><th scope="col">RR</th></tr></thead>
+<tbody>
+<tr><th scope="row">hashing</th><td>q01</td><td>pl-&gt;pl</td><td>Jak mierzy się wzrost cen w sklepach?</td><td>cpi_pl</td><td>cpi_pl, netconf_en, fx_en, rates_pl, cats_en</td><td>1.0</td></tr>
+<tr><th scope="row">hashing</th><td>q02</td><td>pl-&gt;en</td><td>Ile złotych trzeba zapłacić za dolara?</td><td>fx_en</td><td>cpi_pl, fx_en, rates_pl, cats_en, whales_en</td><td>0.5</td></tr>
+<tr><th scope="row">hashing</th><td>q03</td><td>pl-&gt;pl</td><td>Kto decyduje o wysokości oprocentowania kredytu?</td><td>rates_pl</td><td>cpi_pl, fx_en, rates_pl, cats_en, birds_pl</td><td>0.333</td></tr>
+<tr><th scope="row">hashing</th><td>q04</td><td>pl-&gt;en</td><td>Czy kot domowy jest ssakiem?</td><td>cats_en</td><td>canberra_pl, cpi_pl, fx_en, rates_pl, birds_pl</td><td>0.0</td></tr>
+<tr><th scope="row">hashing</th><td>q05</td><td>pl-&gt;en</td><td>Które zwierzę morskie karmi młode mlekiem?</td><td>whales_en</td><td>krakow_pl, yang_pl, birds_pl, netconf_en, fx_en</td><td>0.0</td></tr>
+<tr><th scope="row">hashing</th><td>q06</td><td>pl-&gt;en</td><td>Jakie miasto jest obecnie stolicą Polski?</td><td>warsaw_en</td><td>canberra_pl, krakow_pl, cats_en, whales_en, cpi_pl</td><td>0.0</td></tr>
+<tr><th scope="row">hashing</th><td>q07</td><td>pl-&gt;en</td><td>Jakim protokołem zmienia się konfigurację routera?</td><td>netconf_en</td><td>cpi_pl, netconf_en, fx_en, rates_pl, cats_en</td><td>0.5</td></tr>
+<tr><th scope="row">hashing</th><td>q08</td><td>pl-&gt;en</td><td>Czym są wykresy Helm w Kubernetesie?</td><td>helm_en</td><td>helm_en, cpi_pl, fx_en, rates_pl, cats_en</td><td>1.0</td></tr>
+<tr><th scope="row">hashing</th><td>q09</td><td>en-&gt;pl</td><td>Which city is the capital of Australia?</td><td>canberra_pl</td><td>warsaw_en, fx_en, netconf_en, yang_pl, helm_en</td><td>0.0</td></tr>
+<tr><th scope="row">hashing</th><td>q10</td><td>en-&gt;pl</td><td>Who sets the reference interest rate in Poland?</td><td>rates_pl</td><td>warsaw_en, fx_en, whales_en, netconf_en, helm_en</td><td>0.0</td></tr>
+<tr><th scope="row">hashing</th><td>q11</td><td>en-&gt;pl</td><td>Is a sparrow a bird?</td><td>birds_pl</td><td>netconf_en, canberra_pl, yang_pl, birds_pl, cpi_pl</td><td>0.25</td></tr>
+<tr><th scope="row">hashing</th><td>q12</td><td>en-&gt;pl</td><td>Where were Polish kings crowned?</td><td>krakow_pl</td><td>whales_en, fx_en, cpi_pl, rates_pl, cats_en</td><td>0.0</td></tr>
+<tr><th scope="row">hashing</th><td>q13</td><td>en-&gt;pl</td><td>What language describes configuration data models?</td><td>yang_pl</td><td>netconf_en, cpi_pl, fx_en, rates_pl, cats_en</td><td>0.0</td></tr>
+<tr><th scope="row">hashing</th><td>q14</td><td>en-&gt;pl</td><td>How is the change of consumer prices measured?</td><td>cpi_pl</td><td>fx_en, warsaw_en, netconf_en, yang_pl, helm_en</td><td>0.0</td></tr>
+<tr><th scope="row">hashing</th><td>q15</td><td>en-&gt;en</td><td>Do whales breathe air?</td><td>whales_en</td><td>whales_en, birds_pl, cpi_pl, fx_en, rates_pl</td><td>1.0</td></tr>
+<tr><th scope="row">hashing</th><td>q16</td><td>en-&gt;en</td><td>What tool packages applications for Kubernetes?</td><td>helm_en</td><td>helm_en, cats_en, netconf_en, cpi_pl, fx_en</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q01</td><td>pl-&gt;pl</td><td>Jak mierzy się wzrost cen w sklepach?</td><td>cpi_pl</td><td>birds_pl, krakow_pl, cpi_pl, canberra_pl, rates_pl</td><td>0.333</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q02</td><td>pl-&gt;en</td><td>Ile złotych trzeba zapłacić za dolara?</td><td>fx_en</td><td>birds_pl, krakow_pl, cpi_pl, yang_pl, rates_pl</td><td>0.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q03</td><td>pl-&gt;pl</td><td>Kto decyduje o wysokości oprocentowania kredytu?</td><td>rates_pl</td><td>rates_pl, yang_pl, birds_pl, cpi_pl, krakow_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q04</td><td>pl-&gt;en</td><td>Czy kot domowy jest ssakiem?</td><td>cats_en</td><td>yang_pl, cpi_pl, birds_pl, krakow_pl, rates_pl</td><td>0.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q05</td><td>pl-&gt;en</td><td>Które zwierzę morskie karmi młode mlekiem?</td><td>whales_en</td><td>birds_pl, yang_pl, krakow_pl, cpi_pl, rates_pl</td><td>0.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q06</td><td>pl-&gt;en</td><td>Jakie miasto jest obecnie stolicą Polski?</td><td>warsaw_en</td><td>krakow_pl, rates_pl, birds_pl, canberra_pl, yang_pl</td><td>0.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q07</td><td>pl-&gt;en</td><td>Jakim protokołem zmienia się konfigurację routera?</td><td>netconf_en</td><td>yang_pl, birds_pl, rates_pl, krakow_pl, cpi_pl</td><td>0.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q08</td><td>pl-&gt;en</td><td>Czym są wykresy Helm w Kubernetesie?</td><td>helm_en</td><td>yang_pl, cpi_pl, krakow_pl, birds_pl, rates_pl</td><td>0.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q09</td><td>en-&gt;pl</td><td>Which city is the capital of Australia?</td><td>canberra_pl</td><td>canberra_pl, warsaw_en, cats_en, fx_en, krakow_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q10</td><td>en-&gt;pl</td><td>Who sets the reference interest rate in Poland?</td><td>rates_pl</td><td>fx_en, warsaw_en, cpi_pl, yang_pl, rates_pl</td><td>0.2</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q11</td><td>en-&gt;pl</td><td>Is a sparrow a bird?</td><td>birds_pl</td><td>cats_en, fx_en, whales_en, canberra_pl, krakow_pl</td><td>0.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q12</td><td>en-&gt;pl</td><td>Where were Polish kings crowned?</td><td>krakow_pl</td><td>warsaw_en, krakow_pl, yang_pl, canberra_pl, cpi_pl</td><td>0.5</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q13</td><td>en-&gt;pl</td><td>What language describes configuration data models?</td><td>yang_pl</td><td>netconf_en, helm_en, yang_pl, canberra_pl, fx_en</td><td>0.333</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q14</td><td>en-&gt;pl</td><td>How is the change of consumer prices measured?</td><td>cpi_pl</td><td>fx_en, cats_en, netconf_en, helm_en, cpi_pl</td><td>0.2</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q15</td><td>en-&gt;en</td><td>Do whales breathe air?</td><td>whales_en</td><td>whales_en, cats_en, canberra_pl, birds_pl, cpi_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:nomic-embed-text</th><td>q16</td><td>en-&gt;en</td><td>What tool packages applications for Kubernetes?</td><td>helm_en</td><td>helm_en, netconf_en, yang_pl, birds_pl, canberra_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q01</td><td>pl-&gt;pl</td><td>Jak mierzy się wzrost cen w sklepach?</td><td>cpi_pl</td><td>cpi_pl, rates_pl, fx_en, yang_pl, netconf_en</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q02</td><td>pl-&gt;en</td><td>Ile złotych trzeba zapłacić za dolara?</td><td>fx_en</td><td>fx_en, rates_pl, cpi_pl, krakow_pl, canberra_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q03</td><td>pl-&gt;pl</td><td>Kto decyduje o wysokości oprocentowania kredytu?</td><td>rates_pl</td><td>rates_pl, fx_en, cpi_pl, netconf_en, helm_en</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q04</td><td>pl-&gt;en</td><td>Czy kot domowy jest ssakiem?</td><td>cats_en</td><td>cats_en, birds_pl, whales_en, canberra_pl, krakow_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q05</td><td>pl-&gt;en</td><td>Które zwierzę morskie karmi młode mlekiem?</td><td>whales_en</td><td>whales_en, birds_pl, cats_en, canberra_pl, yang_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q06</td><td>pl-&gt;en</td><td>Jakie miasto jest obecnie stolicą Polski?</td><td>warsaw_en</td><td>krakow_pl, warsaw_en, canberra_pl, cats_en, fx_en</td><td>0.5</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q07</td><td>pl-&gt;en</td><td>Jakim protokołem zmienia się konfigurację routera?</td><td>netconf_en</td><td>netconf_en, helm_en, yang_pl, rates_pl, fx_en</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q08</td><td>pl-&gt;en</td><td>Czym są wykresy Helm w Kubernetesie?</td><td>helm_en</td><td>helm_en, yang_pl, netconf_en, cpi_pl, rates_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q09</td><td>en-&gt;pl</td><td>Which city is the capital of Australia?</td><td>canberra_pl</td><td>canberra_pl, warsaw_en, krakow_pl, whales_en, cats_en</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q10</td><td>en-&gt;pl</td><td>Who sets the reference interest rate in Poland?</td><td>rates_pl</td><td>rates_pl, fx_en, warsaw_en, cpi_pl, netconf_en</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q11</td><td>en-&gt;pl</td><td>Is a sparrow a bird?</td><td>birds_pl</td><td>birds_pl, whales_en, cats_en, canberra_pl, warsaw_en</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q12</td><td>en-&gt;pl</td><td>Where were Polish kings crowned?</td><td>krakow_pl</td><td>krakow_pl, warsaw_en, fx_en, canberra_pl, birds_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q13</td><td>en-&gt;pl</td><td>What language describes configuration data models?</td><td>yang_pl</td><td>yang_pl, netconf_en, helm_en, cpi_pl, rates_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q14</td><td>en-&gt;pl</td><td>How is the change of consumer prices measured?</td><td>cpi_pl</td><td>cpi_pl, fx_en, rates_pl, netconf_en, yang_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q15</td><td>en-&gt;en</td><td>Do whales breathe air?</td><td>whales_en</td><td>whales_en, birds_pl, cats_en, warsaw_en, canberra_pl</td><td>1.0</td></tr>
+<tr><th scope="row">ollama:bge-m3</th><td>q16</td><td>en-&gt;en</td><td>What tool packages applications for Kubernetes?</td><td>helm_en</td><td>helm_en, yang_pl, netconf_en, birds_pl, cpi_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q01</td><td>pl-&gt;pl</td><td>Jak mierzy się wzrost cen w sklepach?</td><td>cpi_pl</td><td>cpi_pl, rates_pl, fx_en, yang_pl, netconf_en</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q02</td><td>pl-&gt;en</td><td>Ile złotych trzeba zapłacić za dolara?</td><td>fx_en</td><td>fx_en, rates_pl, cpi_pl, krakow_pl, canberra_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q03</td><td>pl-&gt;pl</td><td>Kto decyduje o wysokości oprocentowania kredytu?</td><td>rates_pl</td><td>rates_pl, fx_en, cpi_pl, netconf_en, helm_en</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q04</td><td>pl-&gt;en</td><td>Czy kot domowy jest ssakiem?</td><td>cats_en</td><td>cats_en, birds_pl, whales_en, canberra_pl, krakow_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q05</td><td>pl-&gt;en</td><td>Które zwierzę morskie karmi młode mlekiem?</td><td>whales_en</td><td>whales_en, birds_pl, cats_en, canberra_pl, yang_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q06</td><td>pl-&gt;en</td><td>Jakie miasto jest obecnie stolicą Polski?</td><td>warsaw_en</td><td>krakow_pl, warsaw_en, canberra_pl, cats_en, fx_en</td><td>0.5</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q07</td><td>pl-&gt;en</td><td>Jakim protokołem zmienia się konfigurację routera?</td><td>netconf_en</td><td>netconf_en, helm_en, yang_pl, rates_pl, fx_en</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q08</td><td>pl-&gt;en</td><td>Czym są wykresy Helm w Kubernetesie?</td><td>helm_en</td><td>helm_en, yang_pl, netconf_en, cpi_pl, rates_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q09</td><td>en-&gt;pl</td><td>Which city is the capital of Australia?</td><td>canberra_pl</td><td>canberra_pl, warsaw_en, krakow_pl, whales_en, cats_en</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q10</td><td>en-&gt;pl</td><td>Who sets the reference interest rate in Poland?</td><td>rates_pl</td><td>rates_pl, fx_en, warsaw_en, cpi_pl, netconf_en</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q11</td><td>en-&gt;pl</td><td>Is a sparrow a bird?</td><td>birds_pl</td><td>birds_pl, whales_en, cats_en, canberra_pl, warsaw_en</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q12</td><td>en-&gt;pl</td><td>Where were Polish kings crowned?</td><td>krakow_pl</td><td>krakow_pl, warsaw_en, fx_en, canberra_pl, birds_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q13</td><td>en-&gt;pl</td><td>What language describes configuration data models?</td><td>yang_pl</td><td>yang_pl, netconf_en, helm_en, cpi_pl, rates_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q14</td><td>en-&gt;pl</td><td>How is the change of consumer prices measured?</td><td>cpi_pl</td><td>cpi_pl, fx_en, rates_pl, netconf_en, yang_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q15</td><td>en-&gt;en</td><td>Do whales breathe air?</td><td>whales_en</td><td>whales_en, birds_pl, cats_en, warsaw_en, canberra_pl</td><td>1.0</td></tr>
+<tr><th scope="row">localai:bge-m3-localai</th><td>q16</td><td>en-&gt;en</td><td>What tool packages applications for Kubernetes?</td><td>helm_en</td><td>helm_en, yang_pl, netconf_en, birds_pl, cpi_pl</td><td>1.0</td></tr>
+</tbody>
+</table></body></html>

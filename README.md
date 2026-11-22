@@ -306,6 +306,13 @@ result = engine.process_schema("schema.json", "output.json")
 
 **Supported:** Inkscape, SVG.js, Snap.svg, Raphaël, svgwrite
 
+## Format processing tools
+
+YAML template uncommenting, JSON Schema reordering and validation, YANG
+conversion, Excel extraction and JSON/YAML conversion, with their CLIs and
+orchestrators: see [doc/FORMAT_PROCESSING.md](doc/FORMAT_PROCESSING.md)
+(merged from the former `README_*integration*.md` files).
+
 ## Architecture
 
 ```text

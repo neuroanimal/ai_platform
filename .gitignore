@@ -215,3 +215,6 @@ yarn.lock
 # ./configuration). configuration/ may hold api_keys.json - never commit it.
 config/test_env/data/
 config/test_env/configuration/
+
+# Benchmark working directory; curated results are copied to doc/report/benchmarks/.
+config/test_env/results/

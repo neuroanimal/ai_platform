@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Bielik 11B v2.6, Polish, max_tokens 1024 (supplement)</title>
+<style>
+body { font-family: sans-serif; margin: 2rem; color: #111; }
+table { border-collapse: collapse; margin: 1.5rem 0; }
+caption { text-align: left; font-weight: bold; padding: .4rem 0; }
+th, td { border: 1px solid #999; padding: .3rem .6rem; text-align: left; }
+thead th { background: #e8e8e8; }
+.caveat { border-left: 4px solid #b36b00; padding: .5rem 1rem; background: #fff6e5; }
+</style></head>
+<body>
+<h1>Bielik 11B v2.6, Polish, max_tokens 1024 (supplement)</h1>
+<p class="caveat">Screening is a rule-based pre-assessment, not a verdict: &#x27;correct&#x27; and &#x27;incorrect&#x27; are candidates, &#x27;manual review&#x27; needs a human. Latency is wall-clock time per request after a warm-up, on this machine.</p>
+<ul><li>Task set: bilingual_reasoning@2</li><li>Provider: ollama (http://127.0.0.1:11434)</li><li>Repeats: 3, temperature 0.0, max_tokens 1024</li><li>Run started (UTC): 2026-11-19T03:44:21.590354+00:00</li><li>Screening version: 4.6</li><li>Task/model cells whose runs disagree: 0</li></ul>
+<table>
+<caption>Models by screening outcome</caption>
+<thead><tr><th scope="col">Model</th><th scope="col">Lang</th><th scope="col">Answered</th><th scope="col">Requests</th><th scope="col">Median s</th><th scope="col">p90 s</th><th scope="col">Truncated</th><th scope="col">Correct</th><th scope="col">Incorrect</th><th scope="col">Partial</th><th scope="col">Manual review</th></tr></thead>
+<tbody>
+<tr><th scope="row">bielik-11b-v2.6:q4_k_m</th><td>pl</td><td>12</td><td>12</td><td>75.32</td><td>118.25</td><td>0</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+</tbody>
+</table>
+<table>
+<caption>Warm-up (model load + first answer)</caption>
+<thead><tr><th scope="col">Model</th><th scope="col">Status</th><th scope="col">Load + first answer s</th><th scope="col">Error</th></tr></thead>
+<tbody>
+<tr><th scope="row">bielik-11b-v2.6:q4_k_m</th><td>PASS</td><td>28.294</td><td></td></tr>
+</tbody>
+</table>
+<table>
+<caption>Outcome per task, language and model</caption>
+<thead><tr><th scope="col">Task</th><th scope="col">Lang</th><th scope="col">Model</th><th scope="col">Majority outcome</th><th scope="col">Runs agree</th><th scope="col">All runs</th></tr></thead>
+<tbody>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+</tbody>
+</table>
+</body></html>

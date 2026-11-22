@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Tool use: which local models can drive tools</title><style>body{font-family:sans-serif;margin:2rem}table{border-collapse:collapse;margin:1.5rem 0}th,td{border:1px solid #999;padding:.3rem .6rem;text-align:left;vertical-align:top}caption{text-align:left;font-weight:bold}</style></head><body><h1>Tool use: which local models can drive tools</h1><p>9 tasks per model and mode: a quick check of whether a model can drive tools, not a general agent benchmark. 'Right answer' is the rule-based screening.</p><table>
+<caption>Summary</caption>
+<thead><tr><th scope="col">Model</th><th scope="col">Mode</th><th scope="col">Tasks</th><th scope="col">Right tools</th><th scope="col">Right answer</th><th scope="col">Both</th><th scope="col">Valid calls</th><th scope="col">Mean steps</th><th scope="col">Not answered</th></tr></thead>
+<tbody>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>9</td><td>5</td><td>5</td><td>4</td><td>1.0</td><td>1.67</td><td>0</td></tr>
+</tbody>
+</table><table>
+<caption>Every run</caption>
+<thead><tr><th scope="col">Model</th><th scope="col">Mode</th><th scope="col">Task</th><th scope="col">Question</th><th scope="col">Expected tools</th><th scope="col">Tools used</th><th scope="col">Expected</th><th scope="col">Answer</th><th scope="col">Screening</th><th scope="col">Stop</th></tr></thead>
+<tbody>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>calc_pl</td><td>Ile wynosi 17 razy 23 razy 19?</td><td>calculator</td><td>calculator</td><td>7429</td><td>17 razy 23 razy 19 wynosi 7429.</td><td>candidate_correct_result_only</td><td>answered</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>calc_big_en</td><td>What is 123456 multiplied by 789?</td><td>calculator</td><td>calculator</td><td>97406784</td><td>The result of 123456 multiplied by 789 is 9,740,6784.</td><td>candidate_incorrect</td><td>answered</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>calc_expr_en</td><td>Compute (48.5 - 12.25) / 0.25.</td><td>calculator</td><td></td><td>145</td><td>154.5</td><td>manual_review</td><td>answered</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>convert_pl</td><td>Ile minut ma 2,5 dnia?</td><td>convert_units|calculator</td><td>calculator</td><td>3600</td><td>2,5 dnia to 3600 minut.</td><td>candidate_correct_result_only</td><td>answered</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>convert_en</td><td>Convert 77 degrees Fahrenheit to Celsius.</td><td>convert_units|calculator</td><td>convert_units</td><td>25</td><td>77 degrees Fahrenheit is equal to 25 degrees Celsius.</td><td>candidate_correct_result_only</td><td>answered</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>search_pl</td><td>Ile ciężarówek elektrycznych ma firma Nordwind?</td><td>search_documents</td><td>search_documents</td><td>19</td><td>Firma Nordwind ma 19 ciężarówek elektrycznych.</td><td>candidate_correct_result_only</td><td>answered</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>search_en</td><td>What is the access code of Nordwind warehouse number 7?</td><td>search_documents</td><td></td><td>4512</td><td>I&#x27;m sorry, but I don&#x27;t have access to specific information about Nordwind warehouse number 7, such as its access code. You may need to contact Nordwind or check their security system for this informat</td><td>manual_review</td><td>answered</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>search_calc_en</td><td>How much does one year of the Nordwind Express subscription cost in total?</td><td>search_documents, calculator</td><td></td><td>588</td><td>I&#x27;m unable to directly access pricing information or current data. However, I can help you calculate if you provide the monthly cost. **Question:** How much does one month of the Nordwind Express subs</td><td>manual_review</td><td>answered</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:fp16</th><td>json</td><td>no_tool_pl</td><td>Jakie miasto jest stolicą Polski?</td><td></td><td>search_documents</td><td>Warszawa|Warszawie|Warsaw</td><td>Warszawa</td><td>candidate_correct</td><td>answered</td></tr>
+</tbody>
+</table></body></html>

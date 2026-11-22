@@ -1,0 +1,299 @@
+{
+  "schema": "ai_platform.llm_benchmark.report/1",
+  "task_set": "bilingual_reasoning",
+  "task_set_version": "2",
+  "created_at_utc": "2026-11-19T03:44:21.590354+00:00",
+  "models": [
+    "bielik-11b-v2.6:q4_k_m"
+  ],
+  "languages": [
+    "pl"
+  ],
+  "repeats": 3,
+  "warmup": {
+    "bielik-11b-v2.6:q4_k_m": {
+      "status": "PASS",
+      "load_and_warmup_seconds": 28.294
+    }
+  },
+  "status_semantics": "PASS = an answer came back; correctness is screened separately",
+  "provider": "ollama",
+  "endpoint": "http://127.0.0.1:11434",
+  "temperature": 0.0,
+  "max_tokens": 1024,
+  "summary": {
+    "bielik-11b-v2.6:q4_k_m [PL]": {
+      "technical_pass": 12,
+      "expected_executions": 12,
+      "median_seconds": 75.32,
+      "max_seconds": 137.044,
+      "truncated": 0
+    }
+  },
+  "results": [
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "arithmetic_multiplication",
+      "checker": "multiplication",
+      "category": "mathematics",
+      "language": "pl",
+      "run_index": 0,
+      "prompt": "Ile wynosi 17 razy 23? Podaj wynik i obliczenie.",
+      "expected": "391",
+      "status": "PASS",
+      "answer": "Aby obliczyć, ile wynosi 17 razy 23, wykonujemy mnożenie:\n\n\\[ 17 \\times 23 \\]\n\nMożna to zrobić na kilka sposobów, ale jednym z prostszych jest rozłożenie 23 na 20 + 3:\n\n\\[ 17 \\times 23 = 17 \\times (20 + 3) \\]\n\n\\[ = (17 \\times 20) + (17 \\times 3) \\]\n\n\\[ = 340 + 51 \\]\n\n\\[ = 391 \\]\n\nAlternatywnie, można to obliczyć bezpośrednio:\n\n\\[ 17 \\times 20 = 340 \\]\n\n\\[ 17 \\times 3 = 51 \\]\n\n\\[ 340 + 51 = 391 \\]\n\nWynik to:\n\n\\[ 17 \\times 23 = 391 \\]\n\n**Ostateczna odpowiedź:**\n\n\\[ \\boxed{391} \\]",
+      "elapsed_seconds": 37.773,
+      "usage": {
+        "prompt_tokens": 31,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 275,
+        "total_tokens": 306
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "percentage_change",
+      "checker": "percentage",
+      "category": "mathematics",
+      "language": "pl",
+      "run_index": 0,
+      "prompt": "Cena produktu wzrosła ze 100 zł do 112 zł. O ile procent wzrosła?",
+      "expected": "12%",
+      "status": "PASS",
+      "answer": "Aby obliczyć procentowy wzrost ceny produktu, należy wykonać następujące kroki:\n\n1. **Obliczyć różnicę w cenie:**\n   Cena początkowa = 100 zł\n   Cena końcowa = 112 zł\n   Różnica = Cena końcowa - Cena początkowa = 112 zł - 100 zł = 12 zł\n\n2. **Obliczyć procentowy wzrost:**\n   Procentowy wzrost = (Różnica / Cena początkowa) * 100%\n   Procentowy wzrost = (12 zł / 100 zł) * 100% = 0,12 * 100% = 12%\n\n**Odpowiedź:**\nCena produktu wzrosła o **12%**.\n\nJeśli chcesz sprawdzić, czy obliczenia są poprawne, możesz to zrobić w następujący sposób:\n\n- 100 zł zwiększone o 12% to:\n  \\( 100 \\, \\text{zł} \\times (1 + 0,12) = 100 \\, \\text{zł} \\times 1,12 = 112 \\, \\text{zł} \\)\n\nTo potwierdza, że obliczenia są poprawne. \n\n**Ostateczna odpowiedź:**\nCena wzrosła o \\(\\boxed{12\\%}\\).",
+      "elapsed_seconds": 55.894,
+      "usage": {
+        "prompt_tokens": 43,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 406,
+        "total_tokens": 449
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "logical_syllogism",
+      "checker": "syllogism",
+      "category": "logic",
+      "language": "pl",
+      "run_index": 0,
+      "prompt": "Wszystkie koty są ssakami. Mruczek jest kotem. Czy Mruczek jest ssakiem? Uzasadnij.",
+      "expected": "Tak, Mruczek jest ssakiem.",
+      "status": "PASS",
+      "answer": "Aby rozwiązać to zadanie, musimy przeanalizować podane informacje i zastosować zasady logiki.\n\n1. **Premisa 1:** \"Wszystkie koty są ssakami.\"\n   - Oznacza to, że jeśli jakiś obiekt jest kotem, to musi być ssakiem.\n\n2. **Premisa 2:** \"Mruczek jest kotem.\"\n   - To stwierdzenie mówi nam, że Mruczek należy do kategorii kotów.\n\n3. **Wniosek:** \"Czy Mruczek jest ssakiem?\"\n\n### Analiza\n\nAby sprawdzić, czy Mruczek jest ssakiem, musimy zobaczyć, czy spełnia warunki bycia ssakiem. Z premisy 1 wiemy, że wszystkie koty są ssakami. Jeśli Mruczek jest kotem (premisa 2), to zgodnie z premisą 1, Mruczek musi być ssakiem.\n\n### Krok po kroku\n\n1. **Premisa 1:** Jeśli coś jest kotem, to jest ssakiem.\n   - Formalnie: Jeśli \\( x \\) jest kotem, to \\( x \\) jest ssakiem.\n\n2. **Premisa 2:** Mruczek jest kotem.\n   - Formalnie: \\( Mruczek \\) jest kotem.\n\n3. **Wniosek:** Z premisy 2 i premisy 1 wynika, że Mruczek jest ssakiem.\n   - Formalnie: Jeśli \\( Mruczek \\) jest kotem, a wszystkie koty są ssakami, to \\( Mruczek \\) jest ssakiem.\n\n### Sprawdzenie\n\nCzy istnieje jakikolwiek wyjątek od reguły, że wszystkie koty są ssakami? W kontekście biologicznym, koty (Felis catus) są rzeczywiście ssakami, należącymi do rodziny kotowatych (Felidae) i rzędu drapieżnych (Carnivora). Nie ma biologicznych podstaw, aby zakwestionować tę klasyfikację.\n\n### Podsumowanie\n\nNa podstawie podanych informacji i zasad logiki, możemy stwierdzić, że Mruczek, będąc kotem, jest ssakiem.\n\n**Odpowiedź:**\nTak, Mruczek jest ssakiem.\n\n**Uzasadnienie:**\nPonieważ wszystkie koty są ssakami, a Mruczek jest kotem, to Mruczek musi być ssakiem. \n\n\\(\\boxed{Yes}\\)",
+      "elapsed_seconds": 103.017,
+      "usage": {
+        "prompt_tokens": 47,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 734,
+        "total_tokens": 781
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "currency_vs_inflation",
+      "checker": "currency_vs_cpi",
+      "category": "economics",
+      "language": "pl",
+      "run_index": 0,
+      "prompt": "Czy wzrost kursu USD/PLN oznacza automatycznie wzrost inflacji CPI w Polsce? Wyjaśnij krótko.",
+      "expected": "Nie. Kurs walutowy może wpływać na ceny importu i CPI, ale wzrost kursu nie oznacza automatycznie wzrostu CPI.",
+      "status": "PASS",
+      "answer": "Nie, wzrost kursu USD/PLN nie oznacza automatycznie wzrostu inflacji CPI (Consumer Price Index) w Polsce. Oto krótkie wyjaśnienie:\n\n1. **Wpływ na import**: Silniejszy złoty (czyli niższy kurs USD/PLN) sprawia, że import staje się tańszy, co może obniżyć inflację. Natomiast słabszy złoty (wyższy kurs USD/PLN) podnosi koszty importu, co może zwiększyć inflację.\n\n2. **Inne czynniki inflacyjne**: Inflacja CPI zależy od wielu czynników, takich jak koszty produkcji, płace, podaż pieniądza, polityka monetarna, a także globalne ceny surowców. Kurs walutowy to tylko jeden z wielu elementów.\n\n3. **Efekty drugiej rundy**: Wzrost kosztów importu może prowadzić do wzrostu cen krajowych (efekt drugiej rundy), ale nie zawsze się to dzieje natychmiast. Firmy mogą absorbować część kosztów lub przenosić je na konsumentów stopniowo.\n\n4. **Polityka monetarna**: Narodowy Bank Polski (NBP) może interweniować na rynku walutowym lub zmieniać stopy procentowe, aby stabilizować kurs złotego i kontrolować inflację.\n\nPodsumowując, choć wzrost kursu USD/PLN (osłabienie złotego) może przyczynić się do wzrostu inflacji poprzez droższy import, nie jest to jedyny ani automatyczny czynnik. Inflacja CPI jest wynikiem złożonej interakcji wielu zmiennych ekonomicznych.",
+      "elapsed_seconds": 75.559,
+      "usage": {
+        "prompt_tokens": 50,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 504,
+        "total_tokens": 554
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "arithmetic_multiplication",
+      "checker": "multiplication",
+      "category": "mathematics",
+      "language": "pl",
+      "run_index": 1,
+      "prompt": "Ile wynosi 17 razy 23? Podaj wynik i obliczenie.",
+      "expected": "391",
+      "status": "PASS",
+      "answer": "Aby obliczyć, ile wynosi 17 razy 23, wykonujemy mnożenie:\n\n\\[ 17 \\times 23 \\]\n\nMożna to zrobić na kilka sposobów, ale jednym z prostszych jest rozłożenie 23 na 20 + 3:\n\n\\[ 17 \\times 23 = 17 \\times (20 + 3) \\]\n\n\\[ = (17 \\times 20) + (17 \\times 3) \\]\n\n\\[ = 340 + 51 \\]\n\n\\[ = 391 \\]\n\nAlternatywnie, można to obliczyć bezpośrednio:\n\n\\[ 17 \\times 20 = 340 \\]\n\n\\[ 17 \\times 3 = 51 \\]\n\n\\[ 340 + 51 = 391 \\]\n\nWynik to:\n\n\\[ 17 \\times 23 = 391 \\]\n\n**Ostateczna odpowiedź:**\n\n\\[ \\boxed{391} \\]",
+      "elapsed_seconds": 37.695,
+      "usage": {
+        "prompt_tokens": 31,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 275,
+        "total_tokens": 306
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "percentage_change",
+      "checker": "percentage",
+      "category": "mathematics",
+      "language": "pl",
+      "run_index": 1,
+      "prompt": "Cena produktu wzrosła ze 100 zł do 112 zł. O ile procent wzrosła?",
+      "expected": "12%",
+      "status": "PASS",
+      "answer": "Aby obliczyć procentowy wzrost ceny produktu, należy wykonać następujące kroki:\n\n1. **Obliczyć różnicę w cenie:**\n   Cena początkowa = 100 zł\n   Cena końcowa = 112 zł\n   Różnica = Cena końcowa - Cena początkowa = 112 zł - 100 zł = 12 zł\n\n2. **Obliczyć procentowy wzrost:**\n   Procentowy wzrost = (Różnica / Cena początkowa) * 100%\n   Procentowy wzrost = (12 zł / 100 zł) * 100% = 0,12 * 100% = 12%\n\n**Odpowiedź:**\nCena produktu wzrosła o **12%**.\n\nJeśli chcesz sprawdzić, czy obliczenia są poprawne, możesz to zrobić w następujący sposób:\n\n- 100 zł zwiększone o 12% to:\n  \\( 100 \\, \\text{zł} \\times (1 + 0,12) = 100 \\, \\text{zł} \\times 1,12 = 112 \\, \\text{zł} \\)\n\nTo potwierdza, że obliczenia są poprawne. \n\n**Ostateczna odpowiedź:**\nCena wzrosła o \\(\\boxed{12\\%}\\).",
+      "elapsed_seconds": 56.446,
+      "usage": {
+        "prompt_tokens": 43,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 406,
+        "total_tokens": 449
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "logical_syllogism",
+      "checker": "syllogism",
+      "category": "logic",
+      "language": "pl",
+      "run_index": 1,
+      "prompt": "Wszystkie koty są ssakami. Mruczek jest kotem. Czy Mruczek jest ssakiem? Uzasadnij.",
+      "expected": "Tak, Mruczek jest ssakiem.",
+      "status": "PASS",
+      "answer": "Aby rozwiązać to zadanie, musimy przeanalizować podane informacje i zastosować zasady logiki.\n\n1. **Premisa 1:** \"Wszystkie koty są ssakami.\"\n   - Oznacza to, że jeśli jakiś obiekt jest kotem, to musi być ssakiem.\n\n2. **Premisa 2:** \"Mruczek jest kotem.\"\n   - To stwierdzenie mówi nam, że Mruczek należy do kategorii kotów.\n\n3. **Wniosek:** \"Czy Mruczek jest ssakiem?\"\n\n### Analiza\n\nAby sprawdzić, czy Mruczek jest ssakiem, musimy zobaczyć, czy spełnia warunki bycia ssakiem. Z premisy 1 wiemy, że wszystkie koty są ssakami. Jeśli Mruczek jest kotem (premisa 2), to zgodnie z premisą 1, Mruczek musi być ssakiem.\n\n### Krok po kroku\n\n1. **Premisa 1:** Jeśli coś jest kotem, to jest ssakiem.\n   - Formalnie: Jeśli \\( x \\) jest kotem, to \\( x \\) jest ssakiem.\n\n2. **Premisa 2:** Mruczek jest kotem.\n   - Formalnie: \\( Mruczek \\) jest kotem.\n\n3. **Wniosek:** Z premisy 2 i premisy 1 wynika, że Mruczek jest ssakiem.\n   - Formalnie: Jeśli \\( Mruczek \\) jest kotem, a wszystkie koty są ssakami, to \\( Mruczek \\) jest ssakiem.\n\n### Sprawdzenie\n\nCzy istnieje jakikolwiek wyjątek od reguły, że wszystkie koty są ssakami? W kontekście biologicznym, koty (Felis catus) są rzeczywiście ssakami, należącymi do rodziny kotowatych (Felidae) i rzędu drapieżnych (Carnivora). Nie ma biologicznych podstaw, aby zakwestionować tę klasyfikację.\n\n### Podsumowanie\n\nNa podstawie podanych informacji i zasad logiki, możemy stwierdzić, że Mruczek, będąc kotem, jest ssakiem.\n\n**Odpowiedź:**\nTak, Mruczek jest ssakiem.\n\n**Uzasadnienie:**\nPonieważ wszystkie koty są ssakami, a Mruczek jest kotem, to Mruczek musi być ssakiem. \n\n\\(\\boxed{Yes}\\)",
+      "elapsed_seconds": 118.255,
+      "usage": {
+        "prompt_tokens": 47,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 734,
+        "total_tokens": 781
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "currency_vs_inflation",
+      "checker": "currency_vs_cpi",
+      "category": "economics",
+      "language": "pl",
+      "run_index": 1,
+      "prompt": "Czy wzrost kursu USD/PLN oznacza automatycznie wzrost inflacji CPI w Polsce? Wyjaśnij krótko.",
+      "expected": "Nie. Kurs walutowy może wpływać na ceny importu i CPI, ale wzrost kursu nie oznacza automatycznie wzrostu CPI.",
+      "status": "PASS",
+      "answer": "Nie, wzrost kursu USD/PLN nie oznacza automatycznie wzrostu inflacji CPI (Consumer Price Index) w Polsce. Oto krótkie wyjaśnienie:\n\n1. **Wpływ na import**: Silniejszy złoty (czyli niższy kurs USD/PLN) sprawia, że import staje się tańszy, co może obniżyć inflację. Natomiast słabszy złoty (wyższy kurs USD/PLN) podnosi koszty importu, co może zwiększyć inflację.\n\n2. **Inne czynniki inflacyjne**: Inflacja CPI zależy od wielu czynników, takich jak koszty produkcji, płace, podaż pieniądza, polityka monetarna, a także globalne ceny surowców. Kurs walutowy to tylko jeden z wielu elementów.\n\n3. **Efekty drugiej rundy**: Wzrost kosztów importu może prowadzić do wzrostu cen krajowych (efekt drugiej rundy), ale nie zawsze się to dzieje natychmiast. Firmy mogą absorbować część kosztów lub przenosić je na konsumentów stopniowo.\n\n4. **Polityka monetarna**: Narodowy Bank Polski (NBP) może interweniować na rynku walutowym lub zmieniać stopy procentowe, aby stabilizować kurs złotego i kontrolować inflację.\n\nPodsumowując, choć wzrost kursu USD/PLN (osłabienie złotego) może przyczynić się do wzrostu inflacji poprzez droższy import, nie jest to jedyny ani automatyczny czynnik. Inflacja CPI jest wynikiem złożonej interakcji wielu zmiennych ekonomicznych.",
+      "elapsed_seconds": 92.389,
+      "usage": {
+        "prompt_tokens": 50,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 504,
+        "total_tokens": 554
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "arithmetic_multiplication",
+      "checker": "multiplication",
+      "category": "mathematics",
+      "language": "pl",
+      "run_index": 2,
+      "prompt": "Ile wynosi 17 razy 23? Podaj wynik i obliczenie.",
+      "expected": "391",
+      "status": "PASS",
+      "answer": "Aby obliczyć, ile wynosi 17 razy 23, wykonujemy mnożenie:\n\n\\[ 17 \\times 23 \\]\n\nMożna to zrobić na kilka sposobów, ale jednym z prostszych jest rozłożenie 23 na 20 + 3:\n\n\\[ 17 \\times 23 = 17 \\times (20 + 3) \\]\n\n\\[ = (17 \\times 20) + (17 \\times 3) \\]\n\n\\[ = 340 + 51 \\]\n\n\\[ = 391 \\]\n\nAlternatywnie, można to obliczyć bezpośrednio:\n\n\\[ 17 \\times 20 = 340 \\]\n\n\\[ 17 \\times 3 = 51 \\]\n\n\\[ 340 + 51 = 391 \\]\n\nWynik to:\n\n\\[ 17 \\times 23 = 391 \\]\n\n**Ostateczna odpowiedź:**\n\n\\[ \\boxed{391} \\]",
+      "elapsed_seconds": 50.667,
+      "usage": {
+        "prompt_tokens": 31,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 275,
+        "total_tokens": 306
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "percentage_change",
+      "checker": "percentage",
+      "category": "mathematics",
+      "language": "pl",
+      "run_index": 2,
+      "prompt": "Cena produktu wzrosła ze 100 zł do 112 zł. O ile procent wzrosła?",
+      "expected": "12%",
+      "status": "PASS",
+      "answer": "Aby obliczyć procentowy wzrost ceny produktu, należy wykonać następujące kroki:\n\n1. **Obliczyć różnicę w cenie:**\n   Cena początkowa = 100 zł\n   Cena końcowa = 112 zł\n   Różnica = Cena końcowa - Cena początkowa = 112 zł - 100 zł = 12 zł\n\n2. **Obliczyć procentowy wzrost:**\n   Procentowy wzrost = (Różnica / Cena początkowa) * 100%\n   Procentowy wzrost = (12 zł / 100 zł) * 100% = 0,12 * 100% = 12%\n\n**Odpowiedź:**\nCena produktu wzrosła o **12%**.\n\nJeśli chcesz sprawdzić, czy obliczenia są poprawne, możesz to zrobić w następujący sposób:\n\n- 100 zł zwiększone o 12% to:\n  \\( 100 \\, \\text{zł} \\times (1 + 0,12) = 100 \\, \\text{zł} \\times 1,12 = 112 \\, \\text{zł} \\)\n\nTo potwierdza, że obliczenia są poprawne. \n\n**Ostateczna odpowiedź:**\nCena wzrosła o \\(\\boxed{12\\%}\\).",
+      "elapsed_seconds": 75.082,
+      "usage": {
+        "prompt_tokens": 43,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 406,
+        "total_tokens": 449
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "logical_syllogism",
+      "checker": "syllogism",
+      "category": "logic",
+      "language": "pl",
+      "run_index": 2,
+      "prompt": "Wszystkie koty są ssakami. Mruczek jest kotem. Czy Mruczek jest ssakiem? Uzasadnij.",
+      "expected": "Tak, Mruczek jest ssakiem.",
+      "status": "PASS",
+      "answer": "Aby rozwiązać to zadanie, musimy przeanalizować podane informacje i zastosować zasady logiki.\n\n1. **Premisa 1:** \"Wszystkie koty są ssakami.\"\n   - Oznacza to, że jeśli jakiś obiekt jest kotem, to musi być ssakiem.\n\n2. **Premisa 2:** \"Mruczek jest kotem.\"\n   - To stwierdzenie mówi nam, że Mruczek należy do kategorii kotów.\n\n3. **Wniosek:** \"Czy Mruczek jest ssakiem?\"\n\n### Analiza\n\nAby sprawdzić, czy Mruczek jest ssakiem, musimy zobaczyć, czy spełnia warunki bycia ssakiem. Z premisy 1 wiemy, że wszystkie koty są ssakami. Jeśli Mruczek jest kotem (premisa 2), to zgodnie z premisą 1, Mruczek musi być ssakiem.\n\n### Krok po kroku\n\n1. **Premisa 1:** Jeśli coś jest kotem, to jest ssakiem.\n   - Formalnie: Jeśli \\( x \\) jest kotem, to \\( x \\) jest ssakiem.\n\n2. **Premisa 2:** Mruczek jest kotem.\n   - Formalnie: \\( Mruczek \\) jest kotem.\n\n3. **Wniosek:** Z premisy 2 i premisy 1 wynika, że Mruczek jest ssakiem.\n   - Formalnie: Jeśli \\( Mruczek \\) jest kotem, a wszystkie koty są ssakami, to \\( Mruczek \\) jest ssakiem.\n\n### Sprawdzenie\n\nCzy istnieje jakikolwiek wyjątek od reguły, że wszystkie koty są ssakami? W kontekście biologicznym, koty (Felis catus) są rzeczywiście ssakami, należącymi do rodziny kotowatych (Felidae) i rzędu drapieżnych (Carnivora). Nie ma biologicznych podstaw, aby zakwestionować tę klasyfikację.\n\n### Podsumowanie\n\nNa podstawie podanych informacji i zasad logiki, możemy stwierdzić, że Mruczek, będąc kotem, jest ssakiem.\n\n**Odpowiedź:**\nTak, Mruczek jest ssakiem.\n\n**Uzasadnienie:**\nPonieważ wszystkie koty są ssakami, a Mruczek jest kotem, to Mruczek musi być ssakiem. \n\n\\(\\boxed{Yes}\\)",
+      "elapsed_seconds": 137.044,
+      "usage": {
+        "prompt_tokens": 47,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 734,
+        "total_tokens": 781
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "model": "bielik-11b-v2.6:q4_k_m",
+      "test_id": "currency_vs_inflation",
+      "checker": "currency_vs_cpi",
+      "category": "economics",
+      "language": "pl",
+      "run_index": 2,
+      "prompt": "Czy wzrost kursu USD/PLN oznacza automatycznie wzrost inflacji CPI w Polsce? Wyjaśnij krótko.",
+      "expected": "Nie. Kurs walutowy może wpływać na ceny importu i CPI, ale wzrost kursu nie oznacza automatycznie wzrostu CPI.",
+      "status": "PASS",
+      "answer": "Nie, wzrost kursu USD/PLN nie oznacza automatycznie wzrostu inflacji CPI (Consumer Price Index) w Polsce. Oto krótkie wyjaśnienie:\n\n1. **Wpływ na import**: Silniejszy złoty (czyli niższy kurs USD/PLN) sprawia, że import staje się tańszy, co może obniżyć inflację. Natomiast słabszy złoty (wyższy kurs USD/PLN) podnosi koszty importu, co może zwiększyć inflację.\n\n2. **Inne czynniki inflacyjne**: Inflacja CPI zależy od wielu czynników, takich jak koszty produkcji, płace, podaż pieniądza, polityka monetarna, a także globalne ceny surowców. Kurs walutowy to tylko jeden z wielu elementów.\n\n3. **Efekty drugiej rundy**: Wzrost kosztów importu może prowadzić do wzrostu cen krajowych (efekt drugiej rundy), ale nie zawsze się to dzieje natychmiast. Firmy mogą absorbować część kosztów lub przenosić je na konsumentów stopniowo.\n\n4. **Polityka monetarna**: Narodowy Bank Polski (NBP) może interweniować na rynku walutowym lub zmieniać stopy procentowe, aby stabilizować kurs złotego i kontrolować inflację.\n\nPodsumowując, choć wzrost kursu USD/PLN (osłabienie złotego) może przyczynić się do wzrostu inflacji poprzez droższy import, nie jest to jedyny ani automatyczny czynnik. Inflacja CPI jest wynikiem złożonej interakcji wielu zmiennych ekonomicznych.",
+      "elapsed_seconds": 93.912,
+      "usage": {
+        "prompt_tokens": 50,
+        "prompt_tokens_details": {
+          "cached_tokens": 3
+        },
+        "completion_tokens": 504,
+        "total_tokens": 554
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}

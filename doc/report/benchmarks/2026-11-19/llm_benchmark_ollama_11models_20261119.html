@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>LLM benchmark: 11 local models on Ollama (CPU), bilingual_reasoning@2, max_tokens 384</title>
+<style>
+body { font-family: sans-serif; margin: 2rem; color: #111; }
+table { border-collapse: collapse; margin: 1.5rem 0; }
+caption { text-align: left; font-weight: bold; padding: .4rem 0; }
+th, td { border: 1px solid #999; padding: .3rem .6rem; text-align: left; }
+thead th { background: #e8e8e8; }
+.caveat { border-left: 4px solid #b36b00; padding: .5rem 1rem; background: #fff6e5; }
+</style></head>
+<body>
+<h1>LLM benchmark: 11 local models on Ollama (CPU), bilingual_reasoning@2, max_tokens 384</h1>
+<p class="caveat">Screening is a rule-based pre-assessment, not a verdict: &#x27;correct&#x27; and &#x27;incorrect&#x27; are candidates, &#x27;manual review&#x27; needs a human. Latency is wall-clock time per request after a warm-up, on this machine.</p>
+<ul><li>Task set: bilingual_reasoning@2</li><li>Provider: ollama (http://127.0.0.1:11434)</li><li>Repeats: 3, temperature 0.0, max_tokens 384</li><li>Run started (UTC): 2026-11-19T01:29:23.395757+00:00</li><li>Screening version: 4.6</li><li>Task/model cells whose runs disagree: 2</li></ul>
+<table>
+<caption>Models by screening outcome</caption>
+<thead><tr><th scope="col">Model</th><th scope="col">Lang</th><th scope="col">Answered</th><th scope="col">Requests</th><th scope="col">Median s</th><th scope="col">p90 s</th><th scope="col">Truncated</th><th scope="col">Correct</th><th scope="col">Incorrect</th><th scope="col">Partial</th><th scope="col">Manual review</th></tr></thead>
+<tbody>
+<tr><th scope="row">bielik-1.5b-v3:q4_k_m</th><td>en</td><td>12</td><td>12</td><td>3.57</td><td>10.47</td><td>0</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">bielik-11b-v2.6:q4_k_m</th><td>en</td><td>12</td><td>12</td><td>28.58</td><td>54.68</td><td>0</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:q8_0</th><td>en</td><td>12</td><td>12</td><td>39.31</td><td>52.24</td><td>0</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">bielik-4.5b-v3:q8_0</th><td>pl</td><td>12</td><td>12</td><td>31.47</td><td>47.86</td><td>0</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">gemma3:4b</th><td>pl</td><td>12</td><td>12</td><td>12.76</td><td>17.33</td><td>0</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">llama3.2:3b</th><td>en</td><td>12</td><td>12</td><td>7.91</td><td>9.31</td><td>0</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">qwen2.5:3b</th><td>en</td><td>12</td><td>12</td><td>6.56</td><td>9.14</td><td>0</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">bielik-1.5b-v3:q4_k_m</th><td>pl</td><td>12</td><td>12</td><td>4.63</td><td>8.25</td><td>0</td><td>9</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">gemma3:1b</th><td>en</td><td>12</td><td>12</td><td>4.06</td><td>9.8</td><td>3</td><td>9</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">llama3.2:1b</th><td>en</td><td>12</td><td>12</td><td>4.1</td><td>8.57</td><td>0</td><td>9</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">llama3.2:3b</th><td>pl</td><td>12</td><td>12</td><td>8.71</td><td>15.23</td><td>0</td><td>9</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">phi3:mini</th><td>en</td><td>12</td><td>12</td><td>9.28</td><td>21.97</td><td>0</td><td>9</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">phi3:mini</th><td>pl</td><td>12</td><td>12</td><td>8.78</td><td>24.61</td><td>0</td><td>9</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">qwen2.5:0.5b</th><td>en</td><td>12</td><td>12</td><td>2.52</td><td>3.11</td><td>0</td><td>9</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">qwen2.5:1.5b</th><td>en</td><td>12</td><td>12</td><td>3.83</td><td>8.55</td><td>3</td><td>9</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">gemma3:1b</th><td>pl</td><td>12</td><td>12</td><td>3.18</td><td>9.79</td><td>3</td><td>6</td><td>0</td><td>0</td><td>6</td></tr>
+<tr><th scope="row">gemma3:4b</th><td>en</td><td>12</td><td>12</td><td>16.2</td><td>28.77</td><td>3</td><td>6</td><td>0</td><td>0</td><td>6</td></tr>
+<tr><th scope="row">qwen2.5:3b</th><td>pl</td><td>12</td><td>12</td><td>9.63</td><td>15.97</td><td>0</td><td>6</td><td>0</td><td>0</td><td>6</td></tr>
+<tr><th scope="row">qwen2.5:1.5b</th><td>pl</td><td>12</td><td>12</td><td>3.91</td><td>8.68</td><td>3</td><td>6</td><td>3</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">qwen2.5:0.5b</th><td>pl</td><td>12</td><td>12</td><td>2.18</td><td>3.85</td><td>3</td><td>5</td><td>4</td><td>0</td><td>3</td></tr>
+<tr><th scope="row">bielik-11b-v2.6:q4_k_m</th><td>pl</td><td>12</td><td>12</td><td>73.13</td><td>76.16</td><td>9</td><td>3</td><td>0</td><td>0</td><td>9</td></tr>
+<tr><th scope="row">llama3.2:1b</th><td>pl</td><td>12</td><td>12</td><td>1.1</td><td>13.17</td><td>0</td><td>3</td><td>3</td><td>0</td><td>6</td></tr>
+</tbody>
+</table>
+<table>
+<caption>Warm-up (model load + first answer)</caption>
+<thead><tr><th scope="col">Model</th><th scope="col">Status</th><th scope="col">Load + first answer s</th><th scope="col">Error</th></tr></thead>
+<tbody>
+<tr><th scope="row">qwen2.5:0.5b</th><td>PASS</td><td>3.838</td><td></td></tr>
+<tr><th scope="row">qwen2.5:1.5b</th><td>PASS</td><td>12.723</td><td></td></tr>
+<tr><th scope="row">qwen2.5:3b</th><td>PASS</td><td>20.853</td><td></td></tr>
+<tr><th scope="row">llama3.2:1b</th><td>PASS</td><td>6.134</td><td></td></tr>
+<tr><th scope="row">llama3.2:3b</th><td>PASS</td><td>41.787</td><td></td></tr>
+<tr><th scope="row">gemma3:1b</th><td>PASS</td><td>2.28</td><td></td></tr>
+<tr><th scope="row">gemma3:4b</th><td>PASS</td><td>53.64</td><td></td></tr>
+<tr><th scope="row">phi3:mini</th><td>PASS</td><td>23.848</td><td></td></tr>
+<tr><th scope="row">bielik-1.5b-v3:q4_k_m</th><td>PASS</td><td>2.782</td><td></td></tr>
+<tr><th scope="row">bielik-4.5b-v3:q8_0</th><td>PASS</td><td>10.204</td><td></td></tr>
+<tr><th scope="row">bielik-11b-v2.6:q4_k_m</th><td>PASS</td><td>102.607</td><td></td></tr>
+</tbody>
+</table>
+<table>
+<caption>Outcome per task, language and model</caption>
+<thead><tr><th scope="col">Task</th><th scope="col">Lang</th><th scope="col">Model</th><th scope="col">Majority outcome</th><th scope="col">Runs agree</th><th scope="col">All runs</th></tr></thead>
+<tbody>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>bielik-1.5b-v3:q4_k_m</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>bielik-4.5b-v3:q8_0</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>gemma3:1b</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>gemma3:4b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>llama3.2:1b</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>llama3.2:3b</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>phi3:mini</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>qwen2.5:0.5b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>qwen2.5:1.5b</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>en</td><td>qwen2.5:3b</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>bielik-1.5b-v3:q4_k_m</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>bielik-4.5b-v3:q8_0</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>gemma3:1b</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>gemma3:4b</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>llama3.2:1b</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>llama3.2:3b</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>phi3:mini</td><td>candidate_correct_result_only</td><td>yes</td><td>candidate_correct_result_only, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>qwen2.5:0.5b</td><td>candidate_correct_result_only</td><td>no</td><td>candidate_incorrect, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>qwen2.5:1.5b</td><td>candidate_correct_with_calculation</td><td>yes</td><td>candidate_correct_with_calculation, candidate_correct_with_calculation, candidate_correct_with_calculation</td></tr>
+<tr><th scope="row">arithmetic_multiplication</th><td>pl</td><td>qwen2.5:3b</td><td>candidate_correct_result_only</td><td>no</td><td>candidate_correct_with_calculation, candidate_correct_result_only, candidate_correct_result_only</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>bielik-1.5b-v3:q4_k_m</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>bielik-4.5b-v3:q8_0</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>gemma3:1b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>gemma3:4b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>llama3.2:1b</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>llama3.2:3b</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>phi3:mini</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>qwen2.5:0.5b</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>qwen2.5:1.5b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>en</td><td>qwen2.5:3b</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>bielik-1.5b-v3:q4_k_m</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>bielik-11b-v2.6:q4_k_m</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>bielik-4.5b-v3:q8_0</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>gemma3:1b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>gemma3:4b</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>llama3.2:1b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>llama3.2:3b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>phi3:mini</td><td>candidate_correct_conclusion_direction_not_assessed</td><td>yes</td><td>candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed, candidate_correct_conclusion_direction_not_assessed</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>qwen2.5:0.5b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>qwen2.5:1.5b</td><td>candidate_incorrect_conclusion</td><td>yes</td><td>candidate_incorrect_conclusion, candidate_incorrect_conclusion, candidate_incorrect_conclusion</td></tr>
+<tr><th scope="row">currency_vs_inflation</th><td>pl</td><td>qwen2.5:3b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>bielik-1.5b-v3:q4_k_m</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>bielik-4.5b-v3:q8_0</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>gemma3:1b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>gemma3:4b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>llama3.2:1b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>llama3.2:3b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>phi3:mini</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>qwen2.5:0.5b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>qwen2.5:1.5b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>en</td><td>qwen2.5:3b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>bielik-1.5b-v3:q4_k_m</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>bielik-11b-v2.6:q4_k_m</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>bielik-4.5b-v3:q8_0</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>gemma3:1b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>gemma3:4b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>llama3.2:1b</td><td>candidate_incorrect_conclusion</td><td>yes</td><td>candidate_incorrect_conclusion, candidate_incorrect_conclusion, candidate_incorrect_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>llama3.2:3b</td><td>candidate_correct_conclusion</td><td>yes</td><td>candidate_correct_conclusion, candidate_correct_conclusion, candidate_correct_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>phi3:mini</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>qwen2.5:0.5b</td><td>candidate_incorrect_conclusion</td><td>yes</td><td>candidate_incorrect_conclusion, candidate_incorrect_conclusion, candidate_incorrect_conclusion</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>qwen2.5:1.5b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">logical_syllogism</th><td>pl</td><td>qwen2.5:3b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>bielik-1.5b-v3:q4_k_m</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>bielik-11b-v2.6:q4_k_m</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>bielik-4.5b-v3:q8_0</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>gemma3:1b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>gemma3:4b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>llama3.2:1b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>llama3.2:3b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>phi3:mini</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>qwen2.5:0.5b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>qwen2.5:1.5b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>en</td><td>qwen2.5:3b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>bielik-1.5b-v3:q4_k_m</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>bielik-11b-v2.6:q4_k_m</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>bielik-4.5b-v3:q8_0</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>gemma3:1b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>gemma3:4b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>llama3.2:1b</td><td>manual_review</td><td>yes</td><td>manual_review, manual_review, manual_review</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>llama3.2:3b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>phi3:mini</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>qwen2.5:0.5b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>qwen2.5:1.5b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+<tr><th scope="row">percentage_change</th><td>pl</td><td>qwen2.5:3b</td><td>candidate_correct</td><td>yes</td><td>candidate_correct, candidate_correct, candidate_correct</td></tr>
+</tbody>
+</table>
+</body></html>

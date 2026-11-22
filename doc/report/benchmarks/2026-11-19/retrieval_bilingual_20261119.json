@@ -1,0 +1,1703 @@
+{
+  "schema": "ai_platform.retrieval_benchmark.report/1",
+  "retrieval_set": "bilingual_retrieval",
+  "retrieval_set_version": "1",
+  "created_at_utc": "2026-11-19T10:44:28.230627+00:00",
+  "top_k": 5,
+  "documents": 12,
+  "queries": 16,
+  "results": [
+    {
+      "embedder": "hashing",
+      "status": "PASS",
+      "index_seconds": 0.002,
+      "query_seconds_mean": 0.0015,
+      "metrics": {
+        "hit@1": 0.25,
+        "hit@3": 0.4375,
+        "hit@5": 0.5,
+        "recall@1": 0.25,
+        "recall@3": 0.4375,
+        "recall@5": 0.5,
+        "mrr": 0.3489583333333333
+      },
+      "by_direction": {
+        "en->en": {
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 1.0
+        },
+        "en->pl": {
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.16666666666666666,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.16666666666666666,
+          "mrr": 0.041666666666666664
+        },
+        "pl->en": {
+          "hit@1": 0.16666666666666666,
+          "hit@3": 0.5,
+          "hit@5": 0.5,
+          "recall@1": 0.16666666666666666,
+          "recall@3": 0.5,
+          "recall@5": 0.5,
+          "mrr": 0.3333333333333333
+        },
+        "pl->pl": {
+          "hit@1": 0.5,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.5,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 0.6666666666666666
+        }
+      },
+      "queries": [
+        {
+          "embedder": "hashing",
+          "query_id": "q01",
+          "query": "Jak mierzy się wzrost cen w sklepach?",
+          "direction": "pl->pl",
+          "relevant": [
+            "cpi_pl"
+          ],
+          "ranked": [
+            "cpi_pl",
+            "netconf_en",
+            "fx_en",
+            "rates_pl",
+            "cats_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q02",
+          "query": "Ile złotych trzeba zapłacić za dolara?",
+          "direction": "pl->en",
+          "relevant": [
+            "fx_en"
+          ],
+          "ranked": [
+            "cpi_pl",
+            "fx_en",
+            "rates_pl",
+            "cats_en",
+            "whales_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 0.5
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q03",
+          "query": "Kto decyduje o wysokości oprocentowania kredytu?",
+          "direction": "pl->pl",
+          "relevant": [
+            "rates_pl"
+          ],
+          "ranked": [
+            "cpi_pl",
+            "fx_en",
+            "rates_pl",
+            "cats_en",
+            "birds_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 0.3333333333333333
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q04",
+          "query": "Czy kot domowy jest ssakiem?",
+          "direction": "pl->en",
+          "relevant": [
+            "cats_en"
+          ],
+          "ranked": [
+            "canberra_pl",
+            "cpi_pl",
+            "fx_en",
+            "rates_pl",
+            "birds_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q05",
+          "query": "Które zwierzę morskie karmi młode mlekiem?",
+          "direction": "pl->en",
+          "relevant": [
+            "whales_en"
+          ],
+          "ranked": [
+            "krakow_pl",
+            "yang_pl",
+            "birds_pl",
+            "netconf_en",
+            "fx_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q06",
+          "query": "Jakie miasto jest obecnie stolicą Polski?",
+          "direction": "pl->en",
+          "relevant": [
+            "warsaw_en"
+          ],
+          "ranked": [
+            "canberra_pl",
+            "krakow_pl",
+            "cats_en",
+            "whales_en",
+            "cpi_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q07",
+          "query": "Jakim protokołem zmienia się konfigurację routera?",
+          "direction": "pl->en",
+          "relevant": [
+            "netconf_en"
+          ],
+          "ranked": [
+            "cpi_pl",
+            "netconf_en",
+            "fx_en",
+            "rates_pl",
+            "cats_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 0.5
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q08",
+          "query": "Czym są wykresy Helm w Kubernetesie?",
+          "direction": "pl->en",
+          "relevant": [
+            "helm_en"
+          ],
+          "ranked": [
+            "helm_en",
+            "cpi_pl",
+            "fx_en",
+            "rates_pl",
+            "cats_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q09",
+          "query": "Which city is the capital of Australia?",
+          "direction": "en->pl",
+          "relevant": [
+            "canberra_pl"
+          ],
+          "ranked": [
+            "warsaw_en",
+            "fx_en",
+            "netconf_en",
+            "yang_pl",
+            "helm_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q10",
+          "query": "Who sets the reference interest rate in Poland?",
+          "direction": "en->pl",
+          "relevant": [
+            "rates_pl"
+          ],
+          "ranked": [
+            "warsaw_en",
+            "fx_en",
+            "whales_en",
+            "netconf_en",
+            "helm_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q11",
+          "query": "Is a sparrow a bird?",
+          "direction": "en->pl",
+          "relevant": [
+            "birds_pl"
+          ],
+          "ranked": [
+            "netconf_en",
+            "canberra_pl",
+            "yang_pl",
+            "birds_pl",
+            "cpi_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 1.0,
+          "rr": 0.25
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q12",
+          "query": "Where were Polish kings crowned?",
+          "direction": "en->pl",
+          "relevant": [
+            "krakow_pl"
+          ],
+          "ranked": [
+            "whales_en",
+            "fx_en",
+            "cpi_pl",
+            "rates_pl",
+            "cats_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q13",
+          "query": "What language describes configuration data models?",
+          "direction": "en->pl",
+          "relevant": [
+            "yang_pl"
+          ],
+          "ranked": [
+            "netconf_en",
+            "cpi_pl",
+            "fx_en",
+            "rates_pl",
+            "cats_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q14",
+          "query": "How is the change of consumer prices measured?",
+          "direction": "en->pl",
+          "relevant": [
+            "cpi_pl"
+          ],
+          "ranked": [
+            "fx_en",
+            "warsaw_en",
+            "netconf_en",
+            "yang_pl",
+            "helm_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q15",
+          "query": "Do whales breathe air?",
+          "direction": "en->en",
+          "relevant": [
+            "whales_en"
+          ],
+          "ranked": [
+            "whales_en",
+            "birds_pl",
+            "cpi_pl",
+            "fx_en",
+            "rates_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "hashing",
+          "query_id": "q16",
+          "query": "What tool packages applications for Kubernetes?",
+          "direction": "en->en",
+          "relevant": [
+            "helm_en"
+          ],
+          "ranked": [
+            "helm_en",
+            "cats_en",
+            "netconf_en",
+            "cpi_pl",
+            "fx_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        }
+      ]
+    },
+    {
+      "embedder": "ollama:nomic-embed-text",
+      "status": "PASS",
+      "index_seconds": 1.012,
+      "query_seconds_mean": 0.0438,
+      "metrics": {
+        "hit@1": 0.25,
+        "hit@3": 0.4375,
+        "hit@5": 0.5625,
+        "recall@1": 0.25,
+        "recall@3": 0.4375,
+        "recall@5": 0.5625,
+        "mrr": 0.34791666666666665
+      },
+      "by_direction": {
+        "en->en": {
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 1.0
+        },
+        "en->pl": {
+          "hit@1": 0.16666666666666666,
+          "hit@3": 0.5,
+          "hit@5": 0.8333333333333334,
+          "recall@1": 0.16666666666666666,
+          "recall@3": 0.5,
+          "recall@5": 0.8333333333333334,
+          "mrr": 0.37222222222222223
+        },
+        "pl->en": {
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "mrr": 0.0
+        },
+        "pl->pl": {
+          "hit@1": 0.5,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.5,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 0.6666666666666666
+        }
+      },
+      "queries": [
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q01",
+          "query": "Jak mierzy się wzrost cen w sklepach?",
+          "direction": "pl->pl",
+          "relevant": [
+            "cpi_pl"
+          ],
+          "ranked": [
+            "birds_pl",
+            "krakow_pl",
+            "cpi_pl",
+            "canberra_pl",
+            "rates_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 0.3333333333333333
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q02",
+          "query": "Ile złotych trzeba zapłacić za dolara?",
+          "direction": "pl->en",
+          "relevant": [
+            "fx_en"
+          ],
+          "ranked": [
+            "birds_pl",
+            "krakow_pl",
+            "cpi_pl",
+            "yang_pl",
+            "rates_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q03",
+          "query": "Kto decyduje o wysokości oprocentowania kredytu?",
+          "direction": "pl->pl",
+          "relevant": [
+            "rates_pl"
+          ],
+          "ranked": [
+            "rates_pl",
+            "yang_pl",
+            "birds_pl",
+            "cpi_pl",
+            "krakow_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q04",
+          "query": "Czy kot domowy jest ssakiem?",
+          "direction": "pl->en",
+          "relevant": [
+            "cats_en"
+          ],
+          "ranked": [
+            "yang_pl",
+            "cpi_pl",
+            "birds_pl",
+            "krakow_pl",
+            "rates_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q05",
+          "query": "Które zwierzę morskie karmi młode mlekiem?",
+          "direction": "pl->en",
+          "relevant": [
+            "whales_en"
+          ],
+          "ranked": [
+            "birds_pl",
+            "yang_pl",
+            "krakow_pl",
+            "cpi_pl",
+            "rates_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q06",
+          "query": "Jakie miasto jest obecnie stolicą Polski?",
+          "direction": "pl->en",
+          "relevant": [
+            "warsaw_en"
+          ],
+          "ranked": [
+            "krakow_pl",
+            "rates_pl",
+            "birds_pl",
+            "canberra_pl",
+            "yang_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q07",
+          "query": "Jakim protokołem zmienia się konfigurację routera?",
+          "direction": "pl->en",
+          "relevant": [
+            "netconf_en"
+          ],
+          "ranked": [
+            "yang_pl",
+            "birds_pl",
+            "rates_pl",
+            "krakow_pl",
+            "cpi_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q08",
+          "query": "Czym są wykresy Helm w Kubernetesie?",
+          "direction": "pl->en",
+          "relevant": [
+            "helm_en"
+          ],
+          "ranked": [
+            "yang_pl",
+            "cpi_pl",
+            "krakow_pl",
+            "birds_pl",
+            "rates_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q09",
+          "query": "Which city is the capital of Australia?",
+          "direction": "en->pl",
+          "relevant": [
+            "canberra_pl"
+          ],
+          "ranked": [
+            "canberra_pl",
+            "warsaw_en",
+            "cats_en",
+            "fx_en",
+            "krakow_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q10",
+          "query": "Who sets the reference interest rate in Poland?",
+          "direction": "en->pl",
+          "relevant": [
+            "rates_pl"
+          ],
+          "ranked": [
+            "fx_en",
+            "warsaw_en",
+            "cpi_pl",
+            "yang_pl",
+            "rates_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 1.0,
+          "rr": 0.2
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q11",
+          "query": "Is a sparrow a bird?",
+          "direction": "en->pl",
+          "relevant": [
+            "birds_pl"
+          ],
+          "ranked": [
+            "cats_en",
+            "fx_en",
+            "whales_en",
+            "canberra_pl",
+            "krakow_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 0.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 0.0,
+          "rr": 0.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q12",
+          "query": "Where were Polish kings crowned?",
+          "direction": "en->pl",
+          "relevant": [
+            "krakow_pl"
+          ],
+          "ranked": [
+            "warsaw_en",
+            "krakow_pl",
+            "yang_pl",
+            "canberra_pl",
+            "cpi_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 0.5
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q13",
+          "query": "What language describes configuration data models?",
+          "direction": "en->pl",
+          "relevant": [
+            "yang_pl"
+          ],
+          "ranked": [
+            "netconf_en",
+            "helm_en",
+            "yang_pl",
+            "canberra_pl",
+            "fx_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 0.3333333333333333
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q14",
+          "query": "How is the change of consumer prices measured?",
+          "direction": "en->pl",
+          "relevant": [
+            "cpi_pl"
+          ],
+          "ranked": [
+            "fx_en",
+            "cats_en",
+            "netconf_en",
+            "helm_en",
+            "cpi_pl"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 0.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 0.0,
+          "recall@5": 1.0,
+          "rr": 0.2
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q15",
+          "query": "Do whales breathe air?",
+          "direction": "en->en",
+          "relevant": [
+            "whales_en"
+          ],
+          "ranked": [
+            "whales_en",
+            "cats_en",
+            "canberra_pl",
+            "birds_pl",
+            "cpi_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:nomic-embed-text",
+          "query_id": "q16",
+          "query": "What tool packages applications for Kubernetes?",
+          "direction": "en->en",
+          "relevant": [
+            "helm_en"
+          ],
+          "ranked": [
+            "helm_en",
+            "netconf_en",
+            "yang_pl",
+            "birds_pl",
+            "canberra_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        }
+      ]
+    },
+    {
+      "embedder": "ollama:bge-m3",
+      "status": "PASS",
+      "index_seconds": 3.572,
+      "query_seconds_mean": 0.0913,
+      "metrics": {
+        "hit@1": 0.9375,
+        "hit@3": 1.0,
+        "hit@5": 1.0,
+        "recall@1": 0.9375,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "mrr": 0.96875
+      },
+      "by_direction": {
+        "en->en": {
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 1.0
+        },
+        "en->pl": {
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 1.0
+        },
+        "pl->en": {
+          "hit@1": 0.8333333333333334,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.8333333333333334,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 0.9166666666666666
+        },
+        "pl->pl": {
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 1.0
+        }
+      },
+      "queries": [
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q01",
+          "query": "Jak mierzy się wzrost cen w sklepach?",
+          "direction": "pl->pl",
+          "relevant": [
+            "cpi_pl"
+          ],
+          "ranked": [
+            "cpi_pl",
+            "rates_pl",
+            "fx_en",
+            "yang_pl",
+            "netconf_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q02",
+          "query": "Ile złotych trzeba zapłacić za dolara?",
+          "direction": "pl->en",
+          "relevant": [
+            "fx_en"
+          ],
+          "ranked": [
+            "fx_en",
+            "rates_pl",
+            "cpi_pl",
+            "krakow_pl",
+            "canberra_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q03",
+          "query": "Kto decyduje o wysokości oprocentowania kredytu?",
+          "direction": "pl->pl",
+          "relevant": [
+            "rates_pl"
+          ],
+          "ranked": [
+            "rates_pl",
+            "fx_en",
+            "cpi_pl",
+            "netconf_en",
+            "helm_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q04",
+          "query": "Czy kot domowy jest ssakiem?",
+          "direction": "pl->en",
+          "relevant": [
+            "cats_en"
+          ],
+          "ranked": [
+            "cats_en",
+            "birds_pl",
+            "whales_en",
+            "canberra_pl",
+            "krakow_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q05",
+          "query": "Które zwierzę morskie karmi młode mlekiem?",
+          "direction": "pl->en",
+          "relevant": [
+            "whales_en"
+          ],
+          "ranked": [
+            "whales_en",
+            "birds_pl",
+            "cats_en",
+            "canberra_pl",
+            "yang_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q06",
+          "query": "Jakie miasto jest obecnie stolicą Polski?",
+          "direction": "pl->en",
+          "relevant": [
+            "warsaw_en"
+          ],
+          "ranked": [
+            "krakow_pl",
+            "warsaw_en",
+            "canberra_pl",
+            "cats_en",
+            "fx_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 0.5
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q07",
+          "query": "Jakim protokołem zmienia się konfigurację routera?",
+          "direction": "pl->en",
+          "relevant": [
+            "netconf_en"
+          ],
+          "ranked": [
+            "netconf_en",
+            "helm_en",
+            "yang_pl",
+            "rates_pl",
+            "fx_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q08",
+          "query": "Czym są wykresy Helm w Kubernetesie?",
+          "direction": "pl->en",
+          "relevant": [
+            "helm_en"
+          ],
+          "ranked": [
+            "helm_en",
+            "yang_pl",
+            "netconf_en",
+            "cpi_pl",
+            "rates_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q09",
+          "query": "Which city is the capital of Australia?",
+          "direction": "en->pl",
+          "relevant": [
+            "canberra_pl"
+          ],
+          "ranked": [
+            "canberra_pl",
+            "warsaw_en",
+            "krakow_pl",
+            "whales_en",
+            "cats_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q10",
+          "query": "Who sets the reference interest rate in Poland?",
+          "direction": "en->pl",
+          "relevant": [
+            "rates_pl"
+          ],
+          "ranked": [
+            "rates_pl",
+            "fx_en",
+            "warsaw_en",
+            "cpi_pl",
+            "netconf_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q11",
+          "query": "Is a sparrow a bird?",
+          "direction": "en->pl",
+          "relevant": [
+            "birds_pl"
+          ],
+          "ranked": [
+            "birds_pl",
+            "whales_en",
+            "cats_en",
+            "canberra_pl",
+            "warsaw_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q12",
+          "query": "Where were Polish kings crowned?",
+          "direction": "en->pl",
+          "relevant": [
+            "krakow_pl"
+          ],
+          "ranked": [
+            "krakow_pl",
+            "warsaw_en",
+            "fx_en",
+            "canberra_pl",
+            "birds_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q13",
+          "query": "What language describes configuration data models?",
+          "direction": "en->pl",
+          "relevant": [
+            "yang_pl"
+          ],
+          "ranked": [
+            "yang_pl",
+            "netconf_en",
+            "helm_en",
+            "cpi_pl",
+            "rates_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q14",
+          "query": "How is the change of consumer prices measured?",
+          "direction": "en->pl",
+          "relevant": [
+            "cpi_pl"
+          ],
+          "ranked": [
+            "cpi_pl",
+            "fx_en",
+            "rates_pl",
+            "netconf_en",
+            "yang_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q15",
+          "query": "Do whales breathe air?",
+          "direction": "en->en",
+          "relevant": [
+            "whales_en"
+          ],
+          "ranked": [
+            "whales_en",
+            "birds_pl",
+            "cats_en",
+            "warsaw_en",
+            "canberra_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "ollama:bge-m3",
+          "query_id": "q16",
+          "query": "What tool packages applications for Kubernetes?",
+          "direction": "en->en",
+          "relevant": [
+            "helm_en"
+          ],
+          "ranked": [
+            "helm_en",
+            "yang_pl",
+            "netconf_en",
+            "birds_pl",
+            "cpi_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        }
+      ]
+    },
+    {
+      "embedder": "localai:bge-m3-localai",
+      "status": "PASS",
+      "index_seconds": 9.16,
+      "query_seconds_mean": 1.2237,
+      "metrics": {
+        "hit@1": 0.9375,
+        "hit@3": 1.0,
+        "hit@5": 1.0,
+        "recall@1": 0.9375,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "mrr": 0.96875
+      },
+      "by_direction": {
+        "en->en": {
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 1.0
+        },
+        "en->pl": {
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 1.0
+        },
+        "pl->en": {
+          "hit@1": 0.8333333333333334,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.8333333333333334,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 0.9166666666666666
+        },
+        "pl->pl": {
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "mrr": 1.0
+        }
+      },
+      "queries": [
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q01",
+          "query": "Jak mierzy się wzrost cen w sklepach?",
+          "direction": "pl->pl",
+          "relevant": [
+            "cpi_pl"
+          ],
+          "ranked": [
+            "cpi_pl",
+            "rates_pl",
+            "fx_en",
+            "yang_pl",
+            "netconf_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q02",
+          "query": "Ile złotych trzeba zapłacić za dolara?",
+          "direction": "pl->en",
+          "relevant": [
+            "fx_en"
+          ],
+          "ranked": [
+            "fx_en",
+            "rates_pl",
+            "cpi_pl",
+            "krakow_pl",
+            "canberra_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q03",
+          "query": "Kto decyduje o wysokości oprocentowania kredytu?",
+          "direction": "pl->pl",
+          "relevant": [
+            "rates_pl"
+          ],
+          "ranked": [
+            "rates_pl",
+            "fx_en",
+            "cpi_pl",
+            "netconf_en",
+            "helm_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q04",
+          "query": "Czy kot domowy jest ssakiem?",
+          "direction": "pl->en",
+          "relevant": [
+            "cats_en"
+          ],
+          "ranked": [
+            "cats_en",
+            "birds_pl",
+            "whales_en",
+            "canberra_pl",
+            "krakow_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q05",
+          "query": "Które zwierzę morskie karmi młode mlekiem?",
+          "direction": "pl->en",
+          "relevant": [
+            "whales_en"
+          ],
+          "ranked": [
+            "whales_en",
+            "birds_pl",
+            "cats_en",
+            "canberra_pl",
+            "yang_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q06",
+          "query": "Jakie miasto jest obecnie stolicą Polski?",
+          "direction": "pl->en",
+          "relevant": [
+            "warsaw_en"
+          ],
+          "ranked": [
+            "krakow_pl",
+            "warsaw_en",
+            "canberra_pl",
+            "cats_en",
+            "fx_en"
+          ],
+          "hit@1": 0.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 0.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 0.5
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q07",
+          "query": "Jakim protokołem zmienia się konfigurację routera?",
+          "direction": "pl->en",
+          "relevant": [
+            "netconf_en"
+          ],
+          "ranked": [
+            "netconf_en",
+            "helm_en",
+            "yang_pl",
+            "rates_pl",
+            "fx_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q08",
+          "query": "Czym są wykresy Helm w Kubernetesie?",
+          "direction": "pl->en",
+          "relevant": [
+            "helm_en"
+          ],
+          "ranked": [
+            "helm_en",
+            "yang_pl",
+            "netconf_en",
+            "cpi_pl",
+            "rates_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q09",
+          "query": "Which city is the capital of Australia?",
+          "direction": "en->pl",
+          "relevant": [
+            "canberra_pl"
+          ],
+          "ranked": [
+            "canberra_pl",
+            "warsaw_en",
+            "krakow_pl",
+            "whales_en",
+            "cats_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q10",
+          "query": "Who sets the reference interest rate in Poland?",
+          "direction": "en->pl",
+          "relevant": [
+            "rates_pl"
+          ],
+          "ranked": [
+            "rates_pl",
+            "fx_en",
+            "warsaw_en",
+            "cpi_pl",
+            "netconf_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q11",
+          "query": "Is a sparrow a bird?",
+          "direction": "en->pl",
+          "relevant": [
+            "birds_pl"
+          ],
+          "ranked": [
+            "birds_pl",
+            "whales_en",
+            "cats_en",
+            "canberra_pl",
+            "warsaw_en"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q12",
+          "query": "Where were Polish kings crowned?",
+          "direction": "en->pl",
+          "relevant": [
+            "krakow_pl"
+          ],
+          "ranked": [
+            "krakow_pl",
+            "warsaw_en",
+            "fx_en",
+            "canberra_pl",
+            "birds_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q13",
+          "query": "What language describes configuration data models?",
+          "direction": "en->pl",
+          "relevant": [
+            "yang_pl"
+          ],
+          "ranked": [
+            "yang_pl",
+            "netconf_en",
+            "helm_en",
+            "cpi_pl",
+            "rates_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q14",
+          "query": "How is the change of consumer prices measured?",
+          "direction": "en->pl",
+          "relevant": [
+            "cpi_pl"
+          ],
+          "ranked": [
+            "cpi_pl",
+            "fx_en",
+            "rates_pl",
+            "netconf_en",
+            "yang_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q15",
+          "query": "Do whales breathe air?",
+          "direction": "en->en",
+          "relevant": [
+            "whales_en"
+          ],
+          "ranked": [
+            "whales_en",
+            "birds_pl",
+            "cats_en",
+            "warsaw_en",
+            "canberra_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        },
+        {
+          "embedder": "localai:bge-m3-localai",
+          "query_id": "q16",
+          "query": "What tool packages applications for Kubernetes?",
+          "direction": "en->en",
+          "relevant": [
+            "helm_en"
+          ],
+          "ranked": [
+            "helm_en",
+            "yang_pl",
+            "netconf_en",
+            "birds_pl",
+            "cpi_pl"
+          ],
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "hit@5": 1.0,
+          "recall@1": 1.0,
+          "recall@3": 1.0,
+          "recall@5": 1.0,
+          "rr": 1.0
+        }
+      ]
+    }
+  ]
+}

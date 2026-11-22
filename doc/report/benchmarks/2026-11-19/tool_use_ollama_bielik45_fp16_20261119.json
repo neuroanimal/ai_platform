@@ -1,0 +1,421 @@
+{
+  "schema": "ai_platform.tool_use_benchmark.report/1",
+  "task_set": "tool_use",
+  "created_at_utc": "2026-11-19T15:03:00.461688+00:00",
+  "models": [
+    "bielik-4.5b-v3:fp16"
+  ],
+  "modes": [
+    "json"
+  ],
+  "max_steps": 5,
+  "summary": [
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "tasks": 9,
+      "tool_choice_ok": 5,
+      "answer_correct": 5,
+      "both_ok": 4,
+      "valid_call_rate": 1.0,
+      "mean_steps": 1.67,
+      "errors": 0
+    }
+  ],
+  "results": [
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "calc_pl",
+      "question": "Ile wynosi 17 razy 23 razy 19?",
+      "expected": "7429",
+      "expected_tools": [
+        "calculator"
+      ],
+      "tools_used": [
+        "calculator"
+      ],
+      "tool_choice_ok": true,
+      "tool_calls": 1,
+      "valid_calls": 1,
+      "steps": 2,
+      "stop_reason": "answered",
+      "answer": " 17 razy 23 razy 19 wynosi 7429.",
+      "screening": "candidate_correct_result_only",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 38.91,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"17 * 23 * 19\"}}",
+          "tool_calls": [
+            {
+              "name": "calculator",
+              "arguments": {
+                "expression": "17 * 23 * 19"
+              },
+              "ok": true,
+              "result": "{\"expression\": \"17 * 23 * 19\", \"result\": 7429}",
+              "seconds": 0.0007
+            }
+          ],
+          "elapsed_seconds": 33.60295422398485
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": " 17 razy 23 razy 19 wynosi 7429.",
+          "tool_calls": [],
+          "elapsed_seconds": 5.302848046005238
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "calc_big_en",
+      "question": "What is 123456 multiplied by 789?",
+      "expected": "97406784",
+      "expected_tools": [
+        "calculator"
+      ],
+      "tools_used": [
+        "calculator"
+      ],
+      "tool_choice_ok": true,
+      "tool_calls": 1,
+      "valid_calls": 1,
+      "steps": 2,
+      "stop_reason": "answered",
+      "answer": "The result of 123456 multiplied by 789 is 9,740,6784.",
+      "screening": "candidate_incorrect",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 15.55,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": "{\"tool\": \"calculator\", \"arguments\": {\"expression\": \"123456 * 789\"}}",
+          "tool_calls": [
+            {
+              "name": "calculator",
+              "arguments": {
+                "expression": "123456 * 789"
+              },
+              "ok": true,
+              "result": "{\"expression\": \"123456 * 789\", \"result\": 97406784}",
+              "seconds": 0.0001
+            }
+          ],
+          "elapsed_seconds": 7.634326988016255
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": "The result of 123456 multiplied by 789 is 9,740,6784.",
+          "tool_calls": [],
+          "elapsed_seconds": 7.917272493010387
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "calc_expr_en",
+      "question": "Compute (48.5 - 12.25) / 0.25.",
+      "expected": "145",
+      "expected_tools": [
+        "calculator"
+      ],
+      "tools_used": [],
+      "tool_choice_ok": false,
+      "tool_calls": 0,
+      "valid_calls": 0,
+      "steps": 1,
+      "stop_reason": "answered",
+      "answer": "154.5",
+      "screening": "manual_review",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 3.29,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": "{\"answer\": \"154.5\"}",
+          "tool_calls": [],
+          "elapsed_seconds": 3.291534695017617
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "convert_pl",
+      "question": "Ile minut ma 2,5 dnia?",
+      "expected": "3600",
+      "expected_tools": [
+        "convert_units|calculator"
+      ],
+      "tools_used": [
+        "calculator"
+      ],
+      "tool_choice_ok": true,
+      "tool_calls": 1,
+      "valid_calls": 1,
+      "steps": 2,
+      "stop_reason": "answered",
+      "answer": "2,5 dnia to 3600 minut.",
+      "screening": "candidate_correct_result_only",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 12.06,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"2.5 * 24 * 60\"}}",
+          "tool_calls": [
+            {
+              "name": "calculator",
+              "arguments": {
+                "expression": "2.5 * 24 * 60"
+              },
+              "ok": true,
+              "result": "{\"expression\": \"2.5 * 24 * 60\", \"result\": 3600}",
+              "seconds": 0.0002
+            }
+          ],
+          "elapsed_seconds": 7.68991322995862
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": "2,5 dnia to 3600 minut.",
+          "tool_calls": [],
+          "elapsed_seconds": 4.37295416300185
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "convert_en",
+      "question": "Convert 77 degrees Fahrenheit to Celsius.",
+      "expected": "25",
+      "expected_tools": [
+        "convert_units|calculator"
+      ],
+      "tools_used": [
+        "convert_units"
+      ],
+      "tool_choice_ok": true,
+      "tool_calls": 1,
+      "valid_calls": 1,
+      "steps": 2,
+      "stop_reason": "answered",
+      "answer": "77 degrees Fahrenheit is equal to 25 degrees Celsius.",
+      "screening": "candidate_correct_result_only",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 17.22,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": "{\"tool\": \"convert_units\", \"arguments\": {\"value\": 77, \"from_unit\": \"F\", \"to_unit\": \"C\"}}",
+          "tool_calls": [
+            {
+              "name": "convert_units",
+              "arguments": {
+                "value": 77,
+                "from_unit": "F",
+                "to_unit": "C"
+              },
+              "ok": true,
+              "result": "{\"value\": 77, \"from\": \"F\", \"to\": \"C\", \"result\": 25}",
+              "seconds": 0.0005
+            }
+          ],
+          "elapsed_seconds": 10.444287671998609
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": "77 degrees Fahrenheit is equal to 25 degrees Celsius.",
+          "tool_calls": [],
+          "elapsed_seconds": 6.773711203015409
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "search_pl",
+      "question": "Ile ciężarówek elektrycznych ma firma Nordwind?",
+      "expected": "19",
+      "expected_tools": [
+        "search_documents"
+      ],
+      "tools_used": [
+        "search_documents"
+      ],
+      "tool_choice_ok": true,
+      "tool_calls": 1,
+      "valid_calls": 1,
+      "steps": 2,
+      "stop_reason": "answered",
+      "answer": "Firma Nordwind ma 19 ciężarówek elektrycznych.",
+      "screening": "candidate_correct_result_only",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 18.33,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"ilość ciężarówek elektrycznych firmy Nordwind\"}}",
+          "tool_calls": [
+            {
+              "name": "search_documents",
+              "arguments": {
+                "query": "ilość ciężarówek elektrycznych firmy Nordwind"
+              },
+              "ok": true,
+              "result": "[{\"document_id\": \"fleet_en\", \"text\": \"The Nordwind fleet has 41 trucks, of which 19 are electric and are charged overnight in Gdynia.\", \"score\": 0.731}, {\"document_id\": \"code_pl\", \"text\": \"Kod dostępu do magazynu numer 7 firmy Nordwind to 4512 i zmienia się co kwartał.\", \"score\": 0.551}, {\"document_id\": \"nordwind_pl\", \"text\": \"Nordwind Logistyka to fikcyjna firma przewozowa z siedzibą w Gdyni, założona w 2011 roku przez Halinę Wrzos.\", \"score\": 0.545}]",
+              "seconds": 0.0914
+            }
+          ],
+          "elapsed_seconds": 8.223460928013083
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": "{\"answer\": \"Firma Nordwind ma 19 ciężarówek elektrycznych.\"}",
+          "tool_calls": [],
+          "elapsed_seconds": 10.010487664025277
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "search_en",
+      "question": "What is the access code of Nordwind warehouse number 7?",
+      "expected": "4512",
+      "expected_tools": [
+        "search_documents"
+      ],
+      "tools_used": [],
+      "tool_choice_ok": false,
+      "tool_calls": 0,
+      "valid_calls": 0,
+      "steps": 1,
+      "stop_reason": "answered",
+      "answer": "I'm sorry, but I don't have access to specific information about Nordwind warehouse number 7, such as its access code. You may need to contact Nordwind or check their security system for this information.",
+      "screening": "manual_review",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 15.47,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": "I'm sorry, but I don't have access to specific information about Nordwind warehouse number 7, such as its access code. You may need to contact Nordwind or check their security system for this information.",
+          "tool_calls": [],
+          "elapsed_seconds": 15.467943914991338
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "search_calc_en",
+      "question": "How much does one year of the Nordwind Express subscription cost in total?",
+      "expected": "588",
+      "expected_tools": [
+        "search_documents",
+        "calculator"
+      ],
+      "tools_used": [],
+      "tool_choice_ok": false,
+      "tool_calls": 0,
+      "valid_calls": 0,
+      "steps": 1,
+      "stop_reason": "answered",
+      "answer": "I'm unable to directly access pricing information or current data. However, I can help you calculate if you provide the monthly cost.\n\n**Question:**\n\nHow much does one month of the Nordwind Express subscription cost?\n\n**My answer:**\n\nPlease provide the monthly cost to calculate the total for one year.",
+      "screening": "manual_review",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 27.8,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": "I'm unable to directly access pricing information or current data. However, I can help you calculate if you provide the monthly cost.\n\n**Question:**\n\nHow much does one month of the Nordwind Express subscription cost?\n\n**My answer:**\n\nPlease provide the monthly cost to calculate the total for one year.",
+          "tool_calls": [],
+          "elapsed_seconds": 27.80352173000574
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "mode": "json",
+      "task_id": "no_tool_pl",
+      "question": "Jakie miasto jest stolicą Polski?",
+      "expected": "Warszawa|Warszawie|Warsaw",
+      "expected_tools": [],
+      "tools_used": [
+        "search_documents"
+      ],
+      "tool_choice_ok": false,
+      "tool_calls": 1,
+      "valid_calls": 1,
+      "steps": 2,
+      "stop_reason": "answered",
+      "answer": "Warszawa",
+      "screening": "candidate_correct",
+      "modes_used": [
+        "json"
+      ],
+      "elapsed_seconds": 15.94,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"jakie miasto jest stolicą Polski\"}}",
+          "tool_calls": [
+            {
+              "name": "search_documents",
+              "arguments": {
+                "query": "jakie miasto jest stolicą Polski"
+              },
+              "ok": true,
+              "result": "[{\"document_id\": \"krakow_pl\", \"text\": \"Kraków był stolicą Polski przez kilka stuleci; na Wawelu koronowano królów.\", \"score\": 0.584}, {\"document_id\": \"warsaw_en\", \"text\": \"Warsaw has been the capital of Poland since the late sixteenth century and lies on the Vistula.\", \"score\": 0.515}, {\"document_id\": \"canberra_pl\", \"text\": \"Stolicą Australii jest Canberra, a nie Sydney, choć Sydney jest większe.\", \"score\": 0.461}]",
+              "seconds": 0.0976
+            }
+          ],
+          "elapsed_seconds": 8.561987446038984
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": " {\"answer\": \"Warszawa\"}",
+          "tool_calls": [],
+          "elapsed_seconds": 7.278314929979388
+        }
+      ]
+    }
+  ]
+}

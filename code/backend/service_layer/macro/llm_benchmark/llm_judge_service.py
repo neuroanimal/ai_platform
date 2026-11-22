@@ -8,8 +8,16 @@ kept in their own file, keyed by record (model|test_id|language|run_index),
 so they never overwrite the rule screening or the human review; the review
 spreadsheet shows them in the "LLM verdict" column.
 
+Batched by default: all answers to the same question (same task and
+language - 22 answers for 11 models x 2 runs) go to the judge in ONE prompt,
+with the question and the expected answer stated once. For the v3 run that is
+32 prompts instead of 704. ``scope="undecided"`` judges only the records the
+rules sent to manual review. ``estimate`` reports prompts and approximate
+tokens before anything is sent.
+
 Runs are resumable: records already judged in the output are skipped, so an
-interrupted run continues where it stopped. Calls run in a small thread pool.
+interrupted run continues where it stopped; answers a batch reply missed are
+retried in the next run. Calls run in a small thread pool.
 
 The judge is any LLM adapter with ``chat_completion`` (Anthropic, OpenAI,
 Bedrock, an OpenAI-compatible server ...). Its verdict is an opinion, not a
@@ -54,6 +62,35 @@ ANSWER:
 {answer}
 """
 _JSON = re.compile(r"\{.*\}", re.S)
+_JSON_ARRAY = re.compile(r"\[.*\]", re.S)
+
+BATCH_PROMPT = """You grade answers of language models in a benchmark. All answers below \
+respond to the same QUESTION; judge each one independently, using the EXPECTED answer as \
+the reference. Answers may be in Polish or English.
+
+Verdicts:
+- correct: the final answer matches the expected one (wording, units and language may differ);
+- incorrect: the final answer is wrong, contradicts the expected one, or is missing while \
+the text is coherent;
+- partial: the final answer is right but the reasoning shown contains a real error, or only \
+part of a multi-part answer is right;
+- unclear: the text is incoherent, or it is cut off before any answer.
+
+Reply with ONLY a JSON array, one object per answer, in any order:
+[{{"id": "<answer id>", "verdict": "<correct|incorrect|partial|unclear>", \
+"reason": "<at most 15 words>"}}]
+
+QUESTION:
+{question}
+
+EXPECTED:
+{expected}
+
+ANSWERS:
+{answers}
+"""
+#: Longest answer text sent to the judge (characters); longer ones are cut with a mark.
+MAX_ANSWER_CHARS = 3000
 
 
 def parse_judgement(text: str) -> Dict[str, Any]:
@@ -84,28 +121,115 @@ def judge_record(judge, record: Dict[str, Any]) -> Dict[str, Any]:
     return parse_judgement(reply.text)
 
 
+def _clip(text: str) -> str:
+    text = str(text or "")
+    return text if len(text) <= MAX_ANSWER_CHARS else \
+        text[:MAX_ANSWER_CHARS] + f" [... cut, {len(text)} characters in total]"
+
+
+def batch_prompt(records: List[Dict[str, Any]]) -> str:
+    """One prompt for answers to the same question; ids are A1, A2, ..."""
+    answers = "\n\n".join(f"--- id: A{n} ---\n{_clip(r.get('answer'))}"
+                           for n, r in enumerate(records, start=1))
+    return BATCH_PROMPT.format(question=records[0].get("prompt", ""),
+                               expected=records[0].get("expected", ""), answers=answers)
+
+
+def judge_batch(judge, records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Judgements for answers to one question, in the order of ``records``."""
+    try:
+        reply = judge.chat_completion([{"role": "user", "content": batch_prompt(records)}],
+                                      temperature=0, max_tokens=80 * len(records) + 100)
+    except LLMError as exc:
+        error = {"verdict": None, "reason": f"judge error: {type(exc).__name__}: {exc}"}
+        return [dict(error) for _ in records]
+    match = _JSON_ARRAY.search(reply.text or "")
+    try:
+        items = json.loads(match.group(0)) if match else []
+    except json.JSONDecodeError:
+        items = []
+    by_id = {str(i.get("id")): i for i in items if isinstance(i, dict)}
+    results = []
+    for number in range(1, len(records) + 1):
+        item = by_id.get(f"A{number}")
+        results.append(parse_judgement(json.dumps(item)) if item else
+                       {"verdict": None, "reason": "missing in the judge's batch reply"})
+    return results
+
+
+def _groups(records: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+    """Answered records grouped by question (task + language), in report order."""
+    groups: Dict[tuple, List[Dict[str, Any]]] = {}
+    for record in records:
+        groups.setdefault((record.get("test_id"), record.get("language")), []).append(record)
+    return list(groups.values())
+
+
+def select_records(report: Dict[str, Any], screening: Optional[Dict[str, Any]],
+                   done: Dict[str, Any], scope: str = "all") -> List[Dict[str, Any]]:
+    """Records still to judge; ``scope='undecided'`` keeps only manual_review ones."""
+    if scope not in ("all", "undecided"):
+        raise ValueError("scope must be 'all' or 'undecided'")
+    undecided = None
+    if scope == "undecided":
+        if screening is None:
+            raise ValueError("scope 'undecided' needs the screening")
+        undecided = {record_key(r) for r in screening.get("results", [])
+                     if r["automatic_assessment"]["answer_screening"]["status"]
+                     == "manual_review"}
+    return [r for r in report.get("results", [])
+            if (record_key(r) not in done or done[record_key(r)].get("verdict") is None)
+            and (undecided is None or record_key(r) in undecided)]
+
+
+def estimate(records: List[Dict[str, Any]], batched: bool = True) -> Dict[str, Any]:
+    """Prompts and approximate tokens (characters / 4) a judge run would send."""
+    answered = [r for r in records if r.get("status") == "PASS"]
+    if batched:
+        prompts = [batch_prompt(g) for g in _groups(answered)]
+        output = 25 * len(answered)
+    else:
+        prompts = [JUDGE_PROMPT.format(question=r.get("prompt", ""),
+                                       expected=r.get("expected", ""),
+                                       answer=r.get("answer", "")) for r in answered]
+        output = 40 * len(answered)
+    return {"records": len(records), "prompts": len(prompts),
+            "approx_input_tokens": sum(len(p) for p in prompts) // 4,
+            "approx_output_tokens": output}
+
+
 def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: disable=too-many-arguments,too-many-locals
                  existing: Optional[Dict[str, Any]] = None, workers: int = 4,
+                 screening: Optional[Dict[str, Any]] = None, scope: str = "all",
+                 batched: bool = True,
                  progress: Callable[[str], None] = lambda m: None,
                  save: Callable[[Dict[str, Any]], None] = lambda d: None) -> Dict[str, Any]:
-    """Judge every record not yet judged; ``save`` is called after each batch."""
+    """Judge the records not yet judged; ``save`` is called after each round."""
     data = existing or {"schema": JUDGE_SCHEMA, "judge": judge_name, "judgements": {}}
     if data.get("judge") != judge_name:
         raise ValueError(f"existing judgements are by {data.get('judge')!r}, not {judge_name!r}")
     done = data["judgements"]
-    todo = [r for r in report.get("results", [])
-            if record_key(r) not in done or done[record_key(r)].get("verdict") is None]
-    progress(f"{len(todo)} records to judge ({len(done)} already judged)")
-    batch = max(1, workers * 5)
+    todo = select_records(report, screening, done, scope)
+    for record in todo:  # nothing to judge: recorded without a call
+        if record.get("status") != "PASS":
+            done[record_key(record)] = judge_record(judge, record)
+    todo = [r for r in todo if r.get("status") == "PASS"]
+    units = _groups(todo) if batched else [[r] for r in todo]
+    progress(f"{len(todo)} answers to judge in {len(units)} prompts "
+             f"({len(done)} already judged)")
+
+    def run(unit):
+        return judge_batch(judge, unit) if batched else [judge_record(judge, unit[0])]
+
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-        for start in range(0, len(todo), batch):
-            chunk = todo[start:start + batch]
-            for record, judgement in zip(chunk, pool.map(lambda r: judge_record(judge, r),
-                                                          chunk)):
-                done[record_key(record)] = judgement
+        for start in range(0, len(units), max(1, workers)):
+            chunk = units[start:start + max(1, workers)]
+            for unit, judgements in zip(chunk, pool.map(run, chunk)):
+                for record, judgement in zip(unit, judgements):
+                    done[record_key(record)] = judgement
             data["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
             save(data)
-            progress(f"  {min(start + batch, len(todo))}/{len(todo)} judged")
+            progress(f"  {min(start + len(chunk), len(units))}/{len(units)} prompts")
     return data
 
 

@@ -45,9 +45,11 @@ from ai_platform.backend.service_layer.macro.llm_benchmark.task_set_service impo
     list_task_sets,
 )
 from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (
+    estimate,
     judge_agreement,
     judge_report,
     judgement_columns,
+    select_records,
 )
 from ai_platform.common.llm.bedrock_adapter import BedrockAdapter
 from ai_platform.common.llm.google_adapter import GoogleAdapter
@@ -252,6 +254,21 @@ def command_judge(args) -> int:
     report = json.loads(source.read_text(encoding="utf-8"))
     target = Path(args.output) if args.output else judge_path(source)
     existing = json.loads(target.read_text(encoding="utf-8")) if target.exists() else None
+    screening_file = screening_path(source)
+    screening = json.loads(screening_file.read_text(encoding="utf-8")) \
+        if screening_file.exists() else None
+    if args.estimate:
+        done = (existing or {}).get("judgements", {})
+        try:
+            todo = select_records(report, screening, done, args.scope)
+        except ValueError as exc:
+            print(exc, file=sys.stderr)
+            return 1
+        print(json.dumps(estimate(todo, batched=not args.one_per_prompt), indent=2))
+        return 0
+    if not args.provider or not args.model:
+        print("--provider and --model are required (or use --estimate)", file=sys.stderr)
+        return 1
     judge = JUDGE_PROVIDERS[args.provider]()
     config = {"model": args.model, "temperature": 0, "max_tokens": 200, "timeout": 120}
     if args.base_url:
@@ -261,7 +278,9 @@ def command_judge(args) -> int:
     try:
         judge.initialize(config)
         data = judge_report(report, judge, f"{args.provider}:{args.model}", existing=existing,
-                            workers=args.workers, progress=lambda m: print(m, file=sys.stderr),
+                            workers=args.workers, screening=screening, scope=args.scope,
+                            batched=not args.one_per_prompt,
+                            progress=lambda m: print(m, file=sys.stderr),
                             save=lambda d: write_json(d, target))
     except (LLMError, ValueError) as exc:
         print(f"cannot judge: {exc}", file=sys.stderr)
@@ -331,11 +350,17 @@ def build_parser() -> argparse.ArgumentParser:  # pylint: disable=too-many-state
 
     judge = sub.add_parser("judge", help="LLM-as-judge verdict for every answer (resumable)")
     judge.add_argument("input")
-    judge.add_argument("--provider", choices=sorted(JUDGE_PROVIDERS), required=True)
-    judge.add_argument("--model", required=True)
+    judge.add_argument("--provider", choices=sorted(JUDGE_PROVIDERS))
+    judge.add_argument("--model")
     judge.add_argument("--base-url", default=None)
     judge.add_argument("--api-key-env", default=None)
     judge.add_argument("--workers", type=int, default=4)
+    judge.add_argument("--scope", choices=["all", "undecided"], default="all",
+                       help="'undecided' = only records the rules sent to manual review")
+    judge.add_argument("--one-per-prompt", action="store_true",
+                       help="one answer per prompt instead of all answers to a question")
+    judge.add_argument("--estimate", action="store_true",
+                       help="print prompts and approximate tokens, send nothing")
     judge.add_argument("--output", default=None)
     judge.set_defaults(func=command_judge)
     export.add_argument("--output", default=None)

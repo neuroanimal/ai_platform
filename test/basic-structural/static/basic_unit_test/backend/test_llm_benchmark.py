@@ -313,10 +313,11 @@ def test_llm_judge_resumable_and_agreement(tmp_path):
     report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, answers)).run(
         get_task_set("bilingual_reasoning@2"), ["m"], languages=["pl"], repeats=1)
     saved = []
-    data = judge_report(report, Judge(), "fake:judge", workers=2, save=saved.append)
+    data = judge_report(report, Judge(), "fake:judge", workers=2, save=saved.append,
+                        batched=False)
     assert len(data["judgements"]) == 4 and saved
     calls = Judge.calls
-    judge_report(report, Judge(), "fake:judge", existing=data)  # resume: nothing left
+    judge_report(report, Judge(), "fake:judge", existing=data, batched=False)  # resume
     assert Judge.calls == calls
     with pytest.raises(ValueError):
         judge_report(report, Judge(), "other:judge", existing=data)
@@ -336,3 +337,40 @@ def test_llm_judge_resumable_and_agreement(tmp_path):
         row["verdict"] = row["llm_verdict"]
     agreement = judge_agreement(data, apply_reviews(screening, rows))
     assert agreement["agreement_rate"] == 1.0 and agreement["compared"] == 4
+
+
+def test_llm_judge_batched_one_prompt_per_question():
+    from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (  # pylint: disable=import-outside-toplevel
+        estimate,
+        judge_report,
+        select_records,
+    )
+
+    class BatchJudge:
+        """Answers a batch prompt; skips the last id once to test the retry."""
+        prompts = []
+
+        def chat_completion(self, messages, **_):
+            """Return a JSON array for all ids but (first time) the last."""
+            prompt = messages[0]["content"]
+            BatchJudge.prompts.append(prompt)
+            ids = [line.split("id: ")[1].split(" ")[0] for line in prompt.splitlines()
+                   if line.startswith("--- id: ")]
+            if len(BatchJudge.prompts) == 1:
+                ids = ids[:-1]
+            return ChatResult(text=json.dumps([{"id": i, "verdict": "correct", "reason": "ok"}
+                                               for i in ids]), model="j")
+
+    report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {"17": "391"})).run(
+        get_task_set("bilingual_reasoning@2"), ["a", "b"], languages=["pl", "en"], repeats=2)
+    assert estimate(report["results"])["prompts"] == 8  # 4 tasks x 2 languages
+    data = judge_report(report, BatchJudge(), "fake:j", workers=1)
+    assert len(BatchJudge.prompts) == 8
+    assert sum(j["verdict"] is None for j in data["judgements"].values()) == 1
+    judge_report(report, BatchJudge(), "fake:j", existing=data, workers=1)  # retries the miss
+    assert len(BatchJudge.prompts) == 9
+    assert all(j["verdict"] == "correct" for j in data["judgements"].values())
+    screening = screen_benchmark_report(report)
+    undecided = select_records(report, screening, {}, "undecided")
+    assert all(screening["results"][report["results"].index(r)]["automatic_assessment"]
+               ["answer_screening"]["status"] == "manual_review" for r in undecided)
