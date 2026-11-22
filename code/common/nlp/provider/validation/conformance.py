@@ -208,15 +208,32 @@ def validate_provider_response(
             f"Analysis reports layers that were not requested: {names}.",
         )
 
-    unsupported = reported_layers - supported_layers
+    # unsupported = reported_layers - supported_layers
+    #
+    # if unsupported:
+    #     names = sorted(layer.value for layer in unsupported)
+    #
+    #     _add_issue(
+    #         issues,
+    #         "unsupported_layers_reported",
+    #         f"Analysis reports layers not declared by the provider: {names}.",
+    #     )
 
-    if unsupported:
-        names = sorted(layer.value for layer in unsupported)
+    unsupported_completed = completed_set - supported_layers
+
+    if unsupported_completed:
+        names = sorted(
+            layer.value
+            for layer in unsupported_completed
+        )
 
         _add_issue(
             issues,
-            "unsupported_layers_reported",
-            f"Analysis reports layers not declared by the provider: {names}.",
+            "unsupported_completed_layers",
+            (
+                "Analysis reports unsupported layers as completed: "
+                f"{names}."
+            ),
         )
 
     if not request.allow_partial:

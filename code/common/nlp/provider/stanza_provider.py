@@ -502,7 +502,7 @@ class StanzaPolishProvider(NLPProvider):
                             "head": getattr(word, "head", None),
                             "deprel": getattr(word, "deprel", None),
                             "misc": getattr(word, "misc", None),
-                            "word_offsets_available": (
+                            "word_surface_matches_syntactic_form": (
                                 word_surface == word_form
                             ),
                         }

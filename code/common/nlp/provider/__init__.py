@@ -27,6 +27,7 @@ from .validation import (
     validate_provider_request,
     validate_provider_response,
 )
+from .stanza_provider import StanzaPolishProvider
 
 __all__ = [
     "ProviderCapabilities",
@@ -46,5 +47,6 @@ __all__ = [
     "ProviderConformanceReport",
     "validate_provider_request",
     "validate_provider_response",
+    "StanzaPolishProvider",
 ]
 
