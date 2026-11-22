@@ -101,6 +101,10 @@ class OpenAICompatibleAdapter(LLMAdapter):
             raise LLMConfigurationError(f"{self.PROVIDER}: 'model' is required")
 
         self.api_prefix = config.get("api_prefix", self.DEFAULT_API_PREFIX)
+        # A base_url that already ends with the prefix (".../openai/v1", as the
+        # providers' docs write it) would otherwise give ".../v1/v1/...".
+        if self.api_prefix and self.base_url.rstrip("/").endswith(self.api_prefix):
+            self.base_url = self.base_url.rstrip("/")[:-len(self.api_prefix)]
         self.default_params = {
             key: config[key] for key in ("temperature", "max_tokens") if key in config
         }

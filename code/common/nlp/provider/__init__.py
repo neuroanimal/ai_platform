@@ -33,12 +33,20 @@ from .lifecycle import (
     NLPProviderLifecycleSnapshot,
     NLPProviderLifecycleState,
 )
-from .configuration import (
+# from .configuration import (
+#     NLPExecutionDevice,
+#     NLPProviderEngineConfig,
+#     NLPModelConfig,
+#     NLPRuntimeConfig,
+#     NLPProviderConfiguration,
+# )
+from .configuration_v2 import (
+    NLPDownloadPolicy,
     NLPExecutionDevice,
-    NLPProviderEngineConfig,
-    NLPModelConfig,
-    NLPRuntimeConfig,
-    NLPProviderConfiguration,
+    NLPProviderEngineConfigV2,
+    NLPModelConfigV2,
+    NLPRuntimeConfigV2,
+    NLPProviderConfigurationV2,
 )
 
 __all__ = [
@@ -63,10 +71,17 @@ __all__ = [
     "NLPProviderLifecycle",
     "NLPProviderLifecycleSnapshot",
     "NLPProviderLifecycleState",
+    # "NLPExecutionDevice",
+    # "NLPProviderEngineConfig",
+    # "NLPModelConfig",
+    # "NLPRuntimeConfig",
+    # "NLPProviderConfiguration",
+    "NLPDownloadPolicy",
     "NLPExecutionDevice",
-    "NLPProviderEngineConfig",
-    "NLPModelConfig",
-    "NLPRuntimeConfig",
-    "NLPProviderConfiguration",
+    "NLPProviderEngineConfigV2",
+    "NLPModelConfigV2",
+    "NLPRuntimeConfigV2",
+    "NLPProviderConfigurationV2",
+
 ]
 

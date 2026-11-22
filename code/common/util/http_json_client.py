@@ -17,6 +17,10 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, Mapping, Optional
 
+#: Sent unless the caller sets its own. Python's default "Python-urllib/3.x" is
+#: blocked by some Cloudflare-fronted APIs (Groq: HTTP 403, "Error 1010").
+DEFAULT_USER_AGENT = "ai_platform-http-json-client/1.0"
+
 
 class HttpJsonError(Exception):
     """Base error of the JSON HTTP client."""
@@ -87,7 +91,7 @@ class HttpJsonClient:
         """POST ``payload`` as JSON to ``path`` and decode the JSON answer."""
         return self.request("POST", path, payload, timeout)
 
-    def request(
+    def request(  # pylint: disable=too-many-locals
         self,
         method: str,
         path: str,
@@ -96,7 +100,8 @@ class HttpJsonClient:
     ) -> HttpJsonResponse:
         """Perform one request; raise an ``HttpJsonError`` subclass on failure."""
         url = self.url(path)
-        headers = {"Accept": "application/json", **self.headers}
+        headers = {"Accept": "application/json", "User-Agent": DEFAULT_USER_AGENT,
+                   **self.headers}
         data = None
 
         if payload is not None:
@@ -137,7 +142,7 @@ class HttpJsonClient:
         """
         url = self.url(path)
         headers = {"Accept": "text/event-stream, application/x-ndjson, application/json",
-                   **self.headers}
+                   "User-Agent": DEFAULT_USER_AGENT, **self.headers}
         data = None
         if payload is not None:
             data = json.dumps(payload).encode("utf-8")

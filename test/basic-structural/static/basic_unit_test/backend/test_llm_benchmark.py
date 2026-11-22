@@ -395,7 +395,7 @@ def test_llm_judge_stops_when_every_call_fails_and_files_per_judge(tmp_path):
 
     report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {"17": "391"})).run(
         get_task_set("bilingual_reasoning@2"), ["a"], languages=["pl", "en"], repeats=1)
-    data = judge_report(report, QuotaJudge(), "fake:j", workers=2)
+    data = judge_report(report, QuotaJudge(), "fake:j", workers=2, retries=0)
     assert QuotaJudge.calls == 2  # first round only, not all 8 prompts
     assert judgement_counts(data) == {"pending": 2}
     assert judgement_counts(data, report) == {"pending": 8}
@@ -405,3 +405,45 @@ def test_llm_judge_stops_when_every_call_fails_and_files_per_judge(tmp_path):
     assert judge_path(source, "openai-compatible:openai/gpt-oss-120b").name == \
         "r_judge_openai-compatible-openai-gpt-oss-120b.json"
     assert judge_path(source).name == "r_judge.json"
+
+
+def test_llm_judge_retries_transient_errors():
+    from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (  # pylint: disable=import-outside-toplevel
+        judge_batch,
+    )
+    from ai_platform.common.llm.llm_exception import LLMRequestError  # pylint: disable=import-outside-toplevel
+
+    class BusyJudge:
+        """503 twice ("high demand"), then a proper reply."""
+        calls = 0
+
+        def chat_completion(self, *_, **__):
+            """Fail twice, then answer."""
+            BusyJudge.calls += 1
+            if BusyJudge.calls <= 2:
+                raise LLMRequestError("HTTP 503 high demand", 503)
+            return ChatResult(text='[{"id": "A1", "verdict": "correct", "reason": "ok"}]',
+                              model="j")
+
+    waits = []
+    records = [{"prompt": "q", "expected": "e", "answer": "a", "status": "PASS"}]
+    assert judge_batch(BusyJudge(), records, sleep=waits.append)[0]["verdict"] == "correct"
+    assert waits == [20.0, 60.0]
+    BusyJudge.calls = 0
+    failed = judge_batch(BusyJudge(), records, retries=1, sleep=waits.append)
+    assert failed[0]["verdict"] is None and "503" in failed[0]["reason"]
+
+
+def test_openai_compatible_base_url_with_prefix_and_user_agent():
+    from ai_platform.common.llm.openai_compatible_adapter import OpenAICompatibleAdapter  # pylint: disable=import-outside-toplevel
+    from ai_platform.common.util.http_json_client import (  # pylint: disable=import-outside-toplevel
+        DEFAULT_USER_AGENT,
+    )
+
+    adapter = OpenAICompatibleAdapter()
+    adapter.initialize({"base_url": "https://api.example.com/openai/v1/", "model": "m"})
+    assert adapter.base_url == "https://api.example.com/openai"
+    with FakeJsonServer({("POST", "/v1/chat/completions"): openai_chat_answer("hi")}) as server:
+        adapter.initialize({"base_url": server.url + "/v1", "model": "m"})
+        assert adapter.chat_completion([{"role": "user", "content": "x"}]).text == "hi"
+        assert server.requests[-1]["headers"].get("user-agent") == DEFAULT_USER_AGENT

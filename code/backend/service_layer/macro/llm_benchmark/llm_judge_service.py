@@ -139,15 +139,33 @@ def batch_prompt(records: List[Dict[str, Any]]) -> str:
                                expected=records[0].get("expected", ""), answers=answers)
 
 
-def judge_batch(judge, records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Judgements for answers to one question, in the order of ``records``."""
-    try:
-        reply = judge.chat_completion(
-            [{"role": "user", "content": batch_prompt(records)}],
-            temperature=0, max_tokens=120 * len(records) + THINKING_RESERVE)
-    except LLMError as exc:
-        error = {"verdict": None, "reason": f"judge error: {type(exc).__name__}: {exc}"}
-        return [dict(error) for _ in records]
+#: HTTP statuses worth retrying: rate limit, overload, gateway trouble.
+RETRY_STATUSES = (429, 500, 502, 503, 504)
+#: Waits (seconds) before the 1st, 2nd, ... retry of a batch.
+RETRY_DELAYS = (20.0, 60.0, 120.0)
+
+
+def judge_batch(judge, records: List[Dict[str, Any]], *, retries: int = len(RETRY_DELAYS),
+                sleep: Callable[[float], None] = time.sleep) -> List[Dict[str, Any]]:
+    """Judgements for answers to one question, in the order of ``records``.
+
+    Transient errors (``RETRY_STATUSES``, e.g. "model is experiencing high
+    demand") are retried after ``RETRY_DELAYS``; others fail at once.
+    """
+    attempt = 0
+    while True:
+        try:
+            reply = judge.chat_completion(
+                [{"role": "user", "content": batch_prompt(records)}],
+                temperature=0, max_tokens=120 * len(records) + THINKING_RESERVE)
+            break
+        except LLMError as exc:
+            if getattr(exc, "status", None) in RETRY_STATUSES and attempt < retries:
+                sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
+                attempt += 1
+                continue
+            error = {"verdict": None, "reason": f"judge error: {type(exc).__name__}: {exc}"}
+            return [dict(error) for _ in records]
     match = _JSON_ARRAY.search(reply.text or "")
     try:
         items = json.loads(match.group(0)) if match else []
@@ -207,6 +225,7 @@ def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: d
                  existing: Optional[Dict[str, Any]] = None, workers: int = 4,
                  screening: Optional[Dict[str, Any]] = None, scope: str = "all",
                  batched: bool = True, pause: float = 0.0,
+                 retries: int = len(RETRY_DELAYS), sleep: Callable[[float], None] = time.sleep,
                  progress: Callable[[str], None] = lambda m: None,
                  save: Callable[[Dict[str, Any]], None] = lambda d: None) -> Dict[str, Any]:
     """Judge the records not yet judged; ``save`` is called after each round.
@@ -229,7 +248,9 @@ def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: d
              f"({len(done)} already judged)")
 
     def run(unit):
-        return judge_batch(judge, unit) if batched else [judge_record(judge, unit[0])]
+        if batched:
+            return judge_batch(judge, unit, retries=retries, sleep=sleep)
+        return [judge_record(judge, unit[0])]
 
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         for start in range(0, len(units), max(1, workers)):
@@ -245,7 +266,7 @@ def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: d
                 progress(f"stopped: every call in this round failed - {failed[0]['reason'][:300]}")
                 break
             if pause and start + len(chunk) < len(units):
-                time.sleep(pause)
+                sleep(pause)
     return data
 
 
