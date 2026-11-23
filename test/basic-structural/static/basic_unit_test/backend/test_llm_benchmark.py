@@ -447,3 +447,41 @@ def test_openai_compatible_base_url_with_prefix_and_user_agent():
         adapter.initialize({"base_url": server.url + "/v1", "model": "m"})
         assert adapter.chat_completion([{"role": "user", "content": "x"}]).text == "hi"
         assert server.requests[-1]["headers"].get("user-agent") == DEFAULT_USER_AGENT
+
+
+def test_llm_judge_splits_too_large_batches_and_skips_daily_quota_retries():
+    from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (  # pylint: disable=import-outside-toplevel
+        judge_batch,
+    )
+    from ai_platform.common.llm.llm_exception import LLMRequestError  # pylint: disable=import-outside-toplevel
+
+    class SmallLimitJudge:
+        """HTTP 413 for prompts with more than two answers."""
+        sizes = []
+
+        def chat_completion(self, messages, **_):
+            """Answer every id, or refuse a batch that is too large."""
+            ids = [line.split("id: ")[1].split(" ")[0] for line in
+                   messages[0]["content"].splitlines() if line.startswith("--- id: ")]
+            SmallLimitJudge.sizes.append(len(ids))
+            if len(ids) > 2:
+                raise LLMRequestError("HTTP 413 Request too large ... tokens per minute", 413)
+            return ChatResult(text=json.dumps([{"id": i, "verdict": "correct", "reason": "ok"}
+                                               for i in ids]), model="j")
+
+    records = [{"prompt": "q", "expected": "e", "answer": f"a{n}", "status": "PASS"}
+               for n in range(5)]
+    result = judge_batch(SmallLimitJudge(), records, sleep=lambda s: None)
+    assert [r["verdict"] for r in result] == ["correct"] * 5
+    assert SmallLimitJudge.sizes == [5, 2, 3, 1, 2]
+
+    class DailyQuotaJudge:
+        """429 with a per-day quota message."""
+
+        def chat_completion(self, *_, **__):
+            """Always over the daily quota."""
+            raise LLMRequestError("HTTP 429 Generate content requests per day limit exceeded", 429)
+
+    waits = []
+    assert judge_batch(DailyQuotaJudge(), records[:1], sleep=waits.append)[0]["verdict"] is None
+    assert not waits

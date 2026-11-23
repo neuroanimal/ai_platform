@@ -92,7 +92,9 @@ ANSWERS:
 """
 #: Extra output tokens per batch for "thinking" models (Gemini 3.x, gpt-oss): their
 #: hidden reasoning counts against max_tokens, and a cut reply loses the JSON array.
-THINKING_RESERVE = 4000
+#: Kept moderate: some providers count max_tokens against a per-minute token
+#: limit (Groq free tier: 8000 TPM per request), so a big reserve gets HTTP 413.
+THINKING_RESERVE = 2000
 #: Longest answer text sent to the judge (characters); longer ones are cut with a mark.
 MAX_ANSWER_CHARS = 3000
 
@@ -145,22 +147,38 @@ RETRY_STATUSES = (429, 500, 502, 503, 504)
 RETRY_DELAYS = (20.0, 60.0, 120.0)
 
 
-def judge_batch(judge, records: List[Dict[str, Any]], *, retries: int = len(RETRY_DELAYS),
+def _is_daily_quota(exc: Exception) -> bool:
+    """A per-day quota (waiting minutes does not help, unlike a per-minute one)."""
+    text = str(exc).lower()
+    return "per day" in text or "perday" in text
+
+
+def judge_batch(judge, records: List[Dict[str, Any]], *,  # pylint: disable=too-many-arguments,too-many-locals
+                retries: int = len(RETRY_DELAYS), reserve: int = THINKING_RESERVE,
                 sleep: Callable[[float], None] = time.sleep) -> List[Dict[str, Any]]:
     """Judgements for answers to one question, in the order of ``records``.
 
     Transient errors (``RETRY_STATUSES``, e.g. "model is experiencing high
-    demand") are retried after ``RETRY_DELAYS``; others fail at once.
+    demand") are retried after ``RETRY_DELAYS``, except a per-day quota.
+    HTTP 413 (request too large for the provider's limit) splits the batch in
+    halves, down to single answers. Other errors fail at once.
     """
     attempt = 0
     while True:
         try:
             reply = judge.chat_completion(
                 [{"role": "user", "content": batch_prompt(records)}],
-                temperature=0, max_tokens=120 * len(records) + THINKING_RESERVE)
+                temperature=0, max_tokens=120 * len(records) + reserve)
             break
         except LLMError as exc:
-            if getattr(exc, "status", None) in RETRY_STATUSES and attempt < retries:
+            status = getattr(exc, "status", None)
+            if status == 413 and len(records) > 1:
+                half = len(records) // 2
+                return (judge_batch(judge, records[:half], retries=retries, reserve=reserve,
+                                    sleep=sleep)
+                        + judge_batch(judge, records[half:], retries=retries, reserve=reserve,
+                                      sleep=sleep))
+            if status in RETRY_STATUSES and attempt < retries and not _is_daily_quota(exc):
                 sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                 attempt += 1
                 continue
@@ -225,7 +243,8 @@ def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: d
                  existing: Optional[Dict[str, Any]] = None, workers: int = 4,
                  screening: Optional[Dict[str, Any]] = None, scope: str = "all",
                  batched: bool = True, pause: float = 0.0,
-                 retries: int = len(RETRY_DELAYS), sleep: Callable[[float], None] = time.sleep,
+                 retries: int = len(RETRY_DELAYS), reserve: int = THINKING_RESERVE,
+                 sleep: Callable[[float], None] = time.sleep,
                  progress: Callable[[str], None] = lambda m: None,
                  save: Callable[[Dict[str, Any]], None] = lambda d: None) -> Dict[str, Any]:
     """Judge the records not yet judged; ``save`` is called after each round.
@@ -249,7 +268,7 @@ def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: d
 
     def run(unit):
         if batched:
-            return judge_batch(judge, unit, retries=retries, sleep=sleep)
+            return judge_batch(judge, unit, retries=retries, reserve=reserve, sleep=sleep)
         return [judge_record(judge, unit[0])]
 
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:

@@ -297,7 +297,7 @@ def command_judge(args) -> int:  # pylint: disable=too-many-locals
         data = judge_report(report, judge, judge_name, existing=existing,
                             workers=args.workers, screening=screening, scope=args.scope,
                             batched=not args.one_per_prompt, pause=args.pause,
-                            retries=args.retries,
+                            retries=args.retries, reserve=args.thinking_reserve,
                             progress=lambda m: print(m, file=sys.stderr),
                             save=lambda d: write_json(d, target))
     except (LLMError, ValueError) as exc:
@@ -380,6 +380,8 @@ def build_parser() -> argparse.ArgumentParser:  # pylint: disable=too-many-state
     judge.add_argument("--workers", type=int, default=4)
     judge.add_argument("--retries", type=int, default=3,
                        help="retries of a prompt on HTTP 429/5xx, after 20, 60, 120 s")
+    judge.add_argument("--thinking-reserve", type=int, default=2000,
+                       help="output tokens added per prompt for the judge's hidden reasoning")
     judge.add_argument("--pause", type=float, default=0.0,
                        help="seconds between rounds of --workers prompts (free-tier rate limits)")
     judge.add_argument("--scope", choices=["all", "undecided"], default="all",
