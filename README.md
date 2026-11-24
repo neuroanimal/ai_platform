@@ -306,6 +306,14 @@ result = engine.process_schema("schema.json", "output.json")
 
 **Supported:** Inkscape, SVG.js, Snap.svg, Raphaël, svgwrite
 
+## Browser chat
+
+Local chat with streaming, documents (RAG) and tools:
+`python3 -m ai_platform.backend.ui_layer.web.chat_server`, then open
+http://127.0.0.1:8765/ - see
+[code/frontend/channel/web/chat/README.md](code/frontend/channel/web/chat/README.md).
+Local only, no authentication.
+
 ## Format processing tools
 
 YAML template uncommenting, JSON Schema reordering and validation, YANG

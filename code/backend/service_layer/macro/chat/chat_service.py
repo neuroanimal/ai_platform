@@ -1,0 +1,281 @@
+"""
+Chat service behind the web chat: local models, streaming, documents, tools.
+
+One request = one answer. The client sends the whole conversation each time
+(``messages``), so the service keeps no per-user state apart from the shared
+document index. Two ways of answering:
+
+- ``chat``: the model's answer is streamed as it is generated. With
+  ``use_documents`` the passages retrieved for the last question are put into
+  a system message first (RAG) and reported as a ``sources`` event.
+- ``agent``: a ``ToolAgent`` answers the last question, calling tools
+  (calculator, unit converter, date; with ``use_documents`` also
+  ``search_documents``). Not streamed: the full trace of steps and tool
+  calls is reported after the run. The agent sees only the last question,
+  not the earlier turns - the agent loop takes a single question.
+
+Both yield events (dicts with ``type``): ``sources``, ``delta`` (text),
+``trace`` (agent steps), ``done`` (finish reason, usage, elapsed seconds) or
+``error``. The UI layer turns them into Server-Sent Events.
+
+Models come from local, OpenAI-compatible servers (``PROVIDERS``: Ollama and
+LocalAI); a model id is ``<provider>:<model>``, e.g. ``ollama:qwen2.5:3b``.
+Only models the servers report are accepted, and embedding models are not
+offered. No hosted (remote) provider is configured: nothing leaves the machine.
+
+Documents: a fixed corpus chosen when the service is created - the files of a
+directory (``.txt`` / ``.md``) or the fictional bilingual QA corpus
+("Nordwind", useful for a demo because no model can know its facts). The
+client cannot choose a path. The index is built on first use; the SQLite
+vector store is bound to the thread that created it, so every index
+operation runs on one dedicated worker thread.
+"""
+
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence
+
+from ai_platform.backend.domain_layer.business_logic.rag_benchmark.qa_sets import get_qa_set
+from ai_platform.common.agent.agent_loop import ToolAgent
+from ai_platform.common.agent.builtin_tools import default_tools, rag_search_tool
+from ai_platform.common.agent.tool import ToolRegistry
+from ai_platform.common.llm.llm_exception import LLMError
+from ai_platform.common.llm.localai_adapter import LocalAIAdapter
+from ai_platform.common.llm.ollama_adapter import OllamaAdapter
+from ai_platform.common.rag.native_rag_adapter import NativeRAGAdapter
+
+
+@dataclass(frozen=True)
+class Provider:
+    """A local model server."""
+
+    name: str
+    adapter: Callable[[], Any]
+    base_url: str
+
+
+PROVIDERS = (
+    Provider("ollama", OllamaAdapter, "http://127.0.0.1:11434"),
+    Provider("localai", LocalAIAdapter, "http://127.0.0.1:8081"),
+)
+#: Substrings of model names that are embedding models, not chat models.
+EMBEDDING_MARKERS = ("embed", "bge-")
+ROLES = ("system", "user", "assistant")
+MODELS_CACHE_SECONDS = 30.0
+MAX_MESSAGES = 50
+MAX_MESSAGE_CHARS = 20000
+MAX_DOCUMENT_BYTES = 2_000_000
+DOCUMENT_SUFFIXES = (".txt", ".md")
+DEMO_CORPUS = "demo:bilingual_qa"
+# The language rule comes last: small models follow the end of a system prompt best,
+# and left alone they answer a Polish question about English-free passages in English.
+RAG_SYSTEM = ("Answer using the numbered passages below when they are relevant, and say "
+              "which passage you used, e.g. [1]. If they do not contain the answer, say so."
+              "\n\nPASSAGES:\n{context}\n\n"
+              "Answer in the language of the user's question (Polish question - Polish "
+              "answer). / Odpowiadaj w języku pytania użytkownika.")
+
+
+class ChatError(Exception):
+    """Invalid request (unknown model, malformed messages, no documents)."""
+
+
+def load_documents(source: str) -> List[Dict[str, Any]]:
+    """Documents of ``source``: a directory (``.txt``/``.md``) or ``demo:<qa set>``."""
+    if source.startswith("demo:"):
+        return [{"id": d.doc_id, "text": d.text} for d in get_qa_set(source[5:]).documents]
+    root = Path(source).expanduser()
+    if not root.is_dir():
+        raise ChatError(f"document directory not found: {root}")
+    documents = []
+    for path in sorted(root.rglob("*")):
+        if path.suffix.lower() in DOCUMENT_SUFFIXES and path.is_file() \
+                and path.stat().st_size <= MAX_DOCUMENT_BYTES:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if text.strip():
+                documents.append({"id": str(path.relative_to(root)), "text": text})
+    if not documents:
+        raise ChatError(f"no {'/'.join(DOCUMENT_SUFFIXES)} files in {root}")
+    return documents
+
+
+def validate_messages(messages: Any) -> List[Dict[str, str]]:
+    """Messages as a clean list; the last one must be the user's question."""
+    if not isinstance(messages, list) or not messages:
+        raise ChatError("messages must be a non-empty list")
+    if len(messages) > MAX_MESSAGES:
+        raise ChatError(f"at most {MAX_MESSAGES} messages")
+    clean = []
+    for message in messages:
+        if not isinstance(message, dict) or message.get("role") not in ROLES \
+                or not isinstance(message.get("content"), str):
+            raise ChatError("every message needs a role (system/user/assistant) and a content")
+        if len(message["content"]) > MAX_MESSAGE_CHARS:
+            raise ChatError(f"a message is longer than {MAX_MESSAGE_CHARS} characters")
+        clean.append({"role": message["role"], "content": message["content"]})
+    if clean[-1]["role"] != "user" or not clean[-1]["content"].strip():
+        raise ChatError("the last message must be a non-empty user message")
+    return clean
+
+
+class _DocumentIndex:
+    """Lazily built RAG index; all operations on one worker thread."""
+
+    def __init__(self, source: Optional[str], embedder: Any, top_k: int) -> None:
+        self.source, self.embedder, self.top_k = source, embedder, top_k
+        self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="chat-index")
+        self._rag: Optional[NativeRAGAdapter] = None
+        self._documents = 0
+        self._lock = threading.Lock()
+
+    def _build(self) -> NativeRAGAdapter:
+        documents = load_documents(self.source)
+        rag = NativeRAGAdapter()
+        rag.initialize({"embedder": self.embedder, "top_k": self.top_k, "chunk_size": 1500,
+                        "chunk_overlap": 150})
+        rag.ingest(documents)
+        self._documents = len(documents)
+        return rag
+
+    def _ensure(self) -> NativeRAGAdapter:
+        if self._rag is None:
+            self._rag = self._build()
+        return self._rag
+
+    def retrieve(self, question: str, top_k: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Best passages for ``question``."""
+        if not self.source:
+            raise ChatError("the server was started without documents")
+        with self._lock:
+            return self._worker.submit(
+                lambda: self._ensure().retrieve(question, top_k or self.top_k)).result()
+
+    def status(self) -> Dict[str, Any]:
+        """Source and whether the index is built."""
+        return {"source": self.source, "indexed": self._rag is not None,
+                "documents": self._documents}
+
+    def close(self) -> None:
+        """Release the index and the worker thread."""
+        if self._rag is not None:
+            self._worker.submit(self._rag.shutdown).result()
+            self._rag = None
+        self._worker.shutdown(wait=False)
+
+
+class ChatService:
+    """Model listing, streamed chat with optional RAG, and the tool agent."""
+
+    def __init__(self, *, providers: Sequence[Provider] = PROVIDERS,  # pylint: disable=too-many-arguments
+                 documents: Optional[str] = None, embedder: Any = "ollama:bge-m3",
+                 top_k: int = 4, timeout: float = 600.0) -> None:
+        self.providers = {p.name: p for p in providers}
+        self.timeout = timeout
+        self._models: List[Dict[str, Any]] = []
+        self._models_at = 0.0
+        self.index = _DocumentIndex(documents, embedder, top_k)
+
+    # -- models ----------------------------------------------------------------
+
+    def _adapter(self, provider: Provider, model: Optional[str] = None,
+                 timeout: Optional[float] = None):
+        adapter = provider.adapter()
+        adapter.initialize({"base_url": provider.base_url, "model": model or "-",
+                            "timeout": timeout or self.timeout})
+        return adapter
+
+    def list_models(self, max_age: float = MODELS_CACHE_SECONDS) -> List[Dict[str, Any]]:
+        """Chat models of every reachable provider; unreachable ones are skipped.
+
+        Cached for ``max_age`` seconds (0 = ask the servers now).
+        """
+        if self._models and time.monotonic() - self._models_at < max_age:
+            return self._models
+        models = []
+        for provider in self.providers.values():
+            try:
+                names = self._adapter(provider, timeout=3).list_models()
+            except LLMError:
+                continue
+            models += [{"id": f"{provider.name}:{name}", "provider": provider.name,
+                        "name": name} for name in sorted(names)
+                       if not any(m in name.lower() for m in EMBEDDING_MARKERS)]
+        self._models, self._models_at = models, time.monotonic()
+        return models
+
+    def _llm(self, model_id: str):
+        provider_name, _, model = str(model_id).partition(":")
+        provider = self.providers.get(provider_name)
+        if provider is None or not model:
+            raise ChatError(f"unknown model {model_id!r}")
+        if model_id not in {m["id"] for m in self.list_models()}:
+            raise ChatError(f"model {model_id!r} is not served by {provider_name}")
+        return self._adapter(provider, model)
+
+    def status(self) -> Dict[str, Any]:
+        """What the service offers."""
+        return {"providers": list(self.providers), "documents": self.index.status()}
+
+    # -- answering ---------------------------------------------------------------
+
+    def answer(self, request: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
+        """Events for one request; errors become an ``error`` event."""
+        start = time.perf_counter()
+        try:
+            messages = validate_messages(request.get("messages"))
+            llm = self._llm(request.get("model", ""))
+            params = {"temperature": float(request.get("temperature", 0.3)),
+                      "max_tokens": int(request.get("max_tokens", 1024))}
+            use_documents = bool(request.get("use_documents"))
+            if request.get("mode", "chat") == "agent":
+                yield from self._agent(llm, messages[-1]["content"], use_documents,
+                                       request.get("agent_mode", "auto"))
+            else:
+                yield from self._chat(llm, messages, use_documents, params)
+        except (ChatError, LLMError, ValueError) as exc:
+            yield {"type": "error", "message": f"{type(exc).__name__}: {exc}"}
+            return
+        yield {"type": "done", "elapsed_seconds": round(time.perf_counter() - start, 2)}
+
+    def _chat(self, llm, messages, use_documents, params) -> Iterator[Dict[str, Any]]:
+        if use_documents:
+            sources = self.index.retrieve(messages[-1]["content"])
+            yield {"type": "sources", "sources": [_source(s) for s in sources]}
+            context = "\n\n".join(f"[{n}] ({s.get('document_id')}) {s['text']}"
+                                  for n, s in enumerate(sources, start=1))
+            messages = [{"role": "system", "content": RAG_SYSTEM.format(context=context)}] \
+                + messages
+        finish, usage = None, {}
+        for chunk in llm.stream_chat(messages, **params):
+            if chunk.text:
+                yield {"type": "delta", "text": chunk.text}
+            finish = chunk.finish_reason or finish
+            usage = chunk.usage or usage
+        yield {"type": "finish", "finish_reason": finish, "usage": usage}
+
+    def _agent(self, llm, question, use_documents, agent_mode) -> Iterator[Dict[str, Any]]:
+        tools = default_tools()
+        if use_documents:
+            if not self.index.source:
+                raise ChatError("the server was started without documents")
+            tools.append(rag_search_tool(self.index))
+        run = ToolAgent(llm, ToolRegistry(tools), mode=agent_mode, max_steps=6).run(question)
+        trace = run.to_dict()
+        yield {"type": "trace", "steps": trace["steps"], "tools_used": trace["tools_used"],
+               "stop_reason": trace["stop_reason"]}
+        if run.answer:
+            yield {"type": "delta", "text": run.answer}
+        yield {"type": "finish", "finish_reason": run.stop_reason, "usage": {}}
+
+    def close(self) -> None:
+        """Release the document index."""
+        self.index.close()
+
+
+def _source(source: Dict[str, Any]) -> Dict[str, Any]:
+    score = source.get("score")
+    return {"document_id": source.get("document_id"), "text": source.get("text", ""),
+            "score": round(float(score), 3) if score is not None else None}
