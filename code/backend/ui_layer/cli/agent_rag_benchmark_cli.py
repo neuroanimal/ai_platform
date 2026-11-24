@@ -26,6 +26,7 @@ from ai_platform.backend.service_layer.macro.agent_benchmark.agent_rag_evaluator
     evaluate_agent_rag,
     rescreen,
 )
+from ai_platform.backend.service_layer.macro.chat.chat_service import DEFAULT_MIN_SCORE
 from ai_platform.backend.ui_layer.cli.benchmark_report_rendering import html_table, md_table
 from ai_platform.common.llm.localai_adapter import LocalAIAdapter
 from ai_platform.common.llm.ollama_adapter import OllamaAdapter
@@ -85,6 +86,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--agent-mode", choices=["auto", "native", "json"], default="auto")
     parser.add_argument("--embedder", default="ollama:bge-m3")
     parser.add_argument("--top-k", type=int, default=3)
+    parser.add_argument("--min-score", type=float, default=DEFAULT_MIN_SCORE,
+                        help="passage score floor (default calibrated for ollama:bge-m3; "
+                             "negative = keep all)")
+    parser.add_argument("--prompt", choices=["v1", "v2"], default="v2",
+                        help="RAG system prompt version (v1 = first run of 2026-11-24)")
     parser.add_argument("--max-steps", type=int, default=5)
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--timeout", type=float, default=600.0)
@@ -111,6 +117,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     report = evaluate_agent_rag(args.models, factory, create_embedder(args.embedder),
                                 variants=args.variants, top_k=args.top_k,
                                 agent_mode=args.agent_mode, max_steps=args.max_steps,
+                                min_score=args.min_score if args.min_score >= 0 else None,
+                                prompt=args.prompt,
                                 progress=lambda m: print(m, file=sys.stderr))
     for path in write_reports(report, Path(args.output), args.title):
         print(path.resolve())

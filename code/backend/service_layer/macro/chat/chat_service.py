@@ -72,11 +72,53 @@ DOCUMENT_SUFFIXES = (".txt", ".md")
 DEMO_CORPUS = "demo:bilingual_qa"
 # The language rule comes last: small models follow the end of a system prompt best,
 # and left alone they answer a Polish question about English-free passages in English.
-RAG_SYSTEM = ("Answer using the numbered passages below when they are relevant, and say "
-              "which passage you used, e.g. [1]. If they do not contain the answer, say so."
-              "\n\nPASSAGES:\n{context}\n\n"
-              "Answer in the language of the user's question (Polish question - Polish "
-              "answer). / Odpowiadaj w języku pytania użytkownika.")
+LANGUAGE_RULE = ("Answer in the language of the user's question (Polish question - Polish "
+                 "answer). / Odpowiadaj w języku pytania użytkownika.")
+#: First version (2026-11-24, kept for reproducing that benchmark): passages
+#: are always trusted. Retrieval returns the best match even for a general
+#: question, so "Jakie miasto jest stolicą Polski?" got the passage "Kraków was
+#: the capital for centuries" and small models answered "Kraków".
+RAG_SYSTEM_V1 = ("Answer using the numbered passages below when they are relevant, and say "
+                 "which passage you used, e.g. [1]. If they do not contain the answer, say "
+                 "so.\n\nPASSAGES:\n{context}\n\n" + LANGUAGE_RULE)
+#: Second version: passages may be off-topic; general knowledge is allowed, but
+#: facts only the documents can know must come from them.
+RAG_SYSTEM = ("Passages retrieved for the user's question are below. They may be irrelevant "
+              "or about something else: use only those that answer the question, and cite "
+              "them, e.g. [1]. If the question asks about something only these documents "
+              "could know (a company, a person, a code, a price) and the passages do not "
+              "contain it, say that the documents do not say. If it is general knowledge, "
+              "answer from your own knowledge.\n\nPASSAGES:\n{context}\n\n" + LANGUAGE_RULE)
+AGENT_SYSTEM = ("Use the calculator for every calculation, even a simple one, with the "
+                "numbers taken from the passages or the question - never invented ones.")
+#: When no passage reaches the score floor.
+RAG_NO_MATCH = ("No document matched the user's question. If it asks about something only "
+                "the documents could know (a company, a person, a code, a price), say that "
+                "the documents do not say; otherwise answer from your own knowledge.\n\n"
+                + LANGUAGE_RULE)
+#: Score floor for passages, calibrated for ollama:bge-m3 (cosine) on the
+#: bilingual_qa corpus: passages holding the facts scored 0.64 or more (one
+#: outlier 0.48), off-topic passages for fact questions at most 0.58, and the
+#: misleading "Kraków" passage for the capital question 0.59. Other embedders
+#: score differently - set the floor per embedder (None = no floor).
+DEFAULT_MIN_SCORE = 0.6
+
+
+def rag_system_prompt(sources: List[Dict[str, Any]], template: str = RAG_SYSTEM) -> str:
+    """System message for ``sources`` (``RAG_NO_MATCH`` when there are none)."""
+    if not sources:
+        return RAG_NO_MATCH
+    context = "\n\n".join(f"[{n}] ({s.get('document_id')}) {s['text']}"
+                           for n, s in enumerate(sources, start=1))
+    return template.format(context=context)
+
+
+def split_by_score(sources: List[Dict[str, Any]], min_score: Optional[float]):
+    """(passages at or above ``min_score``, passages below it)."""
+    if min_score is None:
+        return list(sources), []
+    used = [s for s in sources if (s.get("score") or 0.0) >= min_score]
+    return used, [s for s in sources if s not in used]
 
 
 class ChatError(Exception):
@@ -171,9 +213,11 @@ class ChatService:
 
     def __init__(self, *, providers: Sequence[Provider] = PROVIDERS,  # pylint: disable=too-many-arguments
                  documents: Optional[str] = None, embedder: Any = "ollama:bge-m3",
-                 top_k: int = 4, timeout: float = 600.0) -> None:
+                 top_k: int = 4, timeout: float = 600.0,
+                 min_score: Optional[float] = None) -> None:
         self.providers = {p.name: p for p in providers}
         self.timeout = timeout
+        self.min_score = min_score
         self._models: List[Dict[str, Any]] = []
         self._models_at = 0.0
         self.index = _DocumentIndex(documents, embedder, top_k)
@@ -242,12 +286,12 @@ class ChatService:
 
     def _chat(self, llm, messages, use_documents, params) -> Iterator[Dict[str, Any]]:
         if use_documents:
-            sources = self.index.retrieve(messages[-1]["content"])
-            yield {"type": "sources", "sources": [_source(s) for s in sources]}
-            context = "\n\n".join(f"[{n}] ({s.get('document_id')}) {s['text']}"
-                                  for n, s in enumerate(sources, start=1))
-            messages = [{"role": "system", "content": RAG_SYSTEM.format(context=context)}] \
-                + messages
+            used, dropped = split_by_score(self.index.retrieve(messages[-1]["content"]),
+                                           self.min_score)
+            yield {"type": "sources", "sources": [_source(s) for s in used],
+                   "below_min_score": [_source(s) for s in dropped],
+                   "min_score": self.min_score}
+            messages = [{"role": "system", "content": rag_system_prompt(used)}] + messages
         finish, usage = None, {}
         for chunk in llm.stream_chat(messages, **params):
             if chunk.text:
@@ -257,12 +301,21 @@ class ChatService:
         yield {"type": "finish", "finish_reason": finish, "usage": usage}
 
     def _agent(self, llm, question, use_documents, agent_mode) -> Iterator[Dict[str, Any]]:
+        """Tool agent. With documents it searches FIRST: the passages for the
+        question are in its system prompt before the first call (the benchmark
+        showed small models often never call search_documents themselves), and
+        the search tool stays available for follow-up searches."""
         tools = default_tools()
+        system = AGENT_SYSTEM
         if use_documents:
-            if not self.index.source:
-                raise ChatError("the server was started without documents")
+            used, dropped = split_by_score(self.index.retrieve(question), self.min_score)
+            yield {"type": "sources", "sources": [_source(s) for s in used],
+                   "below_min_score": [_source(s) for s in dropped],
+                   "min_score": self.min_score}
+            system = rag_system_prompt(used) + "\n\n" + AGENT_SYSTEM
             tools.append(rag_search_tool(self.index))
-        run = ToolAgent(llm, ToolRegistry(tools), mode=agent_mode, max_steps=6).run(question)
+        run = ToolAgent(llm, ToolRegistry(tools), mode=agent_mode, max_steps=6,
+                        system_prompt=system).run(question)
         trace = run.to_dict()
         yield {"type": "trace", "steps": trace["steps"], "tools_used": trace["tools_used"],
                "stop_reason": trace["stop_reason"]}

@@ -1,0 +1,681 @@
+{
+  "schema": "ai_platform.agent_rag_benchmark.report/1",
+  "task_set": "agent_rag",
+  "created_at_utc": "2026-11-24T20:03:57.744552+00:00",
+  "models": [
+    "bielik-4.5b-v3:fp16"
+  ],
+  "variants": [
+    "rag",
+    "search_first_calc"
+  ],
+  "top_k": 3,
+  "agent_mode": "auto",
+  "max_steps": 5,
+  "min_score": 0.6,
+  "prompt": "v2",
+  "summary": [
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "tasks": 11,
+      "correct": 10,
+      "correct_lookup": "4/4",
+      "correct_lookup_calc": "4/5",
+      "correct_general": "2/2",
+      "retrieval_hit": "8/9",
+      "mean_model_calls": 1.0,
+      "mean_seconds": 30.3,
+      "not_answered": 0
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "tasks": 11,
+      "correct": 5,
+      "correct_lookup": "3/4",
+      "correct_lookup_calc": "0/5",
+      "correct_general": "2/2",
+      "retrieval_hit": "8/9",
+      "mean_model_calls": 1.64,
+      "mean_seconds": 45.5,
+      "not_answered": 0
+    }
+  ],
+  "results": [
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "lookup_trucks_pl",
+      "kind": "lookup",
+      "language": "pl",
+      "question": "Ile ciężarówek elektrycznych ma firma Nordwind?",
+      "expected": "19",
+      "screening": "candidate_correct_result_only",
+      "answer": "Z pasażu [1] wynika, że:\n\nFirma **Nordwind** ma **19** ciężarówek elektrycznych.\n\n\\* Ciężarówki te są ładowane w Gdyni.",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [
+        "fleet_en"
+      ],
+      "elapsed_seconds": 56.09,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "lookup_code_en",
+      "kind": "lookup",
+      "language": "en",
+      "question": "What is the access code of Nordwind warehouse number 7?",
+      "expected": "4512",
+      "screening": "candidate_correct_result_only",
+      "answer": "The access code of Nordwind warehouse number 7 is **4512**, as mentioned in passage [1].",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [
+        "code_pl"
+      ],
+      "elapsed_seconds": 17.13,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "lookup_support_pl",
+      "kind": "lookup",
+      "language": "pl",
+      "question": "Do której godziny działa obsługa klienta Nordwind w dni robocze?",
+      "expected": "16:45|16.45",
+      "screening": "candidate_correct",
+      "answer": "Obsługa klienta Nordwind działa w dni robocze od **7:15** do **16:45**.\n\n[1] (support_en) Nordwind customer support answers on weekdays from 7:15 to 16:45 at the number 58 600 12 34.",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [
+        "support_en"
+      ],
+      "elapsed_seconds": 33.97,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "lookup_founder_en",
+      "kind": "lookup",
+      "language": "en",
+      "question": "Who founded Nordwind Logistyka?",
+      "expected": "Halina Wrzos|Haliny Wrzos|Halinę Wrzos|Halinie Wrzos|Haliną Wrzos",
+      "screening": "candidate_correct",
+      "answer": "Halina Wrzos [1]",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [
+        "nordwind_pl"
+      ],
+      "elapsed_seconds": 11.2,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "calc_year_en",
+      "kind": "lookup_calc",
+      "language": "en",
+      "question": "How much does one year of the Nordwind Express subscription cost in total, in zloty?",
+      "expected": "588",
+      "screening": "candidate_correct_result_only",
+      "answer": "According to passage [1], the Nordwind Express subscription costs **49 zł** per month.\n\nTo find the total cost for one year:\n\n49 zł/month × 12 months = **588 zł**\n\nSo, one year of the Nordwind Express subscription costs **588 zł** in total.",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [
+        "tariff_pl"
+      ],
+      "elapsed_seconds": 34.29,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "calc_year_pl",
+      "kind": "lookup_calc",
+      "language": "pl",
+      "question": "Ile przesyłek maksymalnie obejmuje abonament Nordwind Express przez 12 miesięcy?",
+      "expected": "360",
+      "screening": "candidate_correct_result_only",
+      "answer": "Zgodnie z podanym passem:\n\n[1] (tariff_pl) Abonament Nordwind Express kosztuje 49 zł miesięcznie i obejmuje do 30 przesyłek.\n\n**Odpowiedź:**\nAbonament Nordwind Express obejmuje **do 30 przesyłek miesięcznie**.\n\nAby obliczyć maksymalną liczbę przesyłek w ciągu 12 miesięcy:\n\\[\n30 \\, \\text{przesyłek/miesiąc} \\times 12 \\, \\text{miesięcy} = 360 \\, \\text{przesyłek}\n\\]\n\n**Ostateczna odpowiedź:**\nAbonament Nordwind Express obejmuje **do 360 przesyłek w ciągu 12 miesięcy**.",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [
+        "tariff_pl"
+      ],
+      "elapsed_seconds": 43.24,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "calc_diesel_pl",
+      "kind": "lookup_calc",
+      "language": "pl",
+      "question": "Ile ciężarówek firmy Nordwind nie jest elektrycznych?",
+      "expected": "22",
+      "screening": "candidate_correct_result_only",
+      "answer": "Z pasażu [1] wynika, że:\n\nNordwind fleet has 41 trucks, of which 19 are electric.\n\nAby znaleźć liczbę ciężarówek, które nie są elektryczne:\n\n41 (wszystkie ciężarówki) - 19 (elektryczne) = 22\n\n**Odpowiedź:**\n\n22 ciężarówek firmy Nordwind nie jest elektrycznych.",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [
+        "fleet_en"
+      ],
+      "elapsed_seconds": 26.11,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "calc_minutes_en",
+      "kind": "lookup_calc",
+      "language": "en",
+      "question": "For how many minutes per working day is Nordwind customer support available?",
+      "expected": "570",
+      "screening": "manual_review",
+      "answer": "The passage states that Nordwind customer support is available from 7:15 to 16:45 on weekdays.\n\nTo find the number of minutes, calculate the difference between the end time and the start time:\n\n16:45 - 7:15 = 9 hours and 30 minutes\n\nConvert the hours to minutes:\n9 hours * 60 minutes/hour = 540 minutes\n\nAdd the 30 minutes:\n540 minutes + 30 minutes = 570 minutes\n\nNordwind customer support is available for **570 minutes** per working day.\n\n[1] (support_en) Nordwind customer support answers on weekdays from 7:15 to 16:45 at the number 58 600 12 34.",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [
+        "support_en"
+      ],
+      "elapsed_seconds": 63.62,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "calc_years_pl",
+      "kind": "lookup_calc",
+      "language": "pl",
+      "question": "Ile lat minęło od założenia firmy Nordwind do zakończenia projektu Orion?",
+      "expected": "14",
+      "screening": "candidate_correct_result_only",
+      "answer": "Nie mogę odpowiedzieć na to pytanie na podstawie podanych passaży, ponieważ nie zawierają one informacji o roku założenia firmy Nordwind.\n\nJednakże, jeśli założymy, że data zakończenia projektu (14 marca 2025) jest znana, a data założenia firmy nie jest dostępna, to nie można obliczyć dokładnej liczby lat.\n\nJeśli masz więcej informacji o roku założenia Nordwind, mogę spróbować pomóc!",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": false,
+      "retrieved": [
+        "orion_en"
+      ],
+      "elapsed_seconds": 31.54,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "general_capital_pl",
+      "kind": "general",
+      "language": "pl",
+      "question": "Jakie miasto jest stolicą Polski?",
+      "expected": "Warszawa|Warszawie|Warszawę|Warszawy|Warsaw",
+      "screening": "candidate_correct",
+      "answer": "Warszawa.\n\n(Uwaga: Odpowiedź jest zgodna z faktami, ponieważ Warszawa jest stolicą Polski.)",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": null,
+      "retrieved": [],
+      "elapsed_seconds": 11.78,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "rag",
+      "task_id": "general_mult_en",
+      "kind": "general",
+      "language": "en",
+      "question": "What is 12 times 12?",
+      "expected": "144",
+      "screening": "candidate_correct_result_only",
+      "answer": "12 times 12 is equal to 144.",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": null,
+      "retrieved": [],
+      "elapsed_seconds": 4.85,
+      "trace": []
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "lookup_trucks_pl",
+      "kind": "lookup",
+      "language": "pl",
+      "question": "Ile ciężarówek elektrycznych ma firma Nordwind?",
+      "expected": "19",
+      "screening": "candidate_correct_result_only",
+      "answer": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile ciężarówek elektrycznych ma firma Nordwind?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"19\"}}",
+      "stop_reason": "answered",
+      "tools_used": [
+        "search_documents"
+      ],
+      "model_calls": 2,
+      "retrieval_hit": true,
+      "retrieved": [],
+      "elapsed_seconds": 63.31,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile ciężarówek elektrycznych ma firma Nordwind?\"}}",
+          "tool_calls": [
+            {
+              "name": "search_documents",
+              "arguments": {
+                "query": "Ile ciężarówek elektrycznych ma firma Nordwind?"
+              },
+              "ok": true,
+              "result": "[{\"document_id\": \"fleet_en\", \"text\": \"The Nordwind fleet has 41 trucks, of which 19 are electric and are charged overnight in Gdynia.\", \"score\": 0.714}, {\"document_id\": \"nordwind_pl\", \"text\": \"Nordwind Logistyka to fikcyjna firma przewozowa z siedzibą w Gdyni, założona w 2011 roku przez Halinę Wrzos.\", \"score\": 0.574}, {\"document_id\": \"code_pl\", \"text\": \"Kod dostępu do magazynu numer 7 firmy Nordwind to 4512 i zmienia się co kwartał.\", \"score\": 0.53}]",
+              "seconds": 0.078
+            }
+          ],
+          "elapsed_seconds": 39.02363295698888
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile ciężarówek elektrycznych ma firma Nordwind?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"19\"}}",
+          "tool_calls": [],
+          "elapsed_seconds": 24.1975494310027
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "lookup_code_en",
+      "kind": "lookup",
+      "language": "en",
+      "question": "What is the access code of Nordwind warehouse number 7?",
+      "expected": "4512",
+      "screening": "candidate_correct_result_only",
+      "answer": "The access code for Nordwind warehouse number 7 is 4512.",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [],
+      "elapsed_seconds": 34.58,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": "{\"answer\": \"The access code for Nordwind warehouse number 7 is 4512.\"}",
+          "tool_calls": [],
+          "elapsed_seconds": 34.576238174005994
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "lookup_support_pl",
+      "kind": "lookup",
+      "language": "pl",
+      "question": "Do której godziny działa obsługa klienta Nordwind w dni robocze?",
+      "expected": "16:45|16.45",
+      "screening": "candidate_correct",
+      "answer": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Do której godziny działa obsługa klienta Nordwind w dni robocze?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"16:45 - 7:15\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"(16:45 - 7:15) / 24 * 100\"}}",
+      "stop_reason": "answered",
+      "tools_used": [
+        "search_documents"
+      ],
+      "model_calls": 2,
+      "retrieval_hit": true,
+      "retrieved": [],
+      "elapsed_seconds": 78.94,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Do której godziny działa obsługa klienta Nordwind w dni robocze?\"}}",
+          "tool_calls": [
+            {
+              "name": "search_documents",
+              "arguments": {
+                "query": "Do której godziny działa obsługa klienta Nordwind w dni robocze?"
+              },
+              "ok": true,
+              "result": "[{\"document_id\": \"support_en\", \"text\": \"Nordwind customer support answers on weekdays from 7:15 to 16:45 at the number 58 600 12 34.\", \"score\": 0.76}, {\"document_id\": \"code_pl\", \"text\": \"Kod dostępu do magazynu numer 7 firmy Nordwind to 4512 i zmienia się co kwartał.\", \"score\": 0.584}, {\"document_id\": \"fleet_en\", \"text\": \"The Nordwind fleet has 41 trucks, of which 19 are electric and are charged overnight in Gdynia.\", \"score\": 0.569}]",
+              "seconds": 0.1417
+            }
+          ],
+          "elapsed_seconds": 38.06885792200046
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Do której godziny działa obsługa klienta Nordwind w dni robocze?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"16:45 - 7:15\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"(16:45 - 7:15) / 24 * 100\"}}",
+          "tool_calls": [],
+          "elapsed_seconds": 40.72639175999211
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "lookup_founder_en",
+      "kind": "lookup",
+      "language": "en",
+      "question": "Who founded Nordwind Logistyka?",
+      "expected": "Halina Wrzos|Haliny Wrzos|Halinę Wrzos|Halinie Wrzos|Haliną Wrzos",
+      "screening": "manual_review",
+      "answer": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Kto założył Nordwind Logistyka?\"}} \n {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile ma ciężarówek Nordwind?\"}} \n {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Jaki jest kod dostępu do magazynu numer 7 firmy Nordwind?\"}}",
+      "stop_reason": "answered",
+      "tools_used": [
+        "search_documents"
+      ],
+      "model_calls": 2,
+      "retrieval_hit": true,
+      "retrieved": [],
+      "elapsed_seconds": 72.0,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Kto założył Nordwind Logistyka?\"}}",
+          "tool_calls": [
+            {
+              "name": "search_documents",
+              "arguments": {
+                "query": "Kto założył Nordwind Logistyka?"
+              },
+              "ok": true,
+              "result": "[{\"document_id\": \"nordwind_pl\", \"text\": \"Nordwind Logistyka to fikcyjna firma przewozowa z siedzibą w Gdyni, założona w 2011 roku przez Halinę Wrzos.\", \"score\": 0.66}, {\"document_id\": \"fleet_en\", \"text\": \"The Nordwind fleet has 41 trucks, of which 19 are electric and are charged overnight in Gdynia.\", \"score\": 0.477}, {\"document_id\": \"code_pl\", \"text\": \"Kod dostępu do magazynu numer 7 firmy Nordwind to 4512 i zmienia się co kwartał.\", \"score\": 0.443}]",
+              "seconds": 0.1042
+            }
+          ],
+          "elapsed_seconds": 36.317700136991334
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Kto założył Nordwind Logistyka?\"}} \n {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile ma ciężarówek Nordwind?\"}} \n {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Jaki jest kod dostępu do magazynu numer 7 firmy Nordwind?\"}}",
+          "tool_calls": [],
+          "elapsed_seconds": 35.56673702900298
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "calc_year_en",
+      "kind": "lookup_calc",
+      "language": "en",
+      "question": "How much does one year of the Nordwind Express subscription cost in total, in zloty?",
+      "expected": "588",
+      "screening": "manual_review",
+      "answer": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile kosztuje rok abonamentu Nordwind Express w złotych?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"49 * 12\"}}",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [],
+      "elapsed_seconds": 46.07,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile kosztuje rok abonamentu Nordwind Express w złotych?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"49 * 12\"}}",
+          "tool_calls": [],
+          "elapsed_seconds": 46.06271815499349
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "calc_year_pl",
+      "kind": "lookup_calc",
+      "language": "pl",
+      "question": "Ile przesyłek maksymalnie obejmuje abonament Nordwind Express przez 12 miesięcy?",
+      "expected": "360",
+      "screening": "manual_review",
+      "answer": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile przesyłek maksymalnie obejmuje abonament Nordwind Express przez 12 miesięcy?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"30 * 12\"}}",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [],
+      "elapsed_seconds": 21.13,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile przesyłek maksymalnie obejmuje abonament Nordwind Express przez 12 miesięcy?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"30 * 12\"}}",
+          "tool_calls": [],
+          "elapsed_seconds": 21.12156943300215
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "calc_diesel_pl",
+      "kind": "lookup_calc",
+      "language": "pl",
+      "question": "Ile ciężarówek firmy Nordwind nie jest elektrycznych?",
+      "expected": "22",
+      "screening": "manual_review",
+      "answer": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile ciężarówek firmy Nordwind nie jest elektrycznych?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"41 - 19\"}}",
+      "stop_reason": "answered",
+      "tools_used": [
+        "search_documents"
+      ],
+      "model_calls": 2,
+      "retrieval_hit": true,
+      "retrieved": [],
+      "elapsed_seconds": 36.74,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile ciężarówek firmy Nordwind nie jest elektrycznych?\"}}",
+          "tool_calls": [
+            {
+              "name": "search_documents",
+              "arguments": {
+                "query": "Ile ciężarówek firmy Nordwind nie jest elektrycznych?"
+              },
+              "ok": true,
+              "result": "[{\"document_id\": \"fleet_en\", \"text\": \"The Nordwind fleet has 41 trucks, of which 19 are electric and are charged overnight in Gdynia.\", \"score\": 0.687}, {\"document_id\": \"nordwind_pl\", \"text\": \"Nordwind Logistyka to fikcyjna firma przewozowa z siedzibą w Gdyni, założona w 2011 roku przez Halinę Wrzos.\", \"score\": 0.518}, {\"document_id\": \"code_pl\", \"text\": \"Kod dostępu do magazynu numer 7 firmy Nordwind to 4512 i zmienia się co kwartał.\", \"score\": 0.498}]",
+              "seconds": 0.1052
+            }
+          ],
+          "elapsed_seconds": 10.939763866990688
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Ile ciężarówek firmy Nordwind nie jest elektrycznych?\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"41 - 19\"}}",
+          "tool_calls": [],
+          "elapsed_seconds": 25.68108786799712
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "calc_minutes_en",
+      "kind": "lookup_calc",
+      "language": "en",
+      "question": "For how many minutes per working day is Nordwind customer support available?",
+      "expected": "570",
+      "screening": "manual_review",
+      "answer": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Nordwind customer support availability\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"(16:45 - 7:15) * 60\"}}",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": true,
+      "retrieved": [],
+      "elapsed_seconds": 23.68,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"Nordwind customer support availability\"}} \n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"(16:45 - 7:15) * 60\"}}",
+          "tool_calls": [],
+          "elapsed_seconds": 23.67031426700123
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "calc_years_pl",
+      "kind": "lookup_calc",
+      "language": "pl",
+      "question": "Ile lat minęło od założenia firmy Nordwind do zakończenia projektu Orion?",
+      "expected": "14",
+      "screening": "manual_review",
+      "answer": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"data założenia firmy Nordwind\"}}\n {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"data zakończenia projektu Orion\"}}\n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"2025 - rok założenia Nordwind\"}}",
+      "stop_reason": "answered",
+      "tools_used": [],
+      "model_calls": 1,
+      "retrieval_hit": false,
+      "retrieved": [],
+      "elapsed_seconds": 55.4,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"data założenia firmy Nordwind\"}}\n {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"data zakończenia projektu Orion\"}}\n {\"tool\": \"calculator\", \"arguments\": {\"expression\": \"2025 - rok założenia Nordwind\"}}",
+          "tool_calls": [],
+          "elapsed_seconds": 55.3864298970002
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "general_capital_pl",
+      "kind": "general",
+      "language": "pl",
+      "question": "Jakie miasto jest stolicą Polski?",
+      "expected": "Warszawa|Warszawie|Warszawę|Warszawy|Warsaw",
+      "screening": "candidate_correct",
+      "answer": "Na podstawie analizy dokumentów, stolicą Polski jest **Warszawa**.",
+      "stop_reason": "answered",
+      "tools_used": [
+        "search_documents",
+        "search_documents"
+      ],
+      "model_calls": 3,
+      "retrieval_hit": null,
+      "retrieved": [],
+      "elapsed_seconds": 53.88,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"stolica Polski\"}}",
+          "tool_calls": [
+            {
+              "name": "search_documents",
+              "arguments": {
+                "query": "stolica Polski"
+              },
+              "ok": true,
+              "result": "[{\"document_id\": \"warsaw_en\", \"text\": \"Warsaw has been the capital of Poland since the late sixteenth century and lies on the Vistula.\", \"score\": 0.627}, {\"document_id\": \"krakow_pl\", \"text\": \"Kraków był stolicą Polski przez kilka stuleci; na Wawelu koronowano królów.\", \"score\": 0.587}, {\"document_id\": \"canberra_pl\", \"text\": \"Stolicą Australii jest Canberra, a nie Sydney, choć Sydney jest większe.\", \"score\": 0.431}]",
+              "seconds": 0.07
+            }
+          ],
+          "elapsed_seconds": 31.74499526199361
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": " {\"tool\": \"search_documents\", \"arguments\": {\"query\": \"stolica Polski\"}}",
+          "tool_calls": [
+            {
+              "name": "search_documents",
+              "arguments": {
+                "query": "stolica Polski"
+              },
+              "ok": true,
+              "result": "[{\"document_id\": \"warsaw_en\", \"text\": \"Warsaw has been the capital of Poland since the late sixteenth century and lies on the Vistula.\", \"score\": 0.627}, {\"document_id\": \"krakow_pl\", \"text\": \"Kraków był stolicą Polski przez kilka stuleci; na Wawelu koronowano królów.\", \"score\": 0.587}, {\"document_id\": \"canberra_pl\", \"text\": \"Stolicą Australii jest Canberra, a nie Sydney, choć Sydney jest większe.\", \"score\": 0.431}]",
+              "seconds": 0.0665
+            }
+          ],
+          "elapsed_seconds": 13.246121864998713
+        },
+        {
+          "step": 3,
+          "mode": "json",
+          "model_text": "Na podstawie analizy dokumentów, stolicą Polski jest **Warszawa**.",
+          "tool_calls": [],
+          "elapsed_seconds": 8.743236869995599
+        }
+      ]
+    },
+    {
+      "model": "bielik-4.5b-v3:fp16",
+      "variant": "search_first_calc",
+      "task_id": "general_mult_en",
+      "kind": "general",
+      "language": "en",
+      "question": "What is 12 times 12?",
+      "expected": "144",
+      "screening": "candidate_correct_result_only",
+      "answer": "The result of 12 times 12 is 144.",
+      "stop_reason": "answered",
+      "tools_used": [
+        "calculator"
+      ],
+      "model_calls": 2,
+      "retrieval_hit": null,
+      "retrieved": [],
+      "elapsed_seconds": 14.35,
+      "trace": [
+        {
+          "step": 1,
+          "mode": "json",
+          "model_text": "{\"tool\": \"calculator\", \"arguments\": {\"expression\": \"12 * 12\"}}",
+          "tool_calls": [
+            {
+              "name": "calculator",
+              "arguments": {
+                "expression": "12 * 12"
+              },
+              "ok": true,
+              "result": "{\"expression\": \"12 * 12\", \"result\": 144}",
+              "seconds": 0.0003
+            }
+          ],
+          "elapsed_seconds": 8.516354013991076
+        },
+        {
+          "step": 2,
+          "mode": "json",
+          "model_text": "The result of 12 times 12 is 144.",
+          "tool_calls": [],
+          "elapsed_seconds": 5.827992631006055
+        }
+      ]
+    }
+  ]
+}

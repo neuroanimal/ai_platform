@@ -9,7 +9,14 @@ variants:
   (``chat_service.RAG_SYSTEM``, the same prompt as the browser chat) - one call;
 - ``agent_search``: ``ToolAgent`` with only ``search_documents`` - the model
   decides whether and what to search;
-- ``agent_search_calc``: the same plus ``calculator``.
+- ``agent_search_calc``: the same plus ``calculator``;
+- ``search_first_calc``: the passages are in the system prompt before the
+  first call (as in plain RAG), and the agent has ``search_documents`` and
+  ``calculator`` - what the browser chat does in "z narzędziami" with documents.
+
+``prompt`` picks the RAG system prompt: ``v2`` (default; passages may be
+off-topic, general knowledge allowed) or ``v1`` (the first run of 2026-11-24).
+``min_score`` drops passages below a score floor (``None`` keeps all).
 
 Per run: the answer's screening (``answer_screening``, the rule-based check),
 whether the documents holding the facts were found (``retrieval_hit``: in the
@@ -32,7 +39,15 @@ from ai_platform.backend.domain_layer.business_logic.agent_benchmark.agent_rag_t
     get_agent_rag_tasks,
 )
 from ai_platform.backend.domain_layer.business_logic.rag_benchmark.qa_sets import get_qa_set
-from ai_platform.backend.service_layer.macro.chat.chat_service import RAG_SYSTEM
+from ai_platform.backend.service_layer.macro.chat.chat_service import (
+    AGENT_SYSTEM as CHAT_AGENT_SYSTEM,
+)
+from ai_platform.backend.service_layer.macro.chat.chat_service import (
+    RAG_SYSTEM,
+    RAG_SYSTEM_V1,
+    rag_system_prompt,
+    split_by_score,
+)
 from ai_platform.common.agent.agent_loop import ToolAgent
 from ai_platform.common.agent.builtin_tools import CALCULATOR, rag_search_tool
 from ai_platform.common.agent.tool import ToolRegistry
@@ -41,7 +56,8 @@ from ai_platform.common.llm.llm_exception import LLMError
 from ai_platform.common.rag.native_rag_adapter import NativeRAGAdapter
 
 REPORT_SCHEMA = "ai_platform.agent_rag_benchmark.report/1"
-VARIANTS = ("rag", "agent_search", "agent_search_calc")
+VARIANTS = ("rag", "agent_search", "agent_search_calc", "search_first_calc")
+PROMPTS = {"v1": RAG_SYSTEM_V1, "v2": RAG_SYSTEM}
 AGENT_SYSTEM = ("You are a careful assistant. Use search_documents for facts about companies; "
                 "{calc}Answer briefly in the language of the question.")
 CALC_HINT = "use the calculator for every calculation. "
@@ -62,15 +78,19 @@ def _hit(task: AgentRagTask, found_ids: Sequence[str]):
     return all(doc in found_ids for doc in task.relevant)
 
 
-def run_rag(llm, rag, task: AgentRagTask, top_k: int) -> Dict[str, Any]:
+def _passages(rag, task: AgentRagTask, top_k: int, min_score, prompt: str):
+    used, _ = split_by_score(rag.retrieve(task.question, top_k), min_score)
+    return used, rag_system_prompt(used, PROMPTS[prompt])
+
+
+def run_rag(llm, rag, task: AgentRagTask, top_k: int, *,  # pylint: disable=too-many-arguments
+            min_score=None, prompt: str = "v2") -> Dict[str, Any]:
     """Plain RAG: retrieve, one model call."""
     start = time.perf_counter()
-    sources = rag.retrieve(task.question, top_k)
-    context = "\n\n".join(f"[{n}] ({s.get('document_id')}) {s['text']}"
-                          for n, s in enumerate(sources, start=1))
+    sources, system = _passages(rag, task, top_k, min_score, prompt)
     try:
         answer = llm.chat_completion(
-            [{"role": "system", "content": RAG_SYSTEM.format(context=context)},
+            [{"role": "system", "content": system},
              {"role": "user", "content": task.question}]).text
         stop = "answered"
     except LLMError as exc:
@@ -81,15 +101,22 @@ def run_rag(llm, rag, task: AgentRagTask, top_k: int) -> Dict[str, Any]:
             "elapsed_seconds": round(time.perf_counter() - start, 2), "trace": []}
 
 
-def run_agent(llm, rag, task: AgentRagTask, *, calculator: bool, top_k: int,  # pylint: disable=too-many-arguments
-              mode: str, max_steps: int) -> Dict[str, Any]:
-    """Agent with search (and calculator)."""
+def run_agent(llm, rag, task: AgentRagTask, *, calculator: bool, top_k: int,  # pylint: disable=too-many-arguments,too-many-locals
+              mode: str, max_steps: int, search_first: bool = False, min_score=None,
+              prompt: str = "v2") -> Dict[str, Any]:
+    """Agent with search (and calculator); ``search_first`` preloads the passages."""
     tools = [rag_search_tool(rag, top_k=top_k)] + ([CALCULATOR] if calculator else [])
+    system = AGENT_SYSTEM.format(calc=CALC_HINT if calculator else "")
+    preloaded = []
+    if search_first:
+        preloaded, rag_system = _passages(rag, task, top_k, min_score, prompt)
+        system = rag_system + "\n\n" + CHAT_AGENT_SYSTEM
     agent = ToolAgent(llm, ToolRegistry(tools), mode=mode, max_steps=max_steps,
-                      system_prompt=AGENT_SYSTEM.format(calc=CALC_HINT if calculator else ""))
+                      system_prompt=system)
     run = agent.run(task.question)
-    search_results = " ".join(c["result"] for s in run.steps for c in s.tool_calls
-                              if c["name"] == "search_documents" and c["ok"])
+    search_results = " ".join([c["result"] for s in run.steps for c in s.tool_calls
+                               if c["name"] == "search_documents" and c["ok"]]
+                              + [str(s.get("document_id")) for s in preloaded])
     return {"answer": run.answer or "", "stop_reason": run.stop_reason,
             "tools_used": run.tools_used, "model_calls": len(run.steps),
             "retrieval_hit": _hit(task, [d for d in task.relevant if d in search_results]),
@@ -117,13 +144,15 @@ def rescreen(report: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _run_one(llm, rag, task: AgentRagTask, variant: str, *, top_k: int,  # pylint: disable=too-many-arguments
-             mode: str, max_steps: int) -> Dict[str, Any]:
+             mode: str, max_steps: int, min_score=None, prompt: str = "v2") -> Dict[str, Any]:
     """One task in one variant, screened."""
     if variant == "rag":
-        result = run_rag(llm, rag, task, top_k)
+        result = run_rag(llm, rag, task, top_k, min_score=min_score, prompt=prompt)
     else:
         result = run_agent(llm, rag, task, top_k=top_k, mode=mode, max_steps=max_steps,
-                           calculator=variant == "agent_search_calc")
+                           calculator=variant in ("agent_search_calc", "search_first_calc"),
+                           search_first=variant == "search_first_calc",
+                           min_score=min_score, prompt=prompt)
     return {"variant": variant, "task_id": task.task_id, "kind": task.kind,
             "language": task.language, "question": task.question, "expected": task.expected,
             "screening": _screen(task, result["answer"], result["stop_reason"]), **result}
@@ -159,8 +188,11 @@ def evaluate_agent_rag(models: Sequence[str],  # pylint: disable=too-many-argume
                        llm_factory: Callable[[str], Any], embedder, *,
                        variants: Sequence[str] = VARIANTS, task_set: str = "agent_rag",
                        top_k: int = 3, agent_mode: str = "auto", max_steps: int = 5,
+                       min_score=None, prompt: str = "v2",
                        progress: Callable[[str], None] = lambda m: None) -> Dict[str, Any]:
     """Answer every task with every model in every variant."""
+    if prompt not in PROMPTS:
+        raise ValueError(f"prompt must be one of {sorted(PROMPTS)}")
     unknown = set(variants) - set(VARIANTS)
     if unknown:
         raise ValueError(f"unknown variants {sorted(unknown)}; choose from {VARIANTS}")
@@ -175,7 +207,8 @@ def evaluate_agent_rag(models: Sequence[str],  # pylint: disable=too-many-argume
                     progress(f"model {model} variant {variant}")
                     for task in tasks:
                         row = _run_one(llm, rag, task, variant, top_k=top_k, mode=agent_mode,
-                                       max_steps=max_steps)
+                                       max_steps=max_steps, min_score=min_score,
+                                       prompt=prompt)
                         rows.append({"model": model, **row})
                         progress(f"  {task.task_id}: {row['tools_used']} -> "
                                  f"{row['screening']} ({row['elapsed_seconds']} s)")
@@ -186,5 +219,6 @@ def evaluate_agent_rag(models: Sequence[str],  # pylint: disable=too-many-argume
     return {"schema": REPORT_SCHEMA, "task_set": task_set,
             "created_at_utc": datetime.now(timezone.utc).isoformat(),
             "models": list(models), "variants": list(variants), "top_k": top_k,
-            "agent_mode": agent_mode, "max_steps": max_steps,
+            "agent_mode": agent_mode, "max_steps": max_steps, "min_score": min_score,
+            "prompt": prompt,
             "summary": summarize(rows), "results": rows}

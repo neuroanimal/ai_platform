@@ -531,3 +531,26 @@ def test_llm_judge_schema1_migrates_locally_and_human_reasoning():
     agreement = judge_agreement(old, reviewed)
     assert agreement["agreed"] == 1
     assert agreement["reasoning"]["agreed"] == 1  # not_assessed record left out
+
+
+def test_llm_judge_retries_connection_errors():
+    from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (  # pylint: disable=import-outside-toplevel
+        judge_batch,
+    )
+
+    class SlowJudge:
+        """Read timeout once, then a reply."""
+        calls = 0
+
+        def chat_completion(self, *_, **__):
+            """Time out first."""
+            SlowJudge.calls += 1
+            if SlowJudge.calls == 1:
+                raise LLMConnectionError("The read operation timed out")
+            return ChatResult(text='[{"id": "A1", "result": "correct", "reasoning": "none"}]',
+                              model="j")
+
+    waits = []
+    records = [{"prompt": "q", "expected": "e", "answer": "a", "status": "PASS"}]
+    assert judge_batch(SlowJudge(), records, sleep=waits.append)[0]["result"] == "correct"
+    assert waits == [20.0]

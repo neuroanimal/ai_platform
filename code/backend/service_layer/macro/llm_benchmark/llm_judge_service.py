@@ -50,7 +50,7 @@ from ai_platform.backend.service_layer.macro.llm_benchmark.review_service import
     VERDICTS,
     record_key,
 )
-from ai_platform.common.llm.llm_exception import LLMError
+from ai_platform.common.llm.llm_exception import LLMConnectionError, LLMError
 
 JUDGE_SCHEMA = "ai_platform.llm_judge/2"
 LEGACY_SCHEMA = "ai_platform.llm_judge/1"
@@ -257,7 +257,8 @@ def judge_batch(judge, records: List[Dict[str, Any]], *,  # pylint: disable=too-
     """Judgements for answers to one question, in the order of ``records``.
 
     Transient errors (``RETRY_STATUSES``, e.g. "model is experiencing high
-    demand") are retried after ``RETRY_DELAYS``, except a per-day quota.
+    demand", and connection errors such as a read timeout) are retried after
+    ``RETRY_DELAYS``, except a per-day quota.
     HTTP 413 (request too large for the provider's limit) splits the batch in
     halves, down to single answers. Other errors fail at once.
     """
@@ -276,7 +277,8 @@ def judge_batch(judge, records: List[Dict[str, Any]], *,  # pylint: disable=too-
                                     sleep=sleep)
                         + judge_batch(judge, records[half:], retries=retries, reserve=reserve,
                                       sleep=sleep))
-            if status in RETRY_STATUSES and attempt < retries and not _is_daily_quota(exc):
+            transient = status in RETRY_STATUSES or isinstance(exc, LLMConnectionError)
+            if transient and attempt < retries and not _is_daily_quota(exc):
                 sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                 attempt += 1
                 continue

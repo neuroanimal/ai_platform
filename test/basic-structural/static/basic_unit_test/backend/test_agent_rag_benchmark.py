@@ -57,21 +57,43 @@ def test_tasks_are_consistent():
 def test_evaluate_three_variants(tmp_path):
     report = evaluate_agent_rag(["m"], ScriptedAgentLLM, HashingEmbedder(), agent_mode="json")
     assert [s["variant"] for s in report["summary"]] == list(VARIANTS)
-    rag, search, search_calc = report["summary"]
-    assert rag["correct"] == search["correct"] == search_calc["correct"] == 11
+    rag, search, search_calc, first = report["summary"]
+    assert rag["correct"] == search["correct"] == search_calc["correct"] == first["correct"] == 11
     assert rag["mean_model_calls"] == 1 and search["mean_model_calls"] == 2
+    assert first["mean_model_calls"] == 1  # passages preloaded: answered without a search
     assert rag["correct_lookup_calc"] == "5/5" and rag["correct_general"] == "2/2"
     for row in report["results"]:
         assert (row["retrieval_hit"] is None) == (row["kind"] == "general")
-        assert row["tools_used"] == ([] if row["variant"] == "rag" else ["search_documents"])
+        assert row["tools_used"] == ([] if row["variant"] in ("rag", "search_first_calc")
+                                     else ["search_documents"])
     paths = agent_rag_benchmark_cli.write_reports(report, tmp_path / "r.json", "T")
     assert all(p.exists() for p in paths)
     assert "Lookup + calc" in paths[1].read_text(encoding="utf-8")
 
 
-def test_unknown_variant():
+def test_unknown_variant_and_prompt():
     with pytest.raises(ValueError):
         evaluate_agent_rag(["m"], ScriptedAgentLLM, HashingEmbedder(), variants=["magic"])
+    with pytest.raises(ValueError):
+        evaluate_agent_rag(["m"], ScriptedAgentLLM, HashingEmbedder(), prompt="v9")
+
+
+def test_min_score_drops_passages_and_prompt_versions():
+    seen = []
+
+    class Recorder(ScriptedAgentLLM):
+        """Keeps the system prompts."""
+
+        def chat_completion(self, messages, **kwargs):
+            """Record, then answer as the scripted model."""
+            seen.append(messages[0]["content"])
+            return super().chat_completion(messages, **kwargs)
+
+    evaluate_agent_rag(["m"], Recorder, HashingEmbedder(), variants=["rag"], min_score=1.01)
+    assert all(s.startswith("No document matched") for s in seen)
+    seen.clear()
+    evaluate_agent_rag(["m"], Recorder, HashingEmbedder(), variants=["rag"], prompt="v1")
+    assert all(s.startswith("Answer using the numbered passages") for s in seen)
 
 
 def test_rescreen_uses_current_task_definitions(tmp_path):

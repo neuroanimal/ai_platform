@@ -288,7 +288,8 @@ def command_judge(args) -> int:  # pylint: disable=too-many-locals
         print("--provider and --model are required (or use --estimate)", file=sys.stderr)
         return 1
     judge = JUDGE_PROVIDERS[args.provider]()
-    config = {"model": args.model, "temperature": 0, "max_tokens": 200, "timeout": 120}
+    config = {"model": args.model, "temperature": 0, "max_tokens": 200,
+              "timeout": args.timeout}
     if args.base_url:
         config["base_url"] = args.base_url
     if args.api_key_env:
@@ -381,6 +382,9 @@ def build_parser() -> argparse.ArgumentParser:  # pylint: disable=too-many-state
     judge.add_argument("--base-url", default=None)
     judge.add_argument("--api-key-env", default=None)
     judge.add_argument("--workers", type=int, default=4)
+    judge.add_argument("--timeout", type=float, default=300.0,
+                       help="seconds per prompt; a batch of 22 answers to a thinking model "
+                            "can take over two minutes")
     judge.add_argument("--retries", type=int, default=3,
                        help="retries of a prompt on HTTP 429/5xx, after 20, 60, 120 s")
     judge.add_argument("--thinking-reserve", type=int, default=2000,

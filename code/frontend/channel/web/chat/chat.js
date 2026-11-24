@@ -109,8 +109,13 @@ async function send(question) {
       if (done) break;
       buffer = parseEvents(buffer + value, (event) => {
         if (event.type === "delta") { answer += event.text; body.textContent = answer; box.scrollIntoView({ block: "end" }); }
-        else if (event.type === "sources") addDetails(box, `Źródła (${event.sources.length})`,
-          event.sources.map((s) => `${s.document_id}  score ${s.score}\n${s.text}`));
+        else if (event.type === "sources") {
+          const dropped = event.below_min_score || [];
+          addDetails(box, `Źródła (${event.sources.length}` +
+            (dropped.length ? `, ${dropped.length} poniżej progu ${event.min_score}` : "") + ")",
+            event.sources.map((s) => `${s.document_id}  score ${s.score}\n${s.text}`)
+              .concat(dropped.map((s) => `[pominięte] ${s.document_id}  score ${s.score}\n${s.text}`)));
+        }
         else if (event.type === "trace") addDetails(box, `Kroki agenta: ${event.steps.length}, narzędzia: ${event.tools_used.join(", ") || "brak"} (${event.stop_reason})`,
           event.steps.map((s) => `#${s.step} [${s.mode}] ${s.model_text}\n` +
             s.tool_calls.map((c) => `-> ${c.name}(${JSON.stringify(c.arguments)}) ${c.ok ? "=" : "BŁĄD"} ${c.result}`).join("\n")));

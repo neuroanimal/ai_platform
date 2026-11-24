@@ -33,6 +33,7 @@ from typing import Any, Optional
 from urllib.parse import urlsplit
 
 from ai_platform.backend.service_layer.macro.chat.chat_service import (
+    DEFAULT_MIN_SCORE,
     DEMO_CORPUS,
     ChatService,
 )
@@ -184,6 +185,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--embedder", default="ollama:bge-m3",
                         help="embedder spec for the documents (see create_embedder)")
     parser.add_argument("--top-k", type=int, default=4)
+    parser.add_argument("--min-score", type=float, default=DEFAULT_MIN_SCORE,
+                        help="drop passages scoring below this (default calibrated for "
+                             "ollama:bge-m3; use a negative value to keep all)")
     parser.add_argument("--static-dir", default=str(DEFAULT_STATIC_DIR))
     return parser
 
@@ -196,7 +200,8 @@ def main(argv: Optional[list] = None) -> int:
               "use --allow-remote only on a trusted network", file=sys.stderr)
         return 2
     documents = None if args.documents == "none" else args.documents
-    service = ChatService(documents=documents, embedder=args.embedder, top_k=args.top_k)
+    service = ChatService(documents=documents, embedder=args.embedder, top_k=args.top_k,
+                          min_score=args.min_score if args.min_score >= 0 else None)
     server = create_server(service, args.host, args.port, Path(args.static_dir))
     host, port = server.server_address[:2]
     print(f"chat on http://{host}:{port}/  (documents: {documents or 'none'}; Ctrl-C to stop)",

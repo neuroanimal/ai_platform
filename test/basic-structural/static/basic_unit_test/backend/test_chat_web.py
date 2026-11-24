@@ -174,3 +174,22 @@ def test_server_rejects_foreign_host_origin_and_form_posts(server_url):
 def test_main_refuses_remote_host_without_flag(capsys):
     assert main(["--host", "0.0.0.0"]) == 2
     assert "no authentication" in capsys.readouterr().err
+
+
+def test_score_floor_and_agent_searches_first():
+    from ai_platform.backend.service_layer.macro.chat.chat_service import (  # pylint: disable=import-outside-toplevel
+        RAG_NO_MATCH,
+    )
+
+    service = ChatService(providers=[Provider("fake", FakeLLM, "http://x")],
+                          documents="demo:bilingual_qa", embedder="hashing", min_score=1.01)
+    events = list(service.answer({"model": "fake:tiny:1b", "use_documents": True,
+                                  "messages": [{"role": "user", "content": "Nordwind?"}]}))
+    assert events[0]["sources"] == [] and len(events[0]["below_min_score"]) == 4
+    assert FakeLLM.seen[-1][0]["content"] == RAG_NO_MATCH
+    service.min_score = None
+    events = list(service.answer({"model": "fake:big:7b", "mode": "agent", "agent_mode": "json",
+                                  "use_documents": True,
+                                  "messages": [{"role": "user", "content": "17 razy 23?"}]}))
+    assert [e["type"] for e in events][:2] == ["sources", "trace"]
+    service.close()
