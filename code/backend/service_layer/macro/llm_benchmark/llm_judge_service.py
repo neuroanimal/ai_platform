@@ -2,11 +2,26 @@
 LLM-as-judge: a second, independent opinion on every benchmark answer.
 
 A (preferably strong, remote) model reads the question, the expected answer
-and the model's answer and returns one of the human verdicts - correct,
-incorrect, partial, unclear - with a one-sentence reason. The judgements are
-kept in their own file, keyed by record (model|test_id|language|run_index),
-so they never overwrite the rule screening or the human review; the review
-spreadsheet shows them in the "LLM verdict" column.
+and the model's answer and returns TWO separate assessments, because a right
+result reached through wrong reasoning (e.g. two errors cancelling out) is
+still a defect worth reporting:
+
+- ``result``: correct / partial / incorrect / unclear - the final answer only
+  (partial: only part of a multi-part answer is right; incoherent, looping or
+  refusing text is incorrect; unclear: cut off before any answer);
+- ``reasoning``: correct / incorrect / none - the reasoning shown (incorrect:
+  at least one real error, even when the result is right; none: bare answer);
+
+plus a short ``reason`` naming the error. The judgements are kept in their
+own file, keyed by record (model|test_id|language|run_index), so they never
+overwrite the rule screening or the human review; the review spreadsheet
+shows them in the "LLM result" and "LLM reasoning" columns.
+
+Schema 1 files (one ``verdict`` per record, before 2026-11-23) are converted
+locally by ``migrate_judgements`` - no tokens: correct -> result correct;
+partial -> result correct, reasoning incorrect; incorrect -> result incorrect,
+reasoning not_assessed; unclear -> incorrect for incoherent text, unclear when
+cut off. The old verdict is kept as ``legacy_verdict``.
 
 Batched by default: all answers to the same question (same task and
 language - 22 answers for 11 models x 2 runs) go to the judge in ONE prompt,
@@ -37,21 +52,36 @@ from ai_platform.backend.service_layer.macro.llm_benchmark.review_service import
 )
 from ai_platform.common.llm.llm_exception import LLMError
 
-JUDGE_SCHEMA = "ai_platform.llm_judge/1"
+JUDGE_SCHEMA = "ai_platform.llm_judge/2"
+LEGACY_SCHEMA = "ai_platform.llm_judge/1"
+RESULTS = ("correct", "partial", "incorrect", "unclear")
+REASONINGS = ("correct", "incorrect", "none")
+#: Only in records converted from schema 1, whose verdict said nothing about reasoning.
+NOT_ASSESSED = "not_assessed"
+#: Answers shorter than this (characters) count as showing no reasoning.
+BARE_ANSWER_CHARS = 80
 JUDGE_PROMPT = """You grade answers of language models in a benchmark. Judge only whether \
 the ANSWER is right for the QUESTION, using the EXPECTED answer as the reference. \
 The answer may be in Polish or English.
 
-Verdicts:
-- correct: the final answer matches the expected one (wording, units and language may differ);
-- incorrect: the final answer is wrong, contradicts the expected one, or is missing while \
-the text is coherent;
-- partial: the final answer is right but the reasoning shown contains a real error, or only \
-part of a multi-part answer is right;
-- unclear: the text is incoherent, or it is cut off before any answer.
+Assess two things separately - a right result reached through wrong reasoning \
+is still a defect.
 
-Reply with ONLY a JSON object: {{"verdict": "<correct|incorrect|partial|unclear>", \
-"reason": "<one short sentence>"}}
+result (the final answer only):
+- correct: matches the expected answer (wording, units and language may differ);
+- partial: the question has several parts and only some are answered right;
+- incorrect: wrong, contradicts the expected answer, missing, a refusal, or the text is \
+incoherent or looping;
+- unclear: the text is cut off before giving any answer.
+
+reasoning (the explanation or calculation shown):
+- correct: no real error;
+- incorrect: at least one real error - a wrong fact, a wrong calculation step, a \
+contradiction - even if the result is right;
+- none: no reasoning shown, only the answer.
+
+Reply with ONLY a JSON object: {{"result": "<correct|partial|incorrect|unclear>", \
+"reasoning": "<correct|incorrect|none>", "reason": "<at most 20 words; name the error if any>"}}
 
 QUESTION:
 {question}
@@ -69,17 +99,25 @@ BATCH_PROMPT = """You grade answers of language models in a benchmark. All answe
 respond to the same QUESTION; judge each one independently, using the EXPECTED answer as \
 the reference. Answers may be in Polish or English.
 
-Verdicts:
-- correct: the final answer matches the expected one (wording, units and language may differ);
-- incorrect: the final answer is wrong, contradicts the expected one, or is missing while \
-the text is coherent;
-- partial: the final answer is right but the reasoning shown contains a real error, or only \
-part of a multi-part answer is right;
-- unclear: the text is incoherent, or it is cut off before any answer.
+Assess two things separately - a right result reached through wrong reasoning \
+is still a defect.
+
+result (the final answer only):
+- correct: matches the expected answer (wording, units and language may differ);
+- partial: the question has several parts and only some are answered right;
+- incorrect: wrong, contradicts the expected answer, missing, a refusal, or the text is \
+incoherent or looping;
+- unclear: the text is cut off before giving any answer.
+
+reasoning (the explanation or calculation shown):
+- correct: no real error;
+- incorrect: at least one real error - a wrong fact, a wrong calculation step, a \
+contradiction - even if the result is right;
+- none: no reasoning shown, only the answer.
 
 Reply with ONLY a JSON array, one object per answer, in any order:
-[{{"id": "<answer id>", "verdict": "<correct|incorrect|partial|unclear>", \
-"reason": "<at most 15 words>"}}]
+[{{"id": "<answer id>", "result": "<correct|partial|incorrect|unclear>", \
+"reasoning": "<correct|incorrect|none>", "reason": "<at most 20 words; name the error if any>"}}]
 
 QUESTION:
 {question}
@@ -99,23 +137,83 @@ THINKING_RESERVE = 2000
 MAX_ANSWER_CHARS = 3000
 
 
+def _pending(reason: str) -> Dict[str, Any]:
+    """A record not judged (yet): result None is retried by the next run."""
+    return {"result": None, "reasoning": None, "reason": reason}
+
+
+def is_judged(judgement: Optional[Dict[str, Any]]) -> bool:
+    """True when ``judgement`` holds a result (schema 2) or a verdict (schema 1)."""
+    return bool(judgement) and (judgement.get("result") or judgement.get("verdict")) is not None
+
+
 def parse_judgement(text: str) -> Dict[str, Any]:
-    """{"verdict", "reason"} from the judge's reply; unparsable -> verdict None."""
+    """{"result", "reasoning", "reason"} from the judge's reply; unparsable -> result None.
+
+    A reply in the schema 1 form ({"verdict": ...}) is converted as in
+    ``migrate_judgement``.
+    """
     match = _JSON.search(text or "")
     try:
         data = json.loads(match.group(0)) if match else {}
     except json.JSONDecodeError:
         data = {}
-    verdict = str(data.get("verdict", "")).strip().lower()
-    if verdict not in VERDICTS:
-        return {"verdict": None, "reason": f"unparsable judge reply: {(text or '')[:200]}"}
-    return {"verdict": verdict, "reason": str(data.get("reason", ""))[:500]}
+    if not isinstance(data, dict):
+        data = {}
+    if "result" not in data and str(data.get("verdict", "")).strip().lower() in VERDICTS:
+        return migrate_judgement({"verdict": str(data["verdict"]).strip().lower(),
+                                  "reason": str(data.get("reason", ""))[:500]})
+    result = str(data.get("result", "")).strip().lower()
+    reasoning = str(data.get("reasoning", "")).strip().lower()
+    if result not in RESULTS or reasoning not in REASONINGS:
+        return _pending(f"unparsable judge reply: {(text or '')[:200]}")
+    return {"result": result, "reasoning": reasoning, "reason": str(data.get("reason", ""))[:500]}
+
+
+_CUT_OFF = re.compile(r"cut off|truncat|urwan|ucięt|przerwan", re.I)
+_INCOHERENT = re.compile(r"incoheren|niespójn|zapętl|repetit|chaot|nonsens|bezsens", re.I)
+
+
+def migrate_judgement(old: Dict[str, Any], answer: Optional[str] = None) -> Dict[str, Any]:
+    """Schema 1 judgement (one ``verdict``) as schema 2, locally and without a call.
+
+    ``answer`` (the judged text) only decides correct -> reasoning correct or none.
+    """
+    if "result" in old or old.get("verdict") is None:
+        return {k: v for k, v in old.items() if k != "verdict"} if "result" in old \
+            else _pending(old.get("reason", ""))
+    verdict, reason = old["verdict"], old.get("reason", "")
+    if verdict == "correct":
+        bare = answer is not None and len(str(answer).strip()) < BARE_ANSWER_CHARS
+        new = {"result": "correct", "reasoning": "none" if bare else "correct"}
+    elif verdict == "partial":  # schema 1 used it for "right result, error in reasoning"
+        new = {"result": "correct", "reasoning": "incorrect"}
+    elif verdict == "incorrect":
+        new = {"result": "incorrect", "reasoning": NOT_ASSESSED}
+    else:  # unclear: incoherent text is incorrect now; only a cut-off answer stays unclear
+        cut_only = _CUT_OFF.search(reason) and not _INCOHERENT.search(reason)
+        new = {"result": "unclear" if cut_only else "incorrect", "reasoning": NOT_ASSESSED}
+    return {**new, "reason": reason, "legacy_verdict": verdict}
+
+
+def migrate_judgements(data: Dict[str, Any],
+                       report: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Judgement file converted to schema 2 (unchanged if already there)."""
+    if data.get("schema") == JUDGE_SCHEMA:
+        return data
+    answers = {record_key(r): r.get("answer") for r in (report or {}).get("results", [])}
+    migrated = {key: migrate_judgement(old, answers.get(key))
+                for key, old in data.get("judgements", {}).items()}
+    return {**data, "schema": JUDGE_SCHEMA, "judgements": migrated,
+            "migrated_from": data.get("schema", LEGACY_SCHEMA),
+            "migrated_at_utc": datetime.now(timezone.utc).isoformat()}
 
 
 def judge_record(judge, record: Dict[str, Any]) -> Dict[str, Any]:
     """One judgement (errors are recorded, not raised)."""
     if record.get("status") != "PASS":
-        return {"verdict": "unclear", "reason": f"no answer: {record.get('error')}"}
+        return {"result": "unclear", "reasoning": "none",
+                "reason": f"no answer: {record.get('error')}"}
     prompt = JUDGE_PROMPT.format(question=record.get("prompt", ""),
                                  expected=record.get("expected", ""),
                                  answer=record.get("answer", ""))
@@ -123,7 +221,7 @@ def judge_record(judge, record: Dict[str, Any]) -> Dict[str, Any]:
         reply = judge.chat_completion([{"role": "user", "content": prompt}],
                                       temperature=0, max_tokens=200)
     except LLMError as exc:
-        return {"verdict": None, "reason": f"judge error: {type(exc).__name__}: {exc}"}
+        return _pending(f"judge error: {type(exc).__name__}: {exc}")
     return parse_judgement(reply.text)
 
 
@@ -182,8 +280,7 @@ def judge_batch(judge, records: List[Dict[str, Any]], *,  # pylint: disable=too-
                 sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                 attempt += 1
                 continue
-            error = {"verdict": None, "reason": f"judge error: {type(exc).__name__}: {exc}"}
-            return [dict(error) for _ in records]
+            return [_pending(f"judge error: {type(exc).__name__}: {exc}") for _ in records]
     match = _JSON_ARRAY.search(reply.text or "")
     try:
         items = json.loads(match.group(0)) if match else []
@@ -194,7 +291,7 @@ def judge_batch(judge, records: List[Dict[str, Any]], *,  # pylint: disable=too-
     for number in range(1, len(records) + 1):
         item = by_id.get(f"A{number}")
         results.append(parse_judgement(json.dumps(item)) if item else
-                       {"verdict": None, "reason": "missing in the judge's batch reply"})
+                       _pending("missing in the judge's batch reply"))
     return results
 
 
@@ -219,7 +316,7 @@ def select_records(report: Dict[str, Any], screening: Optional[Dict[str, Any]],
                      if r["automatic_assessment"]["answer_screening"]["status"]
                      == "manual_review"}
     return [r for r in report.get("results", [])
-            if (record_key(r) not in done or done[record_key(r)].get("verdict") is None)
+            if not is_judged(done.get(record_key(r)))
             and (undecided is None or record_key(r) in undecided)]
 
 
@@ -253,7 +350,8 @@ def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: d
     minute). A round in which every call failed stops the run - typically a
     quota or key problem, which the remaining prompts would only repeat.
     """
-    data = existing or {"schema": JUDGE_SCHEMA, "judge": judge_name, "judgements": {}}
+    data = migrate_judgements(existing, report) if existing else \
+        {"schema": JUDGE_SCHEMA, "judge": judge_name, "judgements": {}}
     if data.get("judge") != judge_name:
         raise ValueError(f"existing judgements are by {data.get('judge')!r}, not {judge_name!r}")
     done = data["judgements"]
@@ -289,9 +387,9 @@ def judge_report(report: Dict[str, Any], judge, judge_name: str, *,  # pylint: d
     return data
 
 
-def judgement_counts(data: Dict[str, Any],
-                     report: Optional[Dict[str, Any]] = None) -> Dict[str, int]:
-    """Verdict counts; not judged yet (after an error, or never tried) as 'pending'.
+def judgement_counts(data: Dict[str, Any], report: Optional[Dict[str, Any]] = None,
+                     field: str = "result") -> Dict[str, int]:
+    """Counts of ``field`` (result or reasoning); not judged yet as 'pending'.
 
     With ``report`` every record of the report is counted, judged or not.
     """
@@ -299,19 +397,12 @@ def judgement_counts(data: Dict[str, Any],
     keys = [record_key(r) for r in report.get("results", [])] if report else list(table)
     counts: Dict[str, int] = {}
     for key in keys:
-        verdict = (table.get(key) or {}).get("verdict") or "pending"
-        counts[verdict] = counts.get(verdict, 0) + 1
+        value = (table.get(key) or {}).get(field) or "pending"
+        counts[value] = counts.get(value, 0) + 1
     return dict(sorted(counts.items()))
 
 
-def judge_agreement(judgements: Dict[str, Any], reviewed: Dict[str, Any]) -> Dict[str, Any]:
-    """LLM judge vs human verdicts on records both have judged."""
-    pairs: Dict[str, int] = {}
-    for row in reviewed.get("results", []):
-        human = row["automatic_assessment"]["answer_screening"].get("human_verdict")
-        llm = (judgements.get("judgements", {}).get(record_key(row)) or {}).get("verdict")
-        if human and llm:
-            pairs[f"{llm}->{human}"] = pairs.get(f"{llm}->{human}", 0) + 1
+def _agreement(pairs: Dict[str, int]) -> Dict[str, Any]:
     total = sum(pairs.values())
     agreed = sum(v for k, v in pairs.items() if k.split("->")[0] == k.split("->")[1])
     return {"compared": total, "agreed": agreed,
@@ -319,11 +410,34 @@ def judge_agreement(judgements: Dict[str, Any], reviewed: Dict[str, Any]) -> Dic
             "confusion": dict(sorted(pairs.items()))}
 
 
+def judge_agreement(judgements: Dict[str, Any], reviewed: Dict[str, Any]) -> Dict[str, Any]:
+    """LLM judge vs human, on records both have judged: result and reasoning.
+
+    ``result`` compares the judge's result with the human verdict; ``reasoning``
+    the judge's reasoning with the human reasoning, where the person gave one
+    (records converted from schema 1 with reasoning not_assessed are left out).
+    """
+    table = migrate_judgements(judgements).get("judgements", {})
+    result: Dict[str, int] = {}
+    reasoning: Dict[str, int] = {}
+    for row in reviewed.get("results", []):
+        assessment = row["automatic_assessment"]["answer_screening"]
+        llm = table.get(record_key(row)) or {}
+        human, llm_result = assessment.get("human_verdict"), llm.get("result")
+        if human and llm_result:
+            result[f"{llm_result}->{human}"] = result.get(f"{llm_result}->{human}", 0) + 1
+        human_r, llm_r = assessment.get("human_reasoning"), llm.get("reasoning")
+        if human_r and llm_r and llm_r != NOT_ASSESSED:
+            reasoning[f"{llm_r}->{human_r}"] = reasoning.get(f"{llm_r}->{human_r}", 0) + 1
+    return {**_agreement(result), "reasoning": _agreement(reasoning)}
+
+
 def judgement_columns(judgements: Optional[Dict[str, Any]],
                       items: List[Dict[str, Any]]) -> None:
-    """Add llm_verdict / llm_reason to review items (in place)."""
-    table = (judgements or {}).get("judgements", {})
+    """Add llm_result / llm_reasoning / llm_reason to review items (in place)."""
+    table = migrate_judgements(judgements or {}).get("judgements", {})
     for item in items:
         found = table.get(item["key"]) or {}
-        item["llm_verdict"] = found.get("verdict") or ""
+        item["llm_result"] = found.get("result") or ""
+        item["llm_reasoning"] = found.get("reasoning") or ""
         item["llm_reason"] = found.get("reason") or ""

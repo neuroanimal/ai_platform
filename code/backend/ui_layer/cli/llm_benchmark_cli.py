@@ -228,6 +228,7 @@ def command_review_export(args) -> int:
         for item in items:
             old = previous.get(item["key"]) or {}
             item["verdict"] = old.get("verdict") or ""
+            item["human_reasoning"] = old.get("human_reasoning") or ""
             item["comment"] = old.get("comment") or ""
     target = Path(args.output) if args.output else source.with_name(source.stem + "_review.xlsx")
     write_review_workbook(items, str(target))
@@ -305,7 +306,9 @@ def command_judge(args) -> int:  # pylint: disable=too-many-locals
         return 1
     print(write_json(data, target))
     counts = judgement_counts(data, report)
-    print(f"verdicts: {json.dumps(counts)}", file=sys.stderr)
+    print(f"result: {json.dumps(counts)}", file=sys.stderr)
+    print(f"reasoning: {json.dumps(judgement_counts(data, report, 'reasoning'))}",
+          file=sys.stderr)
     if counts.get("pending"):
         print(f"{counts['pending']} not judged (errors); run the same command again to retry them",
               file=sys.stderr)

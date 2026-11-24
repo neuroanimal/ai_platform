@@ -2,12 +2,15 @@
 Spreadsheet for human review of benchmark answers (Excel .xlsx, openpyxl).
 
 One row per item from ``review_service.review_items``. Column order:
-context, ``Rule verdict``, ``LLM verdict`` (the judge, if a judgement file
-was given), ``Human verdict`` (drop-down), ``Comment``, ``LLM reason``. ``Rule verdict`` is the
-automatic screening in the same vocabulary as the human verdict (correct /
-incorrect / partial, or manual_review when the rules did not decide); the
-``Human verdict`` column has a drop-down for the person's judgement
-(correct / incorrect / partial / unclear); everything else is context.
+context, ``Rule verdict``, ``LLM result`` and ``LLM reasoning`` (the judge,
+if a judgement file was given), ``Human result`` and ``Human reasoning``
+(drop-downs), ``Comment``, ``LLM reason``. ``Rule verdict`` is the automatic
+screening in the same vocabulary as the human result (correct / incorrect /
+partial, or manual_review when the rules did not decide). Result and reasoning
+are assessed separately: a right result reached through wrong reasoning is
+``correct`` + ``incorrect``. ``Human result`` has a drop-down (correct /
+incorrect / partial / unclear), ``Human reasoning`` too (correct / incorrect /
+none); everything else is context.
 Hidden columns ``index`` and ``key`` let the import check that the file
 belongs to the screening it is applied to - do not edit them.
 """
@@ -15,6 +18,7 @@ belongs to the screening it is applied to - do not edit them.
 from typing import Any, Dict, List
 
 from ai_platform.backend.service_layer.macro.llm_benchmark.review_service import (
+    REASONING_VERDICTS,
     VERDICTS,
     ReviewError,
 )
@@ -24,8 +28,9 @@ COLUMNS = [  # (field, header, width)
     ("test_id", "Task", 22), ("language", "Lang", 6), ("run_index", "Run", 5),
     ("prompt", "Question", 40), ("expected", "Expected", 22), ("answer", "Answer", 80),
     ("automatic_status", "Rule status", 26), ("evidence", "Rule evidence", 40),
-    ("automatic_verdict", "Rule verdict", 14), ("llm_verdict", "LLM verdict", 12),
-    ("verdict", "Human verdict", 13), ("comment", "Comment", 30),
+    ("automatic_verdict", "Rule verdict", 14), ("llm_result", "LLM result", 12),
+    ("llm_reasoning", "LLM reasoning", 13), ("verdict", "Human result", 13),
+    ("human_reasoning", "Human reasoning", 14), ("comment", "Comment", 30),
     ("llm_reason", "LLM reason", 50),
 ]
 HIDDEN = ("index", "key")
@@ -56,12 +61,13 @@ def write_review_workbook(items: List[Dict[str, Any]], path: str,  # pylint: dis
         sheet.column_dimensions[letter].hidden = field in HIDDEN
         for row in sheet.iter_rows(min_row=2, min_col=number, max_col=number):
             row[0].alignment = wrap
-    verdict_letter = get_column_letter([f for f, _, _ in COLUMNS].index("verdict") + 1)
-    validation = DataValidation(type="list", formula1='"' + ",".join(VERDICTS) + '"',
-                                allow_blank=True, showErrorMessage=True,
-                                errorTitle="Verdict", error="Choose " + ", ".join(VERDICTS))
-    sheet.add_data_validation(validation)
-    validation.add(f"{verdict_letter}2:{verdict_letter}{max(2, len(items) + 1)}")
+    for field, choices in (("verdict", VERDICTS), ("human_reasoning", REASONING_VERDICTS)):
+        letter = get_column_letter([f for f, _, _ in COLUMNS].index(field) + 1)
+        validation = DataValidation(type="list", formula1='"' + ",".join(choices) + '"',
+                                    allow_blank=True, showErrorMessage=True,
+                                    errorTitle="Verdict", error="Choose " + ", ".join(choices))
+        sheet.add_data_validation(validation)
+        validation.add(f"{letter}2:{letter}{max(2, len(items) + 1)}")
     sheet.freeze_panes = "C2"
     sheet.auto_filter.ref = sheet.dimensions
     workbook.save(path)
@@ -78,6 +84,7 @@ def read_review_workbook(path: str) -> List[Dict[str, Any]]:
     # (or with columns moved by the reviewer) still import.
     by_header = {header: field for field, header, _ in COLUMNS}
     by_header["Verdict"] = "verdict"  # header of sheets written before 2026-11-19 14:00
+    by_header["Human verdict"] = "verdict"  # header of sheets written before 2026-11-23
     positions = {by_header[h]: i for i, h in enumerate(headers) if h in by_header}
     missing = {"index", "key", "verdict"} - set(positions)
     if missing:

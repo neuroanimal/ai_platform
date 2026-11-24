@@ -293,8 +293,10 @@ def test_llm_judge_resumable_and_agreement(tmp_path):
         read_review_workbook,
         write_review_workbook,
     )
-    assert parse_judgement('ok {"verdict": "Correct", "reason": "391"}')["verdict"] == "correct"
-    assert parse_judgement("no json")["verdict"] is None
+    assert parse_judgement('ok {"result": "Correct", "reasoning": "none", "reason": "391"}') \
+        == {"result": "correct", "reasoning": "none", "reason": "391"}
+    assert parse_judgement('{"verdict": "partial", "reason": "x"}')["reasoning"] == "incorrect"
+    assert parse_judgement("no json")["result"] is None
 
     class Judge:
         """Says correct when the answer contains the expected text."""
@@ -307,7 +309,8 @@ def test_llm_judge_resumable_and_agreement(tmp_path):
             expected = prompt.split("EXPECTED:\n")[1].split("\n")[0]
             answer = prompt.split("ANSWER:\n")[1]
             verdict = "correct" if expected.split("|")[0] in answer else "incorrect"
-            return ChatResult(text=json.dumps({"verdict": verdict, "reason": "r"}), model="j")
+            return ChatResult(text=json.dumps({"result": verdict, "reasoning": "none",
+                                               "reason": "r"}), model="j")
 
     answers = {"17": "17 * 23 = 391", "Mruczek": "Nie wiem."}
     report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, answers)).run(
@@ -329,12 +332,13 @@ def test_llm_judge_resumable_and_agreement(tmp_path):
     write_review_workbook(items, str(path))
     from openpyxl import load_workbook  # pylint: disable=import-outside-toplevel
     headers = [c.value for c in load_workbook(path).active[1]]
-    assert headers.index("Rule verdict") + 1 == headers.index("LLM verdict") \
-        == headers.index("Human verdict") - 1
+    assert headers.index("Rule verdict") + 1 == headers.index("LLM result") \
+        == headers.index("LLM reasoning") - 1 == headers.index("Human result") - 2 \
+        == headers.index("Human reasoning") - 3
     rows = read_review_workbook(str(path))
-    assert rows[0]["llm_verdict"] in ("correct", "incorrect")
+    assert rows[0]["llm_result"] in ("correct", "incorrect")
     for row in rows:
-        row["verdict"] = row["llm_verdict"]
+        row["verdict"] = row["llm_result"]
     agreement = judge_agreement(data, apply_reviews(screening, rows))
     assert agreement["agreement_rate"] == 1.0 and agreement["compared"] == 4
 
@@ -358,7 +362,8 @@ def test_llm_judge_batched_one_prompt_per_question():
                    if line.startswith("--- id: ")]
             if len(BatchJudge.prompts) == 1:
                 ids = ids[:-1]
-            return ChatResult(text=json.dumps([{"id": i, "verdict": "correct", "reason": "ok"}
+            return ChatResult(text=json.dumps([{"id": i, "result": "correct",
+                                                "reasoning": "none", "reason": "ok"}
                                                for i in ids]), model="j")
 
     report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {"17": "391"})).run(
@@ -366,10 +371,10 @@ def test_llm_judge_batched_one_prompt_per_question():
     assert estimate(report["results"])["prompts"] == 8  # 4 tasks x 2 languages
     data = judge_report(report, BatchJudge(), "fake:j", workers=1)
     assert len(BatchJudge.prompts) == 8
-    assert sum(j["verdict"] is None for j in data["judgements"].values()) == 1
+    assert sum(j["result"] is None for j in data["judgements"].values()) == 1
     judge_report(report, BatchJudge(), "fake:j", existing=data, workers=1)  # retries the miss
     assert len(BatchJudge.prompts) == 9
-    assert all(j["verdict"] == "correct" for j in data["judgements"].values())
+    assert all(j["result"] == "correct" for j in data["judgements"].values())
     screening = screen_benchmark_report(report)
     undecided = select_records(report, screening, {}, "undecided")
     assert all(screening["results"][report["results"].index(r)]["automatic_assessment"]
@@ -422,16 +427,16 @@ def test_llm_judge_retries_transient_errors():
             BusyJudge.calls += 1
             if BusyJudge.calls <= 2:
                 raise LLMRequestError("HTTP 503 high demand", 503)
-            return ChatResult(text='[{"id": "A1", "verdict": "correct", "reason": "ok"}]',
+            return ChatResult(text='[{"id": "A1", "result": "correct", "reasoning": "none"}]',
                               model="j")
 
     waits = []
     records = [{"prompt": "q", "expected": "e", "answer": "a", "status": "PASS"}]
-    assert judge_batch(BusyJudge(), records, sleep=waits.append)[0]["verdict"] == "correct"
+    assert judge_batch(BusyJudge(), records, sleep=waits.append)[0]["result"] == "correct"
     assert waits == [20.0, 60.0]
     BusyJudge.calls = 0
     failed = judge_batch(BusyJudge(), records, retries=1, sleep=waits.append)
-    assert failed[0]["verdict"] is None and "503" in failed[0]["reason"]
+    assert failed[0]["result"] is None and "503" in failed[0]["reason"]
 
 
 def test_openai_compatible_base_url_with_prefix_and_user_agent():
@@ -466,13 +471,14 @@ def test_llm_judge_splits_too_large_batches_and_skips_daily_quota_retries():
             SmallLimitJudge.sizes.append(len(ids))
             if len(ids) > 2:
                 raise LLMRequestError("HTTP 413 Request too large ... tokens per minute", 413)
-            return ChatResult(text=json.dumps([{"id": i, "verdict": "correct", "reason": "ok"}
+            return ChatResult(text=json.dumps([{"id": i, "result": "correct",
+                                                "reasoning": "none", "reason": "ok"}
                                                for i in ids]), model="j")
 
     records = [{"prompt": "q", "expected": "e", "answer": f"a{n}", "status": "PASS"}
                for n in range(5)]
     result = judge_batch(SmallLimitJudge(), records, sleep=lambda s: None)
-    assert [r["verdict"] for r in result] == ["correct"] * 5
+    assert [r["result"] for r in result] == ["correct"] * 5
     assert SmallLimitJudge.sizes == [5, 2, 3, 1, 2]
 
     class DailyQuotaJudge:
@@ -483,5 +489,45 @@ def test_llm_judge_splits_too_large_batches_and_skips_daily_quota_retries():
             raise LLMRequestError("HTTP 429 Generate content requests per day limit exceeded", 429)
 
     waits = []
-    assert judge_batch(DailyQuotaJudge(), records[:1], sleep=waits.append)[0]["verdict"] is None
+    assert judge_batch(DailyQuotaJudge(), records[:1], sleep=waits.append)[0]["result"] is None
     assert not waits
+
+
+def test_llm_judge_schema1_migrates_locally_and_human_reasoning():
+    from ai_platform.backend.service_layer.macro.llm_benchmark.llm_judge_service import (  # pylint: disable=import-outside-toplevel
+        JUDGE_SCHEMA,
+        judge_agreement,
+        migrate_judgements,
+    )
+    from ai_platform.backend.service_layer.macro.llm_benchmark.review_service import (  # pylint: disable=import-outside-toplevel
+        apply_reviews,
+        review_items,
+    )
+
+    report = LLMBenchmarkRunner(lambda m: ScriptedLLM(m, {"17": "391"})).run(
+        get_task_set("bilingual_reasoning@2"), ["a"], languages=["en"], repeats=1)
+    keys = [r["key"] for r in review_items(report, screen_benchmark_report(report),
+                                           include_all=True)]
+    old = {"schema": "ai_platform.llm_judge/1", "judge": "x", "judgements": {
+        keys[0]: {"verdict": "partial", "reason": "wrong step"},
+        keys[1]: {"verdict": "unclear", "reason": "Tekst jest niespójny i zapętlony."},
+        keys[2]: {"verdict": "unclear", "reason": "The text is cut off before any answer."},
+        keys[3]: {"verdict": "incorrect", "reason": "wrong"}}}
+    new = migrate_judgements(old, report)
+    table = new["judgements"]
+    assert new["schema"] == JUDGE_SCHEMA and new["migrated_from"] == "ai_platform.llm_judge/1"
+    assert (table[keys[0]]["result"], table[keys[0]]["reasoning"]) == ("correct", "incorrect")
+    assert table[keys[1]]["result"] == "incorrect"
+    assert table[keys[2]]["result"] == "unclear"
+    assert table[keys[3]]["reasoning"] == "not_assessed"
+    assert table[keys[0]]["legacy_verdict"] == "partial"
+    screening = screen_benchmark_report(report)
+    reviews = [{"index": 0, "key": keys[0], "verdict": "correct", "human_reasoning": "incorrect"},
+               {"index": 3, "key": keys[3], "verdict": "", "human_reasoning": "none"}]
+    reviewed = apply_reviews(screening, reviews)
+    rows = reviewed["results"]
+    assert rows[0]["automatic_assessment"]["answer_screening"]["human_reasoning"] == "incorrect"
+    assert "human_verdict" not in rows[3]["automatic_assessment"]["answer_screening"]
+    agreement = judge_agreement(old, reviewed)
+    assert agreement["agreed"] == 1
+    assert agreement["reasoning"]["agreed"] == 1  # not_assessed record left out

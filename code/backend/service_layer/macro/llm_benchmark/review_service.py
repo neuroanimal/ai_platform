@@ -26,6 +26,9 @@ from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional
 
 VERDICTS = ("correct", "incorrect", "partial", "unclear")
+#: Human assessment of the reasoning shown, separate from the result: a right
+#: result reached through wrong reasoning is still a defect.
+REASONING_VERDICTS = ("correct", "incorrect", "none")
 
 
 class ReviewError(ValueError):
@@ -67,7 +70,7 @@ def review_items(report: Dict[str, Any], screening: Dict[str, Any],
             "automatic_status": assessment["status"],
             "automatic_verdict": automatic_group(assessment["status"]),
             "evidence": assessment["evidence"],
-            "verdict": "", "comment": "",
+            "verdict": "", "human_reasoning": "", "comment": "",
         }
         (manual if assessment["status"] == "manual_review" else decided).append(item)
     if include_all:
@@ -78,25 +81,37 @@ def review_items(report: Dict[str, Any], screening: Dict[str, Any],
 
 def apply_reviews(screening: Dict[str, Any], reviews: Iterable[Dict[str, Any]],
                   reviewer: Optional[str] = None) -> Dict[str, Any]:
-    """Copy of ``screening`` with human verdicts applied; empty verdicts are skipped."""
+    """Copy of ``screening`` with human verdicts applied; empty verdicts are skipped.
+
+    ``verdict`` is the human result; ``human_reasoning`` (optional) the human
+    assessment of the reasoning. A row with only a reasoning keeps the rule's
+    status and records the reasoning.
+    """
     reviewed = copy.deepcopy(screening)
     rows = reviewed.get("results", [])
     applied = 0
     for review in reviews:
         verdict = str(review.get("verdict") or "").strip().lower()
-        if not verdict:
+        reasoning = str(review.get("human_reasoning") or "").strip().lower()
+        if not verdict and not reasoning:
             continue
-        if verdict not in VERDICTS:
+        if verdict and verdict not in VERDICTS:
             raise ReviewError(f"item {review.get('index')}: verdict {verdict!r} not in {VERDICTS}")
+        if reasoning and reasoning not in REASONING_VERDICTS:
+            raise ReviewError(f"item {review.get('index')}: reasoning {reasoning!r} not in "
+                              f"{REASONING_VERDICTS}")
         index = int(review["index"])
         if index >= len(rows) or record_key(rows[index]) != review.get("key"):
             raise ReviewError(f"item {index}: key {review.get('key')!r} does not match the "
                               "screening - wrong review file?")
         assessment = rows[index]["automatic_assessment"]["answer_screening"]
         assessment.setdefault("automatic_status", assessment["status"])
-        assessment.update(status=f"human_{verdict}", human_verdict=verdict,
-                          human_comment=str(review.get("comment") or ""),
-                          is_final_judgement=True)
+        if reasoning:
+            assessment["human_reasoning"] = reasoning
+        if verdict:
+            assessment.update(status=f"human_{verdict}", human_verdict=verdict,
+                              is_final_judgement=True)
+        assessment["human_comment"] = str(review.get("comment") or "")
         if reviewer:
             assessment["reviewer"] = reviewer
         applied += 1
