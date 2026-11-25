@@ -26,6 +26,9 @@ from .validation import (
     ProviderConformanceReport,
     validate_provider_request,
     validate_provider_response,
+    ProviderConfigurationIssue,
+    ProviderConfigurationReport,
+    validate_provider_configuration,
 )
 from .stanza_provider import StanzaPolishProvider
 from .lifecycle import (
@@ -66,6 +69,9 @@ __all__ = [
     "ProviderConformanceReport",
     "validate_provider_request",
     "validate_provider_response",
+    "ProviderConfigurationIssue",
+    "ProviderConfigurationReport",
+    "validate_provider_configuration",
     "StanzaPolishProvider",
     "NLPProviderLifecycle",
     "NLPProviderLifecycleSnapshot",
