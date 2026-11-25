@@ -16,6 +16,8 @@ Design principles:
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 
 from enum import StrEnum
@@ -249,6 +251,62 @@ class NLPProviderConfigurationV2(NLPModel):
     def to_dict(self) -> dict[str, Any]:
         """Return JSON-compatible configuration data."""
         return self.model_dump(mode="json", exclude_none=False)
+
+
+    def fingerprint_payload(self) -> dict[str, Any]:
+        """
+        Return the canonical subset of configuration used for fingerprinting.
+
+        Deployment-specific paths, download policy, credentials references,
+        and advisory memory limits are intentionally excluded.
+        """
+
+        model_payload = None
+
+        if self.model is not None:
+            model_payload = {
+                "model_id": self.model.model_id,
+                "package": self.model.package,
+                "version": self.model.version,
+                "language": self.model.language,
+            }
+
+        return {
+            "fingerprint_schema": "nlp-provider-configuration-v2",
+            "provider_id": self.provider_id,
+            "engine": {
+                "engine_name": self.engine.engine_name,
+                "options": self.engine.options,
+            },
+            "model": model_payload,
+            "runtime": {
+                "device": self.runtime.device,
+                "threads": self.runtime.threads,
+                "batch_size": self.runtime.batch_size,
+                "allow_device_fallback": (
+                    self.runtime.allow_device_fallback
+                ),
+            },
+        }
+
+    @property
+    def fingerprint_sha256(self) -> str:
+        """
+        Return a deterministic SHA-256 fingerprint.
+
+        Dictionary insertion order does not affect the result.
+        """
+        canonical_json = json.dumps(
+            self.fingerprint_payload(),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+
+        return hashlib.sha256(
+            canonical_json.encode("utf-8")
+        ).hexdigest()
 
 
 __all__ = [

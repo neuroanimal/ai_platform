@@ -352,6 +352,251 @@ def test_runtime_configuration_is_frozen():
     raise AssertionError("Frozen runtime configuration was modified.")
 
 
+def _fingerprint_test_config(**overrides):
+    data = {
+        "provider_id": "stanza-pl",
+        "engine": {
+            "engine_name": "stanza",
+            "options": {
+                "processors": "tokenize,mwt,pos,lemma,depparse",
+                "tokenize_pretokenized": False,
+            },
+        },
+        "model": {
+            "package": "default",
+            "version": "1.0",
+            "language": "pl",
+            "model_dir": "~/models/stanza",
+            "download_policy": "never",
+        },
+        "runtime": {
+            "device": "cpu",
+            "threads": 4,
+            "batch_size": 1,
+            "memory_limit_mb_hint": 4096,
+        },
+    }
+
+    data.update(overrides)
+    return NLPProviderConfigurationV2.from_dict(data)
+
+
+def test_fingerprint_is_sha256():
+    config = _fingerprint_test_config()
+
+    fingerprint = config.fingerprint_sha256
+
+    assert len(fingerprint) == 64
+    assert all(
+        character in "0123456789abcdef"
+        for character in fingerprint
+    )
+
+
+def test_fingerprint_is_deterministic():
+    first = _fingerprint_test_config()
+    second = _fingerprint_test_config()
+
+    assert first.fingerprint_sha256 == second.fingerprint_sha256
+
+
+def test_fingerprint_ignores_dictionary_order():
+    first = NLPProviderConfigurationV2.from_dict({
+        "provider_id": "stanza-pl",
+        "engine": {
+            "engine_name": "stanza",
+            "options": {
+                "processors": "tokenize,pos,lemma",
+                "tokenize_pretokenized": False,
+            },
+        },
+        "model": {
+            "package": "default",
+            "language": "pl",
+        },
+    })
+
+    second = NLPProviderConfigurationV2.from_dict({
+        "model": {
+            "language": "pl",
+            "package": "default",
+        },
+        "engine": {
+            "options": {
+                "tokenize_pretokenized": False,
+                "processors": "tokenize,pos,lemma",
+            },
+            "engine_name": "stanza",
+        },
+        "provider_id": "stanza-pl",
+    })
+
+    assert first.fingerprint_sha256 == second.fingerprint_sha256
+
+
+def test_fingerprint_changes_when_engine_options_change():
+    first = _fingerprint_test_config()
+
+    second = NLPProviderConfigurationV2.from_dict({
+        "provider_id": "stanza-pl",
+        "engine": {
+            "engine_name": "stanza",
+            "options": {
+                "processors": "tokenize,pos,lemma",
+                "tokenize_pretokenized": False,
+            },
+        },
+        "model": {
+            "package": "default",
+            "version": "1.0",
+            "language": "pl",
+        },
+        "runtime": {
+            "device": "cpu",
+            "threads": 4,
+            "batch_size": 1,
+        },
+    })
+
+    assert first.fingerprint_sha256 != second.fingerprint_sha256
+
+
+def test_fingerprint_changes_when_model_version_changes():
+    first = _fingerprint_test_config()
+
+    second = NLPProviderConfigurationV2.from_dict({
+        "provider_id": "stanza-pl",
+        "engine": {
+            "engine_name": "stanza",
+            "options": {
+                "processors": "tokenize,mwt,pos,lemma,depparse",
+                "tokenize_pretokenized": False,
+            },
+        },
+        "model": {
+            "package": "default",
+            "version": "2.0",
+            "language": "pl",
+            "model_dir": "~/models/stanza",
+        },
+        "runtime": {
+            "device": "cpu",
+            "threads": 4,
+            "batch_size": 1,
+        },
+    })
+
+    assert first.fingerprint_sha256 != second.fingerprint_sha256
+
+
+def test_fingerprint_ignores_deployment_path():
+    first = _fingerprint_test_config()
+
+    second = NLPProviderConfigurationV2.from_dict({
+        "provider_id": "stanza-pl",
+        "engine": {
+            "engine_name": "stanza",
+            "options": {
+                "processors": "tokenize,mwt,pos,lemma,depparse",
+                "tokenize_pretokenized": False,
+            },
+        },
+        "model": {
+            "package": "default",
+            "version": "1.0",
+            "language": "pl",
+            "model_dir": "/opt/models/stanza",
+        },
+        "runtime": {
+            "device": "cpu",
+            "threads": 4,
+            "batch_size": 1,
+        },
+    })
+
+    assert first.fingerprint_sha256 == second.fingerprint_sha256
+
+
+def test_fingerprint_ignores_download_policy():
+    first = _fingerprint_test_config()
+
+    second = NLPProviderConfigurationV2.from_dict({
+        "provider_id": "stanza-pl",
+        "engine": {
+            "engine_name": "stanza",
+            "options": {
+                "processors": "tokenize,mwt,pos,lemma,depparse",
+                "tokenize_pretokenized": False,
+            },
+        },
+        "model": {
+            "package": "default",
+            "version": "1.0",
+            "language": "pl",
+            "download_policy": "if_missing",
+        },
+        "runtime": {
+            "device": "cpu",
+            "threads": 4,
+            "batch_size": 1,
+        },
+    })
+
+    assert first.fingerprint_sha256 == second.fingerprint_sha256
+
+
+def test_fingerprint_ignores_secret_environment_variable_name():
+    first = NLPProviderConfigurationV2(
+        provider_id="remote-nlp",
+        engine={
+            "engine_name": "remote",
+            "api_key_env": "API_KEY_A",
+        },
+    )
+
+    second = NLPProviderConfigurationV2(
+        provider_id="remote-nlp",
+        engine={
+            "engine_name": "remote",
+            "api_key_env": "API_KEY_B",
+        },
+    )
+
+    assert first.fingerprint_sha256 == second.fingerprint_sha256
+
+
+def test_fingerprint_ignores_memory_hint():
+    first = NLPProviderConfigurationV2(
+        provider_id="stanza-pl",
+        engine={"engine_name": "stanza"},
+        runtime={"memory_limit_mb_hint": 2048},
+    )
+
+    second = NLPProviderConfigurationV2(
+        provider_id="stanza-pl",
+        engine={"engine_name": "stanza"},
+        runtime={"memory_limit_mb_hint": 8192},
+    )
+
+    assert first.fingerprint_sha256 == second.fingerprint_sha256
+
+
+def test_fingerprint_changes_when_device_changes():
+    first = NLPProviderConfigurationV2(
+        provider_id="stanza-pl",
+        engine={"engine_name": "stanza"},
+        runtime={"device": "cpu"},
+    )
+
+    second = NLPProviderConfigurationV2(
+        provider_id="stanza-pl",
+        engine={"engine_name": "stanza"},
+        runtime={"device": "cuda:0"},
+    )
+
+    assert first.fingerprint_sha256 != second.fingerprint_sha256
+
+
 def main():
     tests = [
         value
