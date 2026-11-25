@@ -26,6 +26,7 @@ from typing import Any, Mapping
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
+from .immutable import deep_freeze
 from ..model.base import NLPModel
 
 
@@ -90,6 +91,11 @@ class NLPProviderEngineConfigV2(NLPModel):
             )
 
         return value
+
+    @field_validator("options", mode="after")
+    @classmethod
+    def freeze_options(cls, value: dict[str, Any]) -> dict[str, Any]:
+        return deep_freeze(value)
 
 
 class NLPModelConfigV2(NLPModel):

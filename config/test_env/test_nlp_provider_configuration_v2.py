@@ -597,6 +597,92 @@ def test_fingerprint_changes_when_device_changes():
     assert first.fingerprint_sha256 != second.fingerprint_sha256
 
 
+def test_engine_options_are_deeply_immutable():
+    config = NLPProviderConfigurationV2.from_dict({
+        "provider_id": "test",
+        "engine": {
+            "engine_name": "test-engine",
+            "options": {
+                "nested": {
+                    "value": 10,
+                    "items": [1, 2, {"enabled": True}],
+                }
+            },
+        },
+    })
+
+    options = config.engine.options
+
+    try:
+        options["new"] = "value"
+        raise AssertionError("Top-level mutation was allowed")
+    except TypeError:
+        pass
+
+    try:
+        options["nested"]["value"] = 20
+        raise AssertionError("Nested mutation was allowed")
+    except TypeError:
+        pass
+
+    try:
+        options["nested"]["items"][0] = 99
+        raise AssertionError("List mutation was allowed")
+    except TypeError:
+        pass
+
+    try:
+        options["nested"]["items"][2]["enabled"] = False
+        raise AssertionError("Deep nested mutation was allowed")
+    except TypeError:
+        pass
+
+
+def test_engine_options_remain_json_serializable():
+    import json
+
+    config = NLPProviderConfigurationV2.from_dict({
+        "provider_id": "test",
+        "engine": {
+            "engine_name": "test-engine",
+            "options": {
+                "nested": {
+                    "items": [1, 2, 3],
+                    "enabled": True,
+                }
+            },
+        },
+    })
+
+    serialized = config.to_dict()
+    encoded = json.dumps(serialized)
+
+    assert isinstance(encoded, str)
+    assert serialized["engine"]["options"]["nested"]["items"] == [1, 2, 3]
+
+
+def test_fingerprint_is_stable_after_creation():
+    config = NLPProviderConfigurationV2.from_dict({
+        "provider_id": "test",
+        "engine": {
+            "engine_name": "test-engine",
+            "options": {
+                "nested": {"value": 10},
+            },
+        },
+    })
+
+    fingerprint_before = config.fingerprint_sha256
+
+    try:
+        config.engine.options["nested"]["value"] = 20
+        raise AssertionError("Nested mutation was allowed")
+    except TypeError:
+        pass
+
+    assert config.fingerprint_sha256 == fingerprint_before
+
+
 def main():
     tests = [
         value
