@@ -49,6 +49,10 @@ from .configuration_loader import (
     NLPConfigurationLoadError,
     NLPProviderConfigurationLoader,
 )
+from .resolver import (
+    NLPProviderResolution,
+    NLPProviderConfigurationResolver,
+)
 
 
 __all__ = [
@@ -85,5 +89,7 @@ __all__ = [
     "ENV_PREFIX",
     "NLPConfigurationLoadError",
     "NLPProviderConfigurationLoader",
+    "NLPProviderResolution",
+    "NLPProviderConfigurationResolver",
 ]
 
