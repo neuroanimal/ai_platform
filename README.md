@@ -286,6 +286,28 @@ result = engine.process_schema("schema.json", "output.json")
 - `python -m ai_platform.common.example.yaml_processing_example`
 - `python -m ai_platform.common.example.jsonschema_processing_example`
 
+### 🗣️ Speech (TTS, STT, STS)
+
+Several stacks behind one contract, so the engine can be swapped.
+Offline baseline (no extra packages): formant `reference-tts`, closed-set
+`template-stt`, and `cascade` (STT, then a text function, then TTS).
+The text function can be an LLM adapter via `llm_reply_transform` without
+the speech package importing `common.llm`. Cloud and neural stacks
+(eSpeak, Piper, Festival, pyttsx3, Kokoro, Coqui, Silero, Edge, gTTS,
+OpenAI-compatible audio, Whisper, faster-whisper, whisper.cpp, Vosk,
+Wav2Vec2, NeMo, SpeechRecognition, OpenAI Realtime, Gemini Live, Moshi)
+raise a clear error until their tool, weights or transport is configured.
+They do not invent a waveform or a transcript. Details:
+[code/common/speech/README.md](code/common/speech/README.md),
+[doc/arch/SPEECH.md](doc/arch/SPEECH.md).
+
+```bash
+python -m ai_platform.common.example.speech_example
+python -m ai_platform.backend.ui_layer.cli.speech_cli list
+python -m ai_platform.backend.ui_layer.cli.speech_cli tts --text "cześć" --output out.wav
+python -m ai_platform.backend.ui_layer.cli.speech_cli compare --text "aaa" --bootstrap-template
+```
+
 ### 🖼️ Image Tools (4 Tools)
 
 **Supported:** ImageMagick, GIMP, Inkscape, Dia
@@ -392,6 +414,11 @@ pytest --import-mode=importlib test/
 
 # Unit tests of adapters, screening and benchmark (no servers needed)
 pytest --import-mode=importlib test/basic-structural/
+
+# Speech adapters and the text-vs-speech cascade (no servers, no weights)
+pytest --import-mode=importlib \
+    test/basic-structural/static/basic_unit_test/common/test_speech_adapters.py \
+    test/functional/integration_test/test_speech_sts.py
 
 # Live tests: skipped automatically when LocalAI/Ollama are not running
 pytest --import-mode=importlib test/functional/integration_test/test_llm_local_live.py \

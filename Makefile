@@ -20,7 +20,7 @@ req:
 	pip install -r config/requirements/r.txt
 	pip install -r config/requirements/julia.txt
 
-.PHONY: install install-all install-llm install-ml install-rag install-viz install-dev install-js test clean system-deps
+.PHONY: install install-all install-llm install-ml install-rag install-viz install-speech install-dev install-js test clean system-deps
 
 # Install system dependencies (Linux/WSL only)
 system-deps:
@@ -58,6 +58,10 @@ install-rag: system-deps
 # Install visualization components
 install-viz: system-deps
 	export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 && pip install --prefer-binary -e ".[viz]"
+
+# Speech extra is empty on purpose (stdlib baseline). Optional stacks are pip-installed by name.
+install-speech:
+	pip install -e ".[speech]"
 
 # Install development dependencies
 install-dev: system-deps

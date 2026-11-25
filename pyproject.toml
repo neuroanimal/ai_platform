@@ -43,6 +43,13 @@ viz = [
     "seaborn>=0.13.0",
     "pillow>=10.0.0",    # Explicit version to prefer binary wheels
 ]
+
+# Speech adapters import optional stacks lazily. reference-tts, template-stt
+# and cascade need nothing beyond the standard library. Install only the
+# stack you want to compare, for example:
+#   pip install pyttsx3 edge-tts gTTS
+#   pip install openai-whisper faster-whisper vosk
+speech = []
 all = [
     "openai>=1.0.0",
     "anthropic>=0.18.0",
