@@ -52,3 +52,10 @@ class NLPProviderOutputError(NLPProviderError):
 class NLPProviderUnavailableError(NLPProviderError):
     default_code = "provider_unavailable"
 
+
+class NLPProviderFactoryError(NLPProviderError):
+    """Raised when an NLP provider factory operation fails."""
+
+    default_code = "provider_factory_error"
+
+

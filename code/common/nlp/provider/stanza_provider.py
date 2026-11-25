@@ -123,6 +123,7 @@ class StanzaPolishProvider(NLPProvider):
         self,
         *,
         model_dir: str | Path | None = None,
+        package: str = "default",
         use_gpu: bool = False,
         pipeline: Any | None = None,
         provider_version: str | None = None,
@@ -133,6 +134,8 @@ class StanzaPolishProvider(NLPProvider):
         Args:
             model_dir:
                 Optional Stanza resources directory.
+            package:
+                Package to use, otherwise 'default'.
             use_gpu:
                 Whether Stanza should use a GPU.
             pipeline:
@@ -146,6 +149,7 @@ class StanzaPolishProvider(NLPProvider):
             if model_dir is not None
             else None
         )
+        self._package = package
         self._use_gpu = use_gpu
         self._lock = threading.Lock()
 
@@ -153,10 +157,16 @@ class StanzaPolishProvider(NLPProvider):
             provider_version or self._detect_stanza_version()
         )
 
-        if pipeline is not None:
-            self._pipeline = pipeline
-        else:
-            self._pipeline = self._initialize_pipeline()
+        # Injected pipelines remain immediately usable in tests
+        # and explicit embedding scenarios.
+        ### if pipeline is not None:
+        ###     self._pipeline = pipeline
+        ### else:
+        ###     self._pipeline = self._initialize_pipeline()
+        # Real pipelines are initialized only by Lifecycle.initialize().
+        self._pipeline = pipeline
+
+        self._model_id = f"pl-{self._package}-pdb"
 
         self._capabilities = ProviderCapabilities(
             provider_id=PROVIDER_ID,
@@ -169,7 +179,7 @@ class StanzaPolishProvider(NLPProvider):
             metadata={
                 "engine": "Stanza",
                 "language": "Polish",
-                "model_package": "default",
+                "model_package": self._package,
                 "treebank": "PDB",
                 "processors": PROCESSORS,
                 "use_gpu": use_gpu,
@@ -183,6 +193,20 @@ class StanzaPolishProvider(NLPProvider):
         except importlib.metadata.PackageNotFoundError:
             return "unknown"
 
+    def initialize(self) -> None:
+        """
+        Initialize the Stanza pipeline exactly once.
+
+        This hook is invoked by NLPProviderLifecycle.
+        It never downloads model resources.
+        """
+
+        with self._initialization_lock:
+            if self._pipeline is not None:
+                return
+
+            self._pipeline = self._initialize_pipeline()
+
     def _initialize_pipeline(self) -> Any:
         try:
             import stanza
@@ -195,6 +219,7 @@ class StanzaPolishProvider(NLPProvider):
 
         kwargs: dict[str, Any] = {
             "lang": "pl",
+            "package": self._package,
             "processors": PROCESSORS,
             "use_gpu": self._use_gpu,
             "download_method": None,
@@ -344,8 +369,8 @@ class StanzaPolishProvider(NLPProvider):
 
         return parent_start, parent_end, parent_surface
 
-    @staticmethod
     def _make_provenance(
+        self,
         provider_version: str,
         configuration: dict[str, Any],
     ) -> Provenance:
@@ -354,7 +379,7 @@ class StanzaPolishProvider(NLPProvider):
             actor_id=PROVIDER_ID,
             provider_id=PROVIDER_ID,
             provider_version=provider_version,
-            model_id="pl-default-pdb",
+            model_id=self._model_id,
             method="Stanza neural NLP pipeline",
             configuration=configuration,
         )
@@ -384,7 +409,7 @@ class StanzaPolishProvider(NLPProvider):
             "language": "pl",
             "processors": PROCESSORS,
             "use_gpu": self._use_gpu,
-            "model_package": "default",
+            "model_package": self._package,
         }
 
         provenance = self._make_provenance(
@@ -654,7 +679,7 @@ class StanzaPolishProvider(NLPProvider):
             provider=ProviderMetadata(
                 provider_id=PROVIDER_ID,
                 provider_version=self._provider_version,
-                model_id="pl-default-pdb",
+                model_id=self._model_id,
                 language_code="pl",
                 configuration=configuration,
                 runtime_seconds=runtime_seconds,
@@ -669,7 +694,7 @@ class StanzaPolishProvider(NLPProvider):
             metadata={
                 "engine": "stanza",
                 "language": "pl",
-                "model_package": "default",
+                "model_package": self._package,
                 "treebank": "PDB",
                 "processors": PROCESSORS,
                 "dependency_roots": roots,
@@ -762,6 +787,13 @@ class StanzaPolishProvider(NLPProvider):
             - set(self.capabilities.supported_layers)
         )
 
+        if supported_requested and self._pipeline is None:
+            raise NLPProviderConfigurationError(
+                "Stanza pipeline has not been initialized. "
+                "Initialize the provider through NLPProviderLifecycle.",
+                provider_id=PROVIDER_ID,
+            )
+
         diagnostics: list[ProviderDiagnostic] = []
 
         for layer in sorted(
@@ -824,7 +856,7 @@ class StanzaPolishProvider(NLPProvider):
                 provider=ProviderMetadata(
                     provider_id=PROVIDER_ID,
                     provider_version=self._provider_version,
-                    model_id="pl-default-pdb",
+                    model_id=self._model_id,
                     language_code="pl",
                 ),
             )

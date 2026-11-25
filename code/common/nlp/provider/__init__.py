@@ -19,6 +19,7 @@ from .errors import (
     NLPProviderExecutionError,
     NLPProviderOutputError,
     NLPProviderUnavailableError,
+    NLPProviderFactoryError,
 )
 from .protocol import NLPProvider
 from .validation import (
@@ -60,6 +61,15 @@ from .configuration_runtime import (
     NLPProviderConfiguredRuntime,
     NLPProviderConfigurationRuntime,
 )
+from .factory import (
+    NLPProviderEngineAdapter,
+    NLPProviderFactoryRegistry,
+    NLPProviderFactoryResult,
+    NLPProviderFactoryService,
+)
+from .stanza_factory import (
+    StanzaPolishEngineAdapter,
+)
 
 
 __all__ = [
@@ -76,6 +86,7 @@ __all__ = [
     "NLPProviderExecutionError",
     "NLPProviderOutputError",
     "NLPProviderUnavailableError",
+    "NLPProviderFactoryError",
     "ProviderConformanceIssue",
     "ProviderConformanceReport",
     "validate_provider_request",
@@ -101,5 +112,11 @@ __all__ = [
     "NLPProviderConfigurationService",
     "NLPProviderConfiguredRuntime",
     "NLPProviderConfigurationRuntime",
+    "NLPProviderFactoryError",
+    "NLPProviderEngineAdapter",
+    "NLPProviderFactoryRegistry",
+    "NLPProviderFactoryResult",
+    "NLPProviderFactoryService",
+    "StanzaPolishEngineAdapter",
 ]
 
