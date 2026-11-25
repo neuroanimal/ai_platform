@@ -54,7 +54,9 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence
 from ai_platform.backend.domain_layer.business_logic.rag_benchmark.qa_sets import get_qa_set
 from ai_platform.common.agent.agent_loop import ToolAgent
 from ai_platform.common.agent.builtin_tools import default_tools, rag_search_tool
+from ai_platform.common.agent.memory import MemoryStore, MemoryStoreError, memory_tools
 from ai_platform.common.agent.tool import ToolRegistry
+from ai_platform.common.agent.workspace_tools import file_tools, python_tools, sqlite_tools
 from ai_platform.common.llm.context_window import (
     ContextError,
     ConversationSummarizer,
@@ -240,6 +242,58 @@ class _DocumentIndex:
         self._worker.shutdown(wait=False)
 
 
+MEMORY_NOTES = 3
+
+
+def memory_prompt(notes: List[Dict[str, Any]]) -> str:
+    """System message with notes recalled from long-term memory."""
+    lines = "\n".join(f"- [note {n['id']}] {n['text']}" for n in notes)
+    return ("Notes from the user's long-term memory. They may be unrelated to the question: "
+            "use only those that help, and do not mention the others.\n" + lines)
+
+
+@dataclass
+class Skills:
+    """Optional agent skills, configured when the server starts (never by a request).
+
+    ``memory``: a MemoryStore (also used in plain chat with "use_memory");
+    ``workspace``: a directory the agent may read (``workspace_writable`` lets it
+    write there too - a side effect, so the agent is allowed side effects only
+    then); ``sqlite``: a database it may query read-only; ``python``: run code
+    in the bubblewrap sandbox.
+    """
+
+    memory: Optional[MemoryStore] = None
+    workspace: Optional[str] = None
+    workspace_writable: bool = False
+    sqlite: Optional[str] = None
+    python: bool = False
+
+    @property
+    def allow_side_effects(self) -> bool:
+        """Only writing workspace files is a side effect, and only when enabled."""
+        return bool(self.workspace and self.workspace_writable)
+
+    def tools(self, include_memory: bool = True) -> List[Any]:
+        """Tools of the enabled skills."""
+        tools: List[Any] = []
+        if self.memory is not None and include_memory:
+            tools += memory_tools(self.memory)
+        if self.workspace:
+            tools += file_tools(self.workspace, writable=self.workspace_writable)
+        if self.sqlite:
+            tools += sqlite_tools(self.sqlite)
+        if self.python:
+            tools += python_tools()
+        return tools
+
+    def describe(self) -> Dict[str, Any]:
+        """Enabled skills, for the status endpoint."""
+        return {"memory": str(self.memory.path) if self.memory else None,
+                "workspace": self.workspace, "workspace_writable": self.workspace_writable,
+                "sqlite": self.sqlite, "python_sandbox": self.python}
+
+
 class ChatService:  # pylint: disable=too-many-instance-attributes
     """Model listing, streamed chat with optional RAG, and the tool agent."""
 
@@ -247,8 +301,10 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
                  documents: Optional[str] = None, embedder: Any = "ollama:bge-m3",
                  top_k: int = 4, timeout: float = 600.0,
                  min_score: Optional[float] = None, max_seconds: float = DEFAULT_MAX_SECONDS,
-                 loop_repeats: Optional[int] = LOOP_REPEATS) -> None:
+                 loop_repeats: Optional[int] = LOOP_REPEATS,
+                 skills: Optional["Skills"] = None) -> None:
         self.providers = {p.name: p for p in providers}
+        self.skills = skills or Skills()
         self.timeout = timeout
         self.min_score = min_score
         self.max_seconds = max_seconds
@@ -320,8 +376,9 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
         return summarizer
 
     def status(self) -> Dict[str, Any]:
-        """What the service offers."""
-        return {"providers": list(self.providers), "documents": self.index.status()}
+        """What the service offers (providers, documents, skills)."""
+        return {"providers": list(self.providers), "documents": self.index.status(),
+                "skills": self.skills.describe()}
 
     # -- answering ---------------------------------------------------------------
 
@@ -336,10 +393,16 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
                       "max_tokens": int(request.get("max_tokens", MAX_TOKENS_BACKSTOP))}
             budget = min(float(request.get("max_seconds", self.max_seconds)), MAX_SECONDS_CAP)
             use_documents = bool(request.get("use_documents"))
+            use_memory = bool(request.get("use_memory")) and self.skills.memory is not None
             if request.get("mode", "chat") == "agent":
                 yield from self._agent(llm, messages[-1]["content"], use_documents,
-                                       request.get("agent_mode", "auto"))
+                                       request.get("agent_mode", "auto"), use_memory)
             else:
+                if use_memory:
+                    notes = self._memory_notes(messages[-1]["content"])
+                    yield {"type": "memory", "notes": notes}
+                    if notes:
+                        messages = [{"role": "system", "content": memory_prompt(notes)}] + messages
                 yield from self._chat(llm, messages, use_documents, params, budget,
                                       request.get("model", ""))
         except (ChatError, LLMError, ValueError) as exc:
@@ -382,12 +445,48 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
         yield {"type": "finish", "finish_reason": finish, "usage": usage, "timing": timing,
                "max_seconds": budget}
 
-    def _agent(self, llm, question, use_documents, agent_mode) -> Iterator[Dict[str, Any]]:
+    def _memory_notes(self, question: str) -> List[Dict[str, Any]]:
+        """Notes for a chat answer: semantic hits above the floor; keyword hits only
+        when there is no embedder (with one, they are mostly common words)."""
+        store = self.skills.memory
+        notes = store.search(question, limit=MEMORY_NOTES, min_score=self.min_score)
+        if store.embedder is not None:
+            notes = [n for n in notes if n["match"] == "semantic"]
+        return [{k: n[k] for k in ("id", "text", "tags", "score", "match")} for n in notes]
+
+    def memory_list(self, limit: int = 200) -> Dict[str, Any]:
+        """Notes for the memory panel."""
+        store = self.skills.memory
+        if store is None:
+            raise ChatError("the server was started without memory (--memory none)")
+        return {"path": str(store.path), "count": store.count(), "notes": store.list(limit)}
+
+    def memory_add(self, text: str, tags=()) -> int:
+        """Add a note typed by the user."""
+        if self.skills.memory is None:
+            raise ChatError("the server was started without memory (--memory none)")
+        try:
+            return self.skills.memory.add(text, list(tags or []), source="user")
+        except MemoryStoreError as exc:
+            raise ChatError(str(exc)) from exc
+
+    def memory_delete(self, note_id: int) -> None:
+        """Delete a note."""
+        if self.skills.memory is None:
+            raise ChatError("the server was started without memory (--memory none)")
+        try:
+            self.skills.memory.delete(int(note_id))
+        except (MemoryStoreError, ValueError) as exc:
+            raise ChatError(str(exc)) from exc
+
+    def _agent(self, llm, question, use_documents, agent_mode,  # pylint: disable=too-many-arguments,too-many-positional-arguments
+               use_memory: bool = False) -> Iterator[Dict[str, Any]]:
         """Tool agent. With documents it searches FIRST: the passages for the
         question are in its system prompt before the first call (the benchmark
         showed small models often never call search_documents themselves), and
-        the search tool stays available for follow-up searches."""
-        tools = default_tools()
+        the search tool stays available for follow-up searches. The configured
+        skills (memory, workspace files, SQLite, Python sandbox) are its tools."""
+        tools = default_tools() + self.skills.tools(include_memory=use_memory)
         system = AGENT_SYSTEM
         if use_documents:
             used, dropped = split_by_score(self.index.retrieve(question), self.min_score)
@@ -396,8 +495,9 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
                    "min_score": self.min_score}
             system = rag_system_prompt(used) + "\n\n" + AGENT_SYSTEM
             tools.append(rag_search_tool(self.index))
-        run = ToolAgent(llm, ToolRegistry(tools), mode=agent_mode, max_steps=6,
-                        system_prompt=system).run(question)
+        run = ToolAgent(llm, ToolRegistry(tools), mode=agent_mode, max_steps=8,
+                        system_prompt=system,
+                        allow_side_effects=self.skills.allow_side_effects).run(question)
         trace = run.to_dict()
         yield {"type": "trace", "steps": trace["steps"], "tools_used": trace["tools_used"],
                "stop_reason": trace["stop_reason"]}

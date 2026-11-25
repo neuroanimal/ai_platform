@@ -15,6 +15,7 @@
     <button type="button" id="refresh" title="Odśwież listę modeli">&#x21bb;<span class="sr-only">Odśwież modele</span></button>
     <label class="toggle"><input type="checkbox" id="use-documents"> z dokumentami</label>
     <label class="toggle"><input type="checkbox" id="use-tools"> z narzędziami</label>
+    <label class="toggle"><input type="checkbox" id="use-memory"> z pamięcią</label>
     <label for="temperature">Temperatura</label>
     <input type="number" id="temperature" min="0" max="2" step="0.1" value="0.3">
     <label for="max-seconds">Limit czasu [s]</label>
@@ -22,6 +23,15 @@
     <button type="button" id="clear">Nowa rozmowa</button>
   </header>
   <p id="status" class="status" role="status" aria-live="polite"></p>
+  <details id="memory-panel" class="memory-panel">
+    <summary>Pamięć (<span id="memory-count">0</span> notatek)</summary>
+    <form id="memory-form" class="memory-form">
+      <label for="memory-text" class="sr-only">Nowa notatka</label>
+      <input type="text" id="memory-text" maxlength="4000" placeholder="Nowa notatka, np. Wolę odpowiedzi po polsku">
+      <button type="submit">Zapamiętaj</button>
+    </form>
+    <ul id="memory-list" class="memory-list"></ul>
+  </details>
   <main id="conversation" class="conversation" aria-live="polite" aria-label="Rozmowa"></main>
   <form id="composer" class="composer">
     <label for="question" class="sr-only">Pytanie</label>

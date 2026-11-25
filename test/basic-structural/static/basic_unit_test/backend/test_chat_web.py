@@ -242,3 +242,67 @@ def test_long_history_is_summarized_into_the_window():
     assert context["dropped_messages"] > 0 and context["summarized"]
     sent = FakeLLM.seen[-1]
     assert sent[0]["content"].startswith("Summary of the earlier part") and sent[-1]["content"] == "i?"
+
+
+def test_memory_in_chat_and_skills(tmp_path):
+    from ai_platform.backend.service_layer.macro.chat.chat_service import (  # pylint: disable=import-outside-toplevel
+        Skills,
+    )
+    from ai_platform.common.agent.memory import MemoryStore  # pylint: disable=import-outside-toplevel
+
+    (tmp_path / "ws").mkdir()
+    db = tmp_path / "d.sqlite"
+    import sqlite3  # pylint: disable=import-outside-toplevel
+    sqlite3.connect(db).close()
+    skills = Skills(memory=MemoryStore(tmp_path / "m.sqlite"), workspace=str(tmp_path / "ws"),
+                    sqlite=str(db))
+    service = ChatService(providers=[Provider("fake", FakeLLM, "http://x")], embedder="hashing",
+                          skills=skills)
+    note = service.memory_add("Greg ma psa o imieniu Burek")
+    assert service.memory_list()["count"] == 1
+    events = list(service.answer({"model": "fake:tiny:1b", "use_memory": True,
+                                  "messages": [{"role": "user", "content": "Jak ma na imię pies?"}]}))
+    memory = next(e for e in events if e["type"] == "memory")
+    assert memory["notes"][0]["id"] == note
+    assert "Burek" in FakeLLM.seen[-1][0]["content"]
+    names = {t.name for t in skills.tools()}
+    assert {"remember", "recall", "forget", "list_files", "read_file", "search_files",
+            "list_tables", "query_sqlite"} <= names and "write_file" not in names
+    assert not skills.allow_side_effects
+    assert service.status()["skills"]["workspace"] == str(tmp_path / "ws")
+    service.memory_delete(note)
+    with pytest.raises(ChatError):
+        service.memory_delete(note)
+    without = ChatService(providers=[Provider("fake", FakeLLM, "http://x")], embedder="hashing")
+    with pytest.raises(ChatError):
+        without.memory_list()
+
+
+
+def test_memory_routes(tmp_path):
+    from ai_platform.backend.service_layer.macro.chat.chat_service import (  # pylint: disable=import-outside-toplevel
+        Skills,
+    )
+    from ai_platform.common.agent.memory import MemoryStore  # pylint: disable=import-outside-toplevel
+
+    service = ChatService(providers=[Provider("fake", FakeLLM, "http://x")], embedder="hashing",
+                          skills=Skills(memory=MemoryStore(tmp_path / "m.sqlite")))
+    server = create_server(service, port=0, static_dir=tmp_path)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        json_header = {"Content-Type": "application/json"}
+        status, _, body = _request(url + "/api/memory", json.dumps({"text": "notatka"}).encode(),
+                                   json_header)
+        note = json.loads(body)["id"]
+        assert status == 200
+        assert json.loads(_request(url + "/api/memory")[2])["notes"][0]["text"] == "notatka"
+        assert _request(url + "/api/memory", b"text=x",
+                        {"Content-Type": "application/x-www-form-urlencoded"})[0] == 415
+        assert _request(url + "/api/memory/delete", json.dumps({"id": note}).encode(),
+                        json_header)[0] == 200
+        assert _request(url + "/api/memory/delete", json.dumps({"id": note}).encode(),
+                        json_header)[0] == 400
+    finally:
+        server.shutdown()
+        server.server_close()

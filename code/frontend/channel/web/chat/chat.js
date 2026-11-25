@@ -47,6 +47,40 @@ function addMeta(box, text) {
   box.append(meta);
 }
 
+async function postJson(url, body) {
+  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify(body) });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || response.status);
+  return data;
+}
+
+async function loadMemory() {
+  const list = $("memory-list");
+  try {
+    const response = await fetch("/api/memory");
+    const data = await response.json();
+    if (!response.ok) { $("memory-panel").hidden = true; $("use-memory").disabled = true; return; }
+    $("memory-count").textContent = data.count;
+    list.replaceChildren(...data.notes.map((note) => {
+      const item = document.createElement("li");
+      const text = document.createElement("span");
+      text.textContent = note.text;
+      const meta = document.createElement("small");
+      meta.textContent = `${note.source}, ${note.created_utc}`;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = "Usuń";
+      remove.setAttribute("aria-label", `Usuń notatkę: ${note.text.slice(0, 40)}`);
+      remove.addEventListener("click", async () => { await postJson("/api/memory/delete", { id: note.id }); loadMemory(); });
+      item.append(text, meta, remove);
+      return item;
+    }));
+  } catch (error) {
+    setStatus(`Nie mogę wczytać pamięci: ${error}`, true);
+  }
+}
+
 async function loadModels() {
   setStatus("Wczytuję modele...");
   const select = $("model");
@@ -99,6 +133,7 @@ async function send(question) {
       body: JSON.stringify({
         model, messages, mode: useTools ? "agent" : "chat",
         use_documents: $("use-documents").checked,
+        use_memory: $("use-memory").checked,
         temperature: Number($("temperature").value),
         max_seconds: Number($("max-seconds").value),
       }),
@@ -143,6 +178,10 @@ async function send(question) {
             (t.elapsed_seconds !== undefined ? `, generowanie ${t.elapsed_seconds} s` : ""));
           if (event.finish_reason === "loop" || event.finish_reason === "time_limit") box.classList.add("warning");
         }
+        else if (event.type === "memory") {
+          if (event.notes.length) addDetails(box, `Z pamięci (${event.notes.length})`,
+            event.notes.map((n) => `[${n.id}] ${n.text}  (${n.match}, ${n.score})`));
+        }
         else if (event.type === "context") addMeta(box, `kontekst: ~${event.prompt_tokens} z ${event.context_tokens} tokenów` +
           ` (${event.source}${event.trained ? `, model obsługuje ${event.trained}` : ""}), rezerwa na odpowiedź ${event.reserve_tokens}` +
           (event.dropped_messages ? `, starsze wiadomości poza oknem: ${event.dropped_messages}` +
@@ -152,6 +191,7 @@ async function send(question) {
       });
     }
     if (!answer) body.textContent = "(brak odpowiedzi)";
+    if (useTools) loadMemory();  // the agent may have remembered or forgotten something
     conversation.push({ role: "user", content: question }, { role: "assistant", content: answer });
     setStatus(`Gotowe w ${((performance.now() - started) / 1000).toFixed(1)} s.`);
   } catch (error) {
@@ -172,6 +212,14 @@ async function send(question) {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadModels();
+  loadMemory();
+  $("memory-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const text = $("memory-text").value.trim();
+    if (!text) return;
+    try { await postJson("/api/memory", { text }); $("memory-text").value = ""; loadMemory(); }
+    catch (error) { setStatus(`Nie zapisano notatki: ${error.message}`, true); }
+  });
   $("refresh").addEventListener("click", loadModels);
   $("stop").addEventListener("click", () => controller && controller.abort());
   $("clear").addEventListener("click", () => {

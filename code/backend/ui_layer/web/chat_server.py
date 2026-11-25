@@ -11,6 +11,9 @@ Routes:
     GET  /static/<file>     its script and style sheet (only files of that directory)
     GET  /api/models        chat models of the reachable local servers
     GET  /api/status        providers and the document corpus
+    GET  /api/memory        notes of the long-term memory
+    POST /api/memory        {"text", "tags"} -> add a note
+    POST /api/memory/delete {"id"} -> delete a note
     POST /api/chat          JSON request -> Server-Sent Events (sources, delta, trace,
                             finish, done / error), see chat_service.ChatService.answer
 
@@ -35,8 +38,14 @@ from urllib.parse import urlsplit
 from ai_platform.backend.service_layer.macro.chat.chat_service import (
     DEFAULT_MIN_SCORE,
     DEMO_CORPUS,
+    ChatError,
     ChatService,
+    Skills,
 )
+from ai_platform.common.agent.memory import DEFAULT_PATH as DEFAULT_MEMORY_PATH
+from ai_platform.common.agent.memory import MemoryStore
+from ai_platform.common.agent.workspace_tools import SandboxUnavailable, python_tools
+from ai_platform.common.rag.embedder import create_embedder
 
 #: code/frontend/channel/web/chat, located from this file (code/backend/ui_layer/web/).
 DEFAULT_STATIC_DIR = Path(__file__).resolve().parents[3] / "frontend" / "channel" / "web" / "chat"
@@ -91,6 +100,11 @@ class ChatHandler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == "/api/models":
             self._json(200, {"models": self.service.list_models(max_age=0)})
+        elif path == "/api/memory":
+            try:
+                self._json(200, self.service.memory_list())
+            except ChatError as exc:
+                self._json(400, {"error": str(exc)})
         elif path == "/api/status":
             self._json(200, self.service.status())
         elif path in ("/", "/index.html"):
@@ -113,12 +127,25 @@ class ChatHandler(BaseHTTPRequestHandler):
         if not self._host_ok():
             self._json(403, {"error": "host or origin not allowed"})
             return
-        if urlsplit(self.path).path != "/api/chat":
+        path = urlsplit(self.path).path
+        if path not in ("/api/chat", "/api/memory", "/api/memory/delete"):
             self._json(404, {"error": "not found"})
             return
         request = self._read_json()
-        if request is not None:
+        if request is None:
+            return
+        if path == "/api/chat":
             self._stream(request)
+            return
+        try:
+            if path == "/api/memory":
+                self._json(200, {"id": self.service.memory_add(request.get("text", ""),
+                                                               request.get("tags") or [])})
+            else:
+                self.service.memory_delete(request.get("id"))
+                self._json(200, {"deleted": request.get("id")})
+        except ChatError as exc:
+            self._json(400, {"error": str(exc)})
 
     def _read_json(self) -> Optional[dict]:
         """The JSON object of the body, or None after sending the error response."""
@@ -185,6 +212,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--embedder", default="ollama:bge-m3",
                         help="embedder spec for the documents (see create_embedder)")
     parser.add_argument("--top-k", type=int, default=4)
+    parser.add_argument("--memory", default=str(DEFAULT_MEMORY_PATH),
+                        help="SQLite file of the long-term memory, or 'none'")
+    parser.add_argument("--workspace", default=None,
+                        help="directory the agent may read (list, read, search files)")
+    parser.add_argument("--workspace-writable", action="store_true",
+                        help="let the agent also write files in --workspace")
+    parser.add_argument("--sqlite", default=None, help="SQLite database the agent may query "
+                                                       "(read-only)")
+    parser.add_argument("--allow-python", action="store_true",
+                        help="let the agent run Python in a bubblewrap sandbox (no network, "
+                             "no access to your files)")
     parser.add_argument("--max-seconds", type=float, default=300.0,
                         help="default time budget per answer (the page can change it)")
     parser.add_argument("--min-score", type=float, default=DEFAULT_MIN_SCORE,
@@ -202,13 +240,24 @@ def main(argv: Optional[list] = None) -> int:
               "use --allow-remote only on a trusted network", file=sys.stderr)
         return 2
     documents = None if args.documents == "none" else args.documents
+    if args.allow_python:
+        try:
+            python_tools()
+        except SandboxUnavailable as exc:
+            print(f"--allow-python: {exc}", file=sys.stderr)
+            return 2
+    memory = None if args.memory == "none" else \
+        MemoryStore(args.memory, embedder=create_embedder(args.embedder))
+    skills = Skills(memory=memory, workspace=args.workspace,
+                    workspace_writable=args.workspace_writable, sqlite=args.sqlite,
+                    python=args.allow_python)
     service = ChatService(documents=documents, embedder=args.embedder, top_k=args.top_k,
                           min_score=args.min_score if args.min_score >= 0 else None,
-                          max_seconds=args.max_seconds)
+                          max_seconds=args.max_seconds, skills=skills)
     server = create_server(service, args.host, args.port, Path(args.static_dir))
     host, port = server.server_address[:2]
-    print(f"chat on http://{host}:{port}/  (documents: {documents or 'none'}; Ctrl-C to stop)",
-          file=sys.stderr)
+    print(f"chat on http://{host}:{port}/  (documents: {documents or 'none'}; "
+          f"skills: {skills.describe()}; Ctrl-C to stop)", file=sys.stderr)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
