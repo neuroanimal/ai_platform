@@ -28,6 +28,8 @@ from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from .immutable import deep_freeze
 from ..model.base import NLPModel
+from ..model.base import ActorType
+from .provenance_configuration import NLPProvenanceConfigV2
 
 
 class NLPDownloadPolicy(StrEnum):
@@ -235,6 +237,10 @@ class NLPProviderConfigurationV2(NLPModel):
         default_factory=NLPRuntimeConfigV2
     )
 
+    provenance: NLPProvenanceConfigV2 = Field(
+        default_factory=NLPProvenanceConfigV2
+    )
+
     @field_validator("provider_id")
     @classmethod
     def validate_provider_id(cls, value: str) -> str:
@@ -278,7 +284,7 @@ class NLPProviderConfigurationV2(NLPModel):
             }
 
         return {
-            "fingerprint_schema": "nlp-provider-configuration-v2",
+            "fingerprint_schema": "nlp-provider-configuration-v2.1",
             "provider_id": self.provider_id,
             "engine": {
                 "engine_name": self.engine.engine_name,
@@ -293,6 +299,10 @@ class NLPProviderConfigurationV2(NLPModel):
                     self.runtime.allow_device_fallback
                 ),
             },
+            "provenance": self.provenance.model_dump(
+                mode="json",
+                exclude_none=False,
+            ),
         }
 
     @property
@@ -322,6 +332,7 @@ __all__ = [
     "NLPModelConfigV2",
     "NLPRuntimeConfigV2",
     "NLPProviderConfigurationV2",
+    "NLPProvenanceConfigV2",
 ]
 
 

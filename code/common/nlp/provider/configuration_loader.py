@@ -127,7 +127,28 @@ _ENVIRONMENT_FIELDS = {
         ("runtime", "allow_device_fallback"),
         _parse_boolean,
     ),
+    "PROVENANCE__ACTOR_TYPE": (
+        ("provenance", "actor_type"),
+        _parse_string,
+    ),
+    "PROVENANCE__ACTOR_ID": (
+        ("provenance", "actor_id"),
+        _parse_string,
+    ),
+    "PROVENANCE__METHOD": (
+        ("provenance", "method"),
+        _parse_string,
+    ),
+    "PROVENANCE__NOTES": (
+        ("provenance", "notes"),
+        _parse_string,
+    ),
 }
+# Sample values:
+# AI_PLATFORM_NLP__PROVENANCE__ACTOR_TYPE=model
+# AI_PLATFORM_NLP__PROVENANCE__ACTOR_ID=nlp-engine-01
+# AI_PLATFORM_NLP__PROVENANCE__METHOD=Stanza neural pipeline, Polish PDB
+# AI_PLATFORM_NLP__PROVENANCE__NOTES=Local model installation
 
 
 def _validation_error_detail(error: ValidationError) -> str:

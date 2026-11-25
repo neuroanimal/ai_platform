@@ -55,6 +55,42 @@ class OllamaAdapter(OpenAICompatibleAdapter):
         response = self._call(client.get, "/api/tags")
         return list((response.data or {}).get("models", []))
 
+    def model_facts(self) -> List[Dict[str, Any]]:
+        """Facts about every installed model, read without loading any of them.
+
+        From ``/api/tags`` (name, size, family, parameters, quantization),
+        ``/api/show`` (``capabilities`` such as completion, tools, thinking,
+        embedding; trained and configured context) and ``/api/ps`` (whether the
+        model is in memory now). Nothing is generated, so no model is loaded and
+        none is pushed out of memory - which a "health check" prompt would do.
+        """
+        client = self._require_client()
+        loaded = {m.get("name"): m for m in
+                  (self._call(client.get, "/api/ps").data or {}).get("models", [])}
+        facts = []
+        for model in self.list_local_models():
+            name = model.get("name")
+            shown = self._call(client.post, "/api/show", {"model": name}).data or {}
+            details = model.get("details") or {}
+            trained = next((v for k, v in (shown.get("model_info") or {}).items()
+                            if k.endswith(".context_length")), None)
+            configured = None
+            for line in str(shown.get("parameters") or "").splitlines():
+                parts = line.split()
+                if len(parts) == 2 and parts[0] == "num_ctx" and parts[1].isdigit():
+                    configured = int(parts[1])
+            facts.append({
+                "name": name, "provider": "ollama",
+                "size_gb": round((model.get("size") or 0) / 1e9, 2),
+                "family": details.get("family"), "parameters": details.get("parameter_size"),
+                "quantization": details.get("quantization_level"),
+                "capabilities": sorted(shown.get("capabilities") or []),
+                "context_trained": trained, "context_configured": configured,
+                "loaded": name in loaded,
+                "loaded_context": (loaded.get(name) or {}).get("context_length"),
+            })
+        return facts
+
     def context_length(self) -> Dict[str, Any]:
         """Context window of the configured model, as Ollama will use it.
 

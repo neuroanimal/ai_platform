@@ -178,6 +178,10 @@ async function send(question) {
             (t.elapsed_seconds !== undefined ? `, generowanie ${t.elapsed_seconds} s` : ""));
           if (event.finish_reason === "loop" || event.finish_reason === "time_limit") box.classList.add("warning");
         }
+        else if (event.type === "route") {
+          addDetails(box, `Wybrany model: ${event.model.replace(/^ollama:/, "")} (zadanie ${event.task}, język ${event.language})`,
+            [event.reasons.join("\n")].concat((event.ranking || []).map((r) => `${r.model}: ${r.score} (${r.seconds} s)`)));
+        }
         else if (event.type === "memory") {
           if (event.notes.length) addDetails(box, `Z pamięci (${event.notes.length})`,
             event.notes.map((n) => `[${n.id}] ${n.text}  (${n.match}, ${n.score})`));

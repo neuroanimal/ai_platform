@@ -152,6 +152,7 @@ class StanzaPolishEngineAdapter:
             model_dir=model.model_dir,
             package=package,
             use_gpu=False,
+            provenance=configuration.provenance,
         )
 
 

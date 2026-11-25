@@ -83,6 +83,7 @@ from .validation.conformance import (
     validate_provider_request,
     validate_provider_response,
 )
+from .provenance_configuration import NLPProvenanceConfigV2
 
 
 PROVIDER_ID = "stanza-pl"
@@ -127,6 +128,7 @@ class StanzaPolishProvider(NLPProvider):
         use_gpu: bool = False,
         pipeline: Any | None = None,
         provider_version: str | None = None,
+        provenance: NLPProvenanceConfigV2 | None = None,
     ) -> None:
         """
         Initialize the provider.
@@ -170,6 +172,20 @@ class StanzaPolishProvider(NLPProvider):
         self._pipeline = pipeline
 
         self._model_id = f"pl-{self._package}-pdb"
+
+        self._provenance_config = (
+            provenance
+            if provenance is not None
+            else NLPProvenanceConfigV2()
+        )
+
+        if not isinstance(
+            self._provenance_config,
+            NLPProvenanceConfigV2,
+        ):
+            raise TypeError(
+                "provenance must be NLPProvenanceConfigV2."
+            )
 
         self._capabilities = ProviderCapabilities(
             provider_id=PROVIDER_ID,
@@ -377,13 +393,16 @@ class StanzaPolishProvider(NLPProvider):
         provider_version: str,
         configuration: dict[str, Any],
     ) -> Provenance:
+        provenance_config = self._provenance_config
+
         return Provenance(
-            actor_type=ActorType.MODEL,
-            actor_id=PROVIDER_ID,
+            actor_type=provenance_config.actor_type,
+            actor_id=provenance_config.actor_id,
             provider_id=PROVIDER_ID,
             provider_version=provider_version,
             model_id=self._model_id,
-            method="Stanza neural NLP pipeline",
+            method=provenance_config.method,
+            notes=provenance_config.notes,
             configuration=configuration,
         )
 

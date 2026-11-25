@@ -42,9 +42,13 @@ from ai_platform.backend.service_layer.macro.chat.chat_service import (
     ChatService,
     Skills,
 )
+from ai_platform.backend.service_layer.macro.model_routing.model_catalog_service import (
+    ModelCatalogService,
+)
 from ai_platform.common.agent.memory import DEFAULT_PATH as DEFAULT_MEMORY_PATH
 from ai_platform.common.agent.memory import MemoryStore
 from ai_platform.common.agent.workspace_tools import SandboxUnavailable, python_tools
+from ai_platform.common.llm.ollama_adapter import OllamaAdapter
 from ai_platform.common.rag.embedder import create_embedder
 
 #: code/frontend/channel/web/chat, located from this file (code/backend/ui_layer/web/).
@@ -223,6 +227,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--allow-python", action="store_true",
                         help="let the agent run Python in a bubblewrap sandbox (no network, "
                              "no access to your files)")
+    parser.add_argument("--no-auto-model", action="store_true",
+                        help="do not offer the automatic model choice")
     parser.add_argument("--max-seconds", type=float, default=300.0,
                         help="default time budget per answer (the page can change it)")
     parser.add_argument("--min-score", type=float, default=DEFAULT_MIN_SCORE,
@@ -251,9 +257,14 @@ def main(argv: Optional[list] = None) -> int:
     skills = Skills(memory=memory, workspace=args.workspace,
                     workspace_writable=args.workspace_writable, sqlite=args.sqlite,
                     python=args.allow_python)
+    router = None
+    if not args.no_auto_model:
+        ollama = OllamaAdapter()
+        ollama.initialize({"model": "-", "timeout": 10})
+        router = ModelCatalogService(ollama.model_facts)
     service = ChatService(documents=documents, embedder=args.embedder, top_k=args.top_k,
                           min_score=args.min_score if args.min_score >= 0 else None,
-                          max_seconds=args.max_seconds, skills=skills)
+                          max_seconds=args.max_seconds, skills=skills, router=router)
     server = create_server(service, args.host, args.port, Path(args.static_dir))
     host, port = server.server_address[:2]
     print(f"chat on http://{host}:{port}/  (documents: {documents or 'none'}; "

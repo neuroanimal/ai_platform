@@ -70,6 +70,9 @@ from .factory import (
 from .stanza_factory import (
     StanzaPolishEngineAdapter,
 )
+from .provenance_configuration import (
+    NLPProvenanceConfigV2,
+)
 
 
 __all__ = [
@@ -118,5 +121,6 @@ __all__ = [
     "NLPProviderFactoryResult",
     "NLPProviderFactoryService",
     "StanzaPolishEngineAdapter",
+    "NLPProvenanceConfigV2",
 ]
 

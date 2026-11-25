@@ -87,6 +87,8 @@ PROVIDERS = (
 EMBEDDING_MARKERS = ("embed", "bge-")
 ROLES = ("system", "user", "assistant")
 MODELS_CACHE_SECONDS = 30.0
+#: Model id of the automatic choice (model_routing: task + language + measurements).
+AUTO_MODEL = "auto"
 #: A local model is limited by TIME, not tokens: the answer is stopped after this
 #: many seconds (a request may ask for less, or more up to MAX_SECONDS_CAP).
 DEFAULT_MAX_SECONDS = 300.0
@@ -304,9 +306,11 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
                  top_k: int = 4, timeout: float = 600.0,
                  min_score: Optional[float] = None, max_seconds: float = DEFAULT_MAX_SECONDS,
                  loop_repeats: Optional[int] = LOOP_REPEATS,
-                 skills: Optional["Skills"] = None) -> None:
+                 skills: Optional["Skills"] = None, router: Any = None) -> None:
         self.providers = {p.name: p for p in providers}
         self.skills = skills or Skills()
+        #: ModelCatalogService (or anything with ``decide(task, text)``): enables model "auto".
+        self.router = router
         self.timeout = timeout
         self.min_score = min_score
         self.max_seconds = max_seconds
@@ -342,6 +346,9 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
             models += [{"id": f"{provider.name}:{name}", "provider": provider.name,
                         "name": name} for name in sorted(names)
                        if not any(m in name.lower() for m in EMBEDDING_MARKERS)]
+        if self.router is not None:
+            models.insert(0, {"id": AUTO_MODEL, "provider": "auto",
+                              "name": "automatycznie (wg benchmarków)"})
         self._models, self._models_at = models, time.monotonic()
         return models
 
@@ -353,6 +360,20 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
         if model_id not in {m["id"] for m in self.list_models()}:
             raise ChatError(f"model {model_id!r} is not served by {provider_name}")
         return self._adapter(provider, model)
+
+    def _route(self, request: Dict[str, Any], messages) -> Iterator[Dict[str, Any]]:
+        """Pick the model for an "auto" request; yields a ``route`` event, returns the id."""
+        if self.router is None:
+            raise ChatError("automatic model choice is not configured on this server")
+        task = "tools" if request.get("mode") == "agent" else \
+            "documents" if request.get("use_documents") else "chat"
+        try:
+            decision = self.router.decide(task, messages[-1]["content"])
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            raise ChatError(f"automatic model choice failed: {exc}") from exc
+        model_id = f"ollama:{decision.model}"
+        yield {"type": "route", **decision.to_dict(), "model": model_id}
+        return model_id
 
     def context_window(self, model_id: str, llm) -> Dict[str, Any]:
         """Context window of ``model_id`` (cached 30 s; Ollama reports it, else the default)."""
@@ -390,6 +411,8 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
         received = _utc()
         try:
             messages = validate_messages(request.get("messages"))
+            if request.get("model") == AUTO_MODEL:
+                request = {**request, "model": (yield from self._route(request, messages))}
             llm = self._llm(request.get("model", ""))
             params = {"temperature": float(request.get("temperature", 0.3)),
                       "max_tokens": int(request.get("max_tokens", MAX_TOKENS_BACKSTOP))}
