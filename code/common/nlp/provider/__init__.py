@@ -53,6 +53,13 @@ from .resolver import (
     NLPProviderResolution,
     NLPProviderConfigurationResolver,
 )
+from .configuration_service import (
+    NLPProviderConfigurationService,
+)
+from .configuration_runtime import (
+    NLPProviderConfiguredRuntime,
+    NLPProviderConfigurationRuntime,
+)
 
 
 __all__ = [
@@ -91,5 +98,8 @@ __all__ = [
     "NLPProviderConfigurationLoader",
     "NLPProviderResolution",
     "NLPProviderConfigurationResolver",
+    "NLPProviderConfigurationService",
+    "NLPProviderConfiguredRuntime",
+    "NLPProviderConfigurationRuntime",
 ]
 

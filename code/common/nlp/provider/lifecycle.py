@@ -245,6 +245,90 @@ class NLPProviderLifecycle:
 
         return self.list_states()
 
+    async def initialize_resolution(
+        self,
+        resolution: Any,
+    ) -> NLPProviderLifecycleSnapshot:
+        """
+        Initialize a provider represented by a validated resolution.
+
+        The provider must already be explicitly managed by this
+        lifecycle instance. The method never registers providers.
+
+        The resolution must refer to the exact provider object managed
+        by this lifecycle and registered in its central registry.
+
+        Configuration is validated and retained as resolution metadata.
+        Engine-specific configuration application is not performed here.
+        """
+        from .resolver import NLPProviderResolution
+        from .errors import NLPProviderConfigurationError
+
+        if not isinstance(resolution, NLPProviderResolution):
+            raise TypeError(
+                "resolution must be NLPProviderResolution."
+            )
+
+        expected_key = (
+            f"{NLPProviderPlugin.KEY_PREFIX}{resolution.provider_id}"
+        )
+
+        if resolution.registry_key != expected_key:
+            raise NLPProviderConfigurationError(
+                "Resolution contains an invalid registry key.",
+                provider_id=resolution.provider_id,
+                details={
+                    "expected_registry_key": expected_key,
+                    "actual_registry_key": resolution.registry_key,
+                },
+            )
+
+        if (
+            resolution.configuration.provider_id
+            != resolution.provider_id
+        ):
+            raise NLPProviderConfigurationError(
+                "Resolution configuration provider_id mismatch.",
+                provider_id=resolution.provider_id,
+            )
+
+        if (
+            resolution.configuration_fingerprint
+            != resolution.configuration.fingerprint_sha256
+        ):
+            raise NLPProviderConfigurationError(
+                "Resolution configuration fingerprint mismatch.",
+                provider_id=resolution.provider_id,
+            )
+
+        record = self._get_record(resolution.provider_id)
+
+        if record.provider is not resolution.provider:
+            raise NLPProviderUnavailableError(
+                "Resolved provider is not the provider managed "
+                "by this lifecycle instance.",
+                provider_id=resolution.provider_id,
+                details={
+                    "state": record.state.value,
+                    "reason": "provider_identity_mismatch",
+                },
+            )
+
+        registered_provider = self._registry.get(expected_key)
+
+        if registered_provider is not resolution.provider:
+            raise NLPProviderUnavailableError(
+                "Resolved provider does not match the object "
+                "currently stored in the central registry.",
+                provider_id=resolution.provider_id,
+                details={
+                    "registry_key": expected_key,
+                    "reason": "registry_identity_mismatch",
+                },
+            )
+
+        return await self.initialize(resolution.provider_id)
+
     async def check_health(
         self,
         provider_id: str,
