@@ -153,6 +153,9 @@ class StanzaPolishProvider(NLPProvider):
         self._use_gpu = use_gpu
         self._lock = threading.Lock()
 
+        # Initialization and inference use separate locks.
+        self._initialization_lock = threading.Lock()
+
         self._provider_version = (
             provider_version or self._detect_stanza_version()
         )
