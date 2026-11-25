@@ -33,13 +33,6 @@ from .lifecycle import (
     NLPProviderLifecycleSnapshot,
     NLPProviderLifecycleState,
 )
-# from .configuration import (
-#     NLPExecutionDevice,
-#     NLPProviderEngineConfig,
-#     NLPModelConfig,
-#     NLPRuntimeConfig,
-#     NLPProviderConfiguration,
-# )
 from .configuration_v2 import (
     NLPDownloadPolicy,
     NLPExecutionDevice,
@@ -48,6 +41,12 @@ from .configuration_v2 import (
     NLPRuntimeConfigV2,
     NLPProviderConfigurationV2,
 )
+from .configuration_loader import (
+    ENV_PREFIX,
+    NLPConfigurationLoadError,
+    NLPProviderConfigurationLoader,
+)
+
 
 __all__ = [
     "ProviderCapabilities",
@@ -71,17 +70,14 @@ __all__ = [
     "NLPProviderLifecycle",
     "NLPProviderLifecycleSnapshot",
     "NLPProviderLifecycleState",
-    # "NLPExecutionDevice",
-    # "NLPProviderEngineConfig",
-    # "NLPModelConfig",
-    # "NLPRuntimeConfig",
-    # "NLPProviderConfiguration",
     "NLPDownloadPolicy",
     "NLPExecutionDevice",
     "NLPProviderEngineConfigV2",
     "NLPModelConfigV2",
     "NLPRuntimeConfigV2",
     "NLPProviderConfigurationV2",
-
+    "ENV_PREFIX",
+    "NLPConfigurationLoadError",
+    "NLPProviderConfigurationLoader",
 ]
 
