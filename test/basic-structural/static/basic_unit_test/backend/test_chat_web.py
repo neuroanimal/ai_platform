@@ -34,8 +34,11 @@ class FakeLLM:
         return ["tiny:1b", "big:7b", "bge-m3"]
 
     def stream_chat(self, messages, **_):
-        """Answer in two chunks."""
+        """Answer in two chunks; in the agent's json protocol, as chat_completion would."""
         FakeLLM.seen.append(messages)
+        if any("You can use tools" in m["content"] for m in messages if m["role"] == "system"):
+            yield StreamChunk(self.chat_completion(messages).text, "stop")
+            return
         yield StreamChunk("Odpo")
         yield StreamChunk("wiedź", "stop", {"completion_tokens": 2})
 
@@ -192,7 +195,7 @@ def test_score_floor_and_agent_searches_first():
     events = list(service.answer({"model": "fake:big:7b", "mode": "agent", "agent_mode": "json",
                                   "use_documents": True,
                                   "messages": [{"role": "user", "content": "17 razy 23?"}]}))
-    assert [e["type"] for e in events][:2] == ["sources", "trace"]
+    assert [e["type"] for e in events][:3] == ["context", "sources", "trace"]
     service.close()
 
 

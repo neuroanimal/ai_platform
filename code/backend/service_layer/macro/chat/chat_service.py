@@ -95,6 +95,8 @@ MAX_SECONDS_CAP = 1800.0
 MAX_TOKENS_BACKSTOP = 16384
 #: Context window assumed when the server does not say (Ollama 0.40 default).
 DEFAULT_CONTEXT_TOKENS = 4096
+#: Context tokens kept free for the agent's tool descriptions (json protocol).
+AGENT_PROMPT_RESERVE = 1500
 #: Time budget for summarizing turns that fall out of the context window.
 SUMMARY_SECONDS = 90.0
 #: Long conversations are fine: what does not fit the window is summarized
@@ -395,8 +397,9 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
             use_documents = bool(request.get("use_documents"))
             use_memory = bool(request.get("use_memory")) and self.skills.memory is not None
             if request.get("mode", "chat") == "agent":
-                yield from self._agent(llm, messages[-1]["content"], use_documents,
-                                       request.get("agent_mode", "auto"), use_memory)
+                yield from self._agent(llm, messages, use_documents,
+                                       request.get("agent_mode", "auto"), use_memory,
+                                       budget=budget, model_id=request.get("model", ""))
             else:
                 if use_memory:
                     notes = self._memory_notes(messages[-1]["content"])
@@ -479,13 +482,26 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
         except (MemoryStoreError, ValueError) as exc:
             raise ChatError(str(exc)) from exc
 
-    def _agent(self, llm, question, use_documents, agent_mode,  # pylint: disable=too-many-arguments,too-many-positional-arguments
-               use_memory: bool = False) -> Iterator[Dict[str, Any]]:
+    def _agent(self, llm, messages, use_documents, agent_mode,  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+               use_memory: bool = False, *, budget: float = DEFAULT_MAX_SECONDS,
+               model_id: str = "") -> Iterator[Dict[str, Any]]:
         """Tool agent. With documents it searches FIRST: the passages for the
         question are in its system prompt before the first call (the benchmark
         showed small models often never call search_documents themselves), and
         the search tool stays available for follow-up searches. The configured
-        skills (memory, workspace files, SQLite, Python sandbox) are its tools."""
+        skills (memory, workspace files, SQLite, Python sandbox) are its tools.
+        Earlier turns go with it, fitted into the context window (with extra
+        room for the tool descriptions), and the whole run has the time budget."""
+        question = messages[-1]["content"]
+        window = self.context_window(model_id, llm)
+        fitted, report = fit_messages(
+            [m for m in messages if m["role"] != "system"], window["tokens"],
+            reserve_tokens=default_reserve(window["tokens"]) + AGENT_PROMPT_RESERVE,
+            summarize=self._summarizer(model_id, llm))
+        yield {"type": "context", **report.to_dict(), "source": window.get("source"),
+               "trained": window.get("trained")}
+        history = [m for m in fitted[:-1] if m["role"] != "system"]
+        summaries = [m["content"] for m in fitted if m["role"] == "system"]
         tools = default_tools() + self.skills.tools(include_memory=use_memory)
         system = AGENT_SYSTEM
         if use_documents:
@@ -495,15 +511,21 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
                    "min_score": self.min_score}
             system = rag_system_prompt(used) + "\n\n" + AGENT_SYSTEM
             tools.append(rag_search_tool(self.index))
+        if summaries:
+            system = "\n\n".join(summaries) + "\n\n" + system
         run = ToolAgent(llm, ToolRegistry(tools), mode=agent_mode, max_steps=8,
-                        system_prompt=system,
-                        allow_side_effects=self.skills.allow_side_effects).run(question)
+                        system_prompt=system, max_seconds=budget,
+                        loop_repeats=self.loop_repeats,
+                        allow_side_effects=self.skills.allow_side_effects).run(question, history)
         trace = run.to_dict()
         yield {"type": "trace", "steps": trace["steps"], "tools_used": trace["tools_used"],
                "stop_reason": trace["stop_reason"]}
         if run.answer:
             yield {"type": "delta", "text": run.answer}
-        yield {"type": "finish", "finish_reason": run.stop_reason, "usage": {}}
+        yield {"type": "finish", "finish_reason": {"answered": "stop"}.get(run.stop_reason,
+                                                                      run.stop_reason),
+               "usage": {}, "max_seconds": budget,
+               "timing": {"elapsed_seconds": round(run.elapsed_seconds, 3)}}
 
     def close(self) -> None:
         """Release the document index."""

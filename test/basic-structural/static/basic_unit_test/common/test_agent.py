@@ -173,3 +173,33 @@ def test_mcp_tools_in_agent(tmp_path):
         assert not tools_from_mcp(client)[0].call({"a": "x", "b": 1}).ok  # schema check
     finally:
         client.disconnect()
+
+
+def test_agent_history_and_loop_guard():
+    from ai_platform.common.agent.agent_loop import ToolAgent  # pylint: disable=import-outside-toplevel
+    from ai_platform.common.agent.tool import ToolRegistry  # pylint: disable=import-outside-toplevel
+    from ai_platform.common.llm.chat_result import ChatResult, StreamChunk  # pylint: disable=import-outside-toplevel
+
+    class Looper:
+        """json mode: streams an endless repetition."""
+        seen = []
+
+        def stream_chat(self, messages, **_):
+            """Record the messages, then loop."""
+            Looper.seen.append(messages)
+            while True:
+                yield StreamChunk("razy dwanaście ")
+
+        def chat_completion(self, *_, **__):
+            """Not used in json mode with streaming."""
+            return ChatResult(text="", model="m")
+
+    history = [{"role": "user", "content": "Mam psa Burka."},
+               {"role": "assistant", "content": "Miło mi."},
+               {"role": "system", "content": "ignored"}]
+    run = ToolAgent(Looper(), ToolRegistry([]), mode="json", max_seconds=30).run(
+        "Jak ma na imię mój pies?", history)
+    assert run.stop_reason == "loop" and run.answer is None
+    sent = Looper.seen[-1]
+    assert [m["role"] for m in sent] == ["system", "user", "assistant", "user"]
+    assert sent[1]["content"] == "Mam psa Burka."

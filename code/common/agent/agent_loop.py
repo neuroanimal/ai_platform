@@ -27,6 +27,14 @@ when the server rejects the ``tools`` parameter.
 
 Tools with ``side_effects=True`` are refused unless the agent was created
 with ``allow_side_effects=True``.
+
+Guards, as for plain chat (``generation_guard``): in ``json`` mode every model
+call is streamed and stopped at the remaining time budget or when the reply
+loops (the same phrase ``loop_repeats`` times); in ``native`` mode the reply
+(it must arrive whole, with its tool calls) is checked for a loop afterwards.
+The run then ends with ``stop_reason`` "time_limit" or "loop". ``run`` accepts
+the earlier turns of a conversation (``history``), already fitted into the
+model's context window by the caller.
 """
 
 import json
@@ -37,6 +45,7 @@ from typing import Any, Dict, List, Optional
 
 from ai_platform.common.agent.tool import ToolRegistry, ToolResult
 from ai_platform.common.llm.chat_result import ToolCall
+from ai_platform.common.llm.generation_guard import LOOP_REPEATS, find_loop, guarded_chat
 from ai_platform.common.llm.llm_exception import LLMError, LLMRequestError
 
 MODES = ("native", "json", "auto")
@@ -84,12 +93,13 @@ class AgentRun:
                 "steps": [step.__dict__ for step in self.steps]}
 
 
-class ToolAgent:  # pylint: disable=too-few-public-methods
+class ToolAgent:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Runs the agent loop for one LLM adapter and one tool registry."""
 
     def __init__(self, llm, tools: ToolRegistry, *, mode: str = "auto",  # pylint: disable=too-many-arguments
                  max_steps: int = 5, max_seconds: float = 300.0, system_prompt: str = "",
-                 allow_side_effects: bool = False) -> None:
+                 allow_side_effects: bool = False,
+                 loop_repeats: Optional[int] = LOOP_REPEATS) -> None:
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
         self.llm = llm
@@ -99,13 +109,24 @@ class ToolAgent:  # pylint: disable=too-few-public-methods
         self.max_seconds = max_seconds
         self.system_prompt = system_prompt
         self.allow_side_effects = allow_side_effects
+        self.loop_repeats = loop_repeats
+        self._deadline = 0.0
+        self._history: List[Dict[str, Any]] = []
 
-    def run(self, question: str) -> AgentRun:
-        """Answer ``question``, using tools as the model requests."""
+    def run(self, question: str,
+            history: Optional[List[Dict[str, Any]]] = None) -> AgentRun:
+        """Answer ``question``, using tools as the model requests.
+
+        ``history``: earlier user/assistant turns, sent between the system
+        prompt and the question.
+        """
+        self._history = [{"role": m["role"], "content": m["content"]} for m in history or []
+                         if m.get("role") in ("user", "assistant")]
         mode = "native" if self.mode in ("native", "auto") else "json"
         messages = self._initial_messages(question, mode)
         run = AgentRun(question=question, answer=None, stop_reason="max_steps")
         start = time.perf_counter()
+        self._deadline = start + self.max_seconds
         for number in range(1, self.max_steps + 1):
             if time.perf_counter() - start > self.max_seconds:
                 run.stop_reason = "max_seconds"
@@ -118,6 +139,10 @@ class ToolAgent:  # pylint: disable=too-few-public-methods
             calls = result.tool_calls if mode == "native" else _json_calls(result.text)
             step = AgentStep(number, mode, result.text, elapsed_seconds=result.elapsed_seconds)
             run.steps.append(step)
+            stopped = self._stopped(result)
+            if stopped:
+                run.stop_reason = stopped
+                break
             if calls is None or not calls:
                 run.answer = _json_answer(result.text) if mode == "json" else result.text
                 run.stop_reason = "answered"
@@ -133,7 +158,8 @@ class ToolAgent:  # pylint: disable=too-few-public-methods
         if mode == "json":
             system = (system + "\n\n" if system else "") + self._json_protocol()
         messages = [{"role": "system", "content": system}] if system else []
-        return messages + [{"role": "user", "content": question}]
+        return messages + list(getattr(self, "_history", [])) + \
+            [{"role": "user", "content": question}]
 
     def _json_protocol(self) -> str:
         lines = [f"- {t['function']['name']}: {t['function']['description']} "
@@ -152,7 +178,19 @@ class ToolAgent:  # pylint: disable=too-few-public-methods
                 # The server does not accept tools: restart the conversation in json mode.
                 messages[:] = self._initial_messages(question, "json")
                 mode = "json"
+        if hasattr(self.llm, "stream_chat"):  # streamed: stopped at the budget or on a loop
+            remaining = max(1.0, self._deadline - time.perf_counter())
+            return guarded_chat(self.llm, messages, max_seconds=remaining,
+                                loop_repeats=self.loop_repeats), mode
         return self.llm.chat_completion(messages, allow_empty=True), mode
+
+    def _stopped(self, result) -> Optional[str]:
+        """"loop" / "time_limit" when the guard stopped the reply or it loops."""
+        if result.finish_reason in ("loop", "time_limit"):
+            return result.finish_reason
+        if self.loop_repeats and result.text and find_loop(result.text, self.loop_repeats):
+            return "loop"
+        return None
 
     def _execute(self, calls: List[ToolCall], mode: str, step: AgentStep,
                  model_text: str) -> List[Dict[str, Any]]:
