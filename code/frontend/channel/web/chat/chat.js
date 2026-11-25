@@ -87,6 +87,7 @@ async function send(question) {
   const { box, body } = addMessage("assistant");
   const useTools = $("use-tools").checked;
   let answer = "";
+  let reasoning = null;           // <pre> inside a "Rozumowanie" <details>, created on demand
   controller = new AbortController();
   $("send").disabled = true; $("stop").disabled = false;
   setStatus(useTools ? "Agent pracuje (narzędzia)..." : "Model odpowiada...");
@@ -99,6 +100,7 @@ async function send(question) {
         model, messages, mode: useTools ? "agent" : "chat",
         use_documents: $("use-documents").checked,
         temperature: Number($("temperature").value),
+        max_seconds: Number($("max-seconds").value),
       }),
     });
     if (!response.ok) throw new Error((await response.json()).error || response.status);
@@ -108,7 +110,19 @@ async function send(question) {
       const { value, done } = await reader.read();
       if (done) break;
       buffer = parseEvents(buffer + value, (event) => {
-        if (event.type === "delta") { answer += event.text; body.textContent = answer; box.scrollIntoView({ block: "end" }); }
+        if (event.type === "reasoning") {
+          if (!reasoning) {
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            summary.textContent = "Rozumowanie modelu";
+            reasoning = document.createElement("pre");
+            details.append(summary, reasoning);
+            box.insertBefore(details, body);
+          }
+          reasoning.textContent += event.text;
+          setStatus("Model rozumuje...");
+        }
+        else if (event.type === "delta") { answer += event.text; body.textContent = answer; box.scrollIntoView({ block: "end" }); }
         else if (event.type === "sources") {
           const dropped = event.below_min_score || [];
           addDetails(box, `Źródła (${event.sources.length}` +
@@ -119,8 +133,17 @@ async function send(question) {
         else if (event.type === "trace") addDetails(box, `Kroki agenta: ${event.steps.length}, narzędzia: ${event.tools_used.join(", ") || "brak"} (${event.stop_reason})`,
           event.steps.map((s) => `#${s.step} [${s.mode}] ${s.model_text}\n` +
             s.tool_calls.map((c) => `-> ${c.name}(${JSON.stringify(c.arguments)}) ${c.ok ? "=" : "BŁĄD"} ${c.result}`).join("\n")));
-        else if (event.type === "finish") addMeta(box, `koniec: ${event.finish_reason || "-"}` +
-          (event.usage && event.usage.completion_tokens ? `, tokeny: ${event.usage.completion_tokens}` : ""));
+        else if (event.type === "finish") {
+          const why = { loop: `przerwano: model się zapętlił ("${(event.timing || {}).loop_unit || ""}")`,
+                        time_limit: `przerwano: limit czasu ${event.max_seconds} s`,
+                        length: "przerwano: limit tokenów", stop: "koniec" }[event.finish_reason] || `koniec: ${event.finish_reason || "-"}`;
+          const t = event.timing || {};
+          addMeta(box, why + (event.usage && event.usage.completion_tokens ? `, tokeny: ${event.usage.completion_tokens}` : "") +
+            (t.first_token_seconds !== undefined ? `, pierwszy token po ${t.first_token_seconds} s` : "") +
+            (t.elapsed_seconds !== undefined ? `, generowanie ${t.elapsed_seconds} s` : ""));
+          if (event.finish_reason === "loop" || event.finish_reason === "time_limit") box.classList.add("warning");
+        }
+        else if (event.type === "done") addMeta(box, `zapytanie ${event.received_utc} → odpowiedź ${event.finished_utc} (UTC), razem ${event.elapsed_seconds} s`);
         else if (event.type === "error") throw new Error(event.message);
       });
     }

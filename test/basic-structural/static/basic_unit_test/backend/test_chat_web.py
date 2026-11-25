@@ -193,3 +193,27 @@ def test_score_floor_and_agent_searches_first():
                                   "messages": [{"role": "user", "content": "17 razy 23?"}]}))
     assert [e["type"] for e in events][:2] == ["sources", "trace"]
     service.close()
+
+
+class LoopingReasoner(FakeLLM):
+    """Reasons a little, then loops in the answer."""
+
+    def stream_chat(self, messages, **_):
+        """Reasoning, then an endless repetition."""
+        FakeLLM.seen.append(messages)
+        yield StreamChunk("", reasoning="Myślę...")
+        yield StreamChunk("Wynik:")
+        while True:
+            yield StreamChunk(" razy dwanaście")
+
+
+def test_chat_streams_reasoning_and_stops_a_loop():
+    service = ChatService(providers=[Provider("fake", LoopingReasoner, "http://x")],
+                          embedder="hashing")
+    events = list(service.answer({"model": "fake:tiny:1b",
+                                  "messages": [{"role": "user", "content": "12 x 12?"}]}))
+    kinds = [e["type"] for e in events]
+    assert kinds[0] == "reasoning" and kinds[-2:] == ["finish", "done"]
+    finish = events[-2]
+    assert finish["finish_reason"] == "loop" and "dwanaście" in finish["timing"]["loop_unit"]
+    assert {"received_utc", "finished_utc"} <= set(events[-1])

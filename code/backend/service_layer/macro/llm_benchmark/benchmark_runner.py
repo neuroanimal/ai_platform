@@ -27,7 +27,8 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from ai_platform.backend.domain_layer.business_logic.llm_benchmark.task_model import TaskSet
-from ai_platform.common.llm.llm_exception import LLMError
+from ai_platform.common.llm.generation_guard import LOOP_REPEATS, guarded_chat
+from ai_platform.common.llm.llm_exception import LLMError, LLMResponseError
 
 REPORT_SCHEMA = "ai_platform.llm_benchmark.report/1"
 WARMUP_PROMPT = "Odpowiedz jednym słowem: OK."
@@ -39,11 +40,19 @@ Progress = Callable[[str], None]
 class LLMBenchmarkRunner:  # pylint: disable=too-few-public-methods
     """Runs task sets against models created by an LLM factory."""
 
-    def __init__(self, llm_factory: LLMFactory, progress: Optional[Progress] = None,
-                 clock: Callable[[], float] = time.perf_counter) -> None:
+    def __init__(self, llm_factory: LLMFactory, progress: Optional[Progress] = None,  # pylint: disable=too-many-arguments
+                 clock: Callable[[], float] = time.perf_counter, *,
+                 max_seconds: Optional[float] = None,
+                 loop_repeats: Optional[int] = None) -> None:
+        """``max_seconds`` and/or ``loop_repeats`` switch to guarded, streamed calls
+        (``generation_guard``): every answer gets the same wall-clock budget and
+        a looping answer is stopped; without them each answer is one plain call
+        limited by the adapter's max_tokens (the behaviour of the first runs)."""
         self.llm_factory = llm_factory
         self.progress = progress or (lambda message: None)
         self.clock = clock
+        self.max_seconds = max_seconds
+        self.loop_repeats = loop_repeats
 
     def run(self, task_set: TaskSet, models: Sequence[str], *,  # pylint: disable=too-many-arguments,too-many-locals
             languages: Optional[Sequence[str]] = None, repeats: int = 3,
@@ -86,6 +95,7 @@ class LLMBenchmarkRunner:  # pylint: disable=too-few-public-methods
             "repeats": repeats,
             "warmup": warmups,
             "status_semantics": "PASS = an answer came back; correctness is screened separately",
+            "max_seconds": self.max_seconds, "loop_repeats": self.loop_repeats,
             **(metadata or {}),
             "summary": summarize(results, models, languages, len(task_set.tasks) * repeats),
             "results": results,
@@ -96,6 +106,11 @@ class LLMBenchmarkRunner:  # pylint: disable=too-few-public-methods
             result = llm.chat_completion([{"role": "user", "content": WARMUP_PROMPT}],
                                          max_tokens=8, temperature=0)
             return {"status": "PASS", "load_and_warmup_seconds": round(result.elapsed_seconds, 3)}
+        except LLMResponseError as exc:
+            # A reasoning model spends the 8 warm-up tokens thinking: loaded, but no answer.
+            if "empty answer" in str(exc):
+                return {"status": "PASS", "note": "empty warm-up answer (reasoning model?)"}
+            return {"status": "FAIL", "error_type": type(exc).__name__, "error": str(exc)}
         except LLMError as exc:
             return {"status": "FAIL", "error_type": type(exc).__name__, "error": str(exc)}
 
@@ -105,13 +120,39 @@ class LLMBenchmarkRunner:  # pylint: disable=too-few-public-methods
                 "category": task.category, "language": language, "run_index": run_index,
                 "prompt": localized.prompt, "expected": localized.expected,
                 "rejected": list(localized.rejected)}
+        messages = [{"role": "user", "content": localized.prompt}]
+        sent = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
         try:
-            result = llm.chat_completion([{"role": "user", "content": localized.prompt}])
+            guarded = self.max_seconds is not None or self.loop_repeats is not None
+            if guarded and hasattr(llm, "stream_chat"):
+                result = guarded_chat(llm, messages, max_seconds=self.max_seconds,
+                                      loop_repeats=self.loop_repeats or LOOP_REPEATS)
+            else:
+                result = llm.chat_completion(messages)
         except LLMError as exc:
-            return {**base, "status": "FAIL", "error_type": type(exc).__name__, "error": str(exc)}
-        return {**base, "status": "PASS", "answer": result.text,
-                "elapsed_seconds": round(result.elapsed_seconds, 3), "usage": result.usage,
-                "finish_reason": result.finish_reason}
+            return {**base, "status": "FAIL", "error_type": type(exc).__name__, "error": str(exc),
+                    "timing": {"request_sent_utc": sent,
+                               "finished_utc": datetime.now(timezone.utc).isoformat(
+                                   timespec="milliseconds")}}
+        timing = (result.metrics or {}).get("timing") or {
+            "request_sent_utc": sent,
+            "finished_utc": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+            "elapsed_seconds": round(result.elapsed_seconds, 3)}
+        record = {**base, "status": "PASS" if result.text.strip() else "FAIL",
+                  "answer": result.text, "elapsed_seconds": round(result.elapsed_seconds, 3),
+                  "usage": result.usage, "finish_reason": result.finish_reason,
+                  "timing": timing}
+        if result.reasoning:
+            record["reasoning"] = result.reasoning
+        if result.finish_reason == "loop":
+            record["loop_unit"] = timing.get("loop_unit")
+        if not result.text.strip():
+            record["error"] = {
+                "loop": f"stopped: the model looped on {timing.get('loop_unit')!r}",
+                "time_limit": f"stopped: time limit of {self.max_seconds} s before an answer",
+            }.get(result.finish_reason, "empty answer" + (" (only reasoning)"
+                                                         if result.reasoning else ""))
+        return record
 
 
 def summarize(results: List[Dict[str, Any]], models: Sequence[str],
@@ -128,13 +169,15 @@ def summarize(results: List[Dict[str, Any]], models: Sequence[str],
                 "median_seconds": round(statistics.median(times), 3) if times else None,
                 "max_seconds": max(times) if times else None,
                 "truncated": sum(r.get("finish_reason") == "length" for r in rows),
+                "time_limited": sum(r.get("finish_reason") == "time_limit" for r in rows),
+                "looped": sum(r.get("finish_reason") == "loop" for r in rows),
             }
     return summary
 
 
 #: Settings that must be equal for two reports to be comparable.
 COMPARABLE_KEYS = ("schema", "task_set", "task_set_version", "languages", "repeats",
-                   "temperature", "max_tokens", "provider")
+                   "temperature", "max_tokens", "provider", "max_seconds")
 
 
 def merge_reports(reports: Sequence[Dict[str, Any]]) -> Dict[str, Any]:

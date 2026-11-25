@@ -40,10 +40,13 @@ class ChatResult:  # pylint: disable=too-many-instance-attributes
     finish_reason: Optional[str] = None
     usage: Dict[str, Any] = field(default_factory=dict)
     elapsed_seconds: float = 0.0
-    metrics: Dict[str, float] = field(default_factory=dict)
+    metrics: Dict[str, Any] = field(default_factory=dict)
     raw: Any = field(default=None, repr=False)
     #: Function calls requested by the model (OpenAI tools protocol).
     tool_calls: List[ToolCall] = field(default_factory=list)
+    #: What a reasoning model "thought" before answering (Ollama ``reasoning``,
+    #: ``reasoning_content`` elsewhere); not part of ``text``.
+    reasoning: str = ""
 
     @property
     def truncated(self) -> bool:
@@ -59,6 +62,7 @@ class ChatResult:  # pylint: disable=too-many-instance-attributes
             "usage": self.usage,
             "elapsed_seconds": round(self.elapsed_seconds, 3),
             "metrics": self.metrics,
+            "reasoning": self.reasoning,
             "tool_calls": [{"id": c.call_id, "name": c.name, "arguments": c.arguments,
                             "arguments_error": c.arguments_error} for c in self.tool_calls],
         }
@@ -75,3 +79,5 @@ class StreamChunk:
     text: str
     finish_reason: Optional[str] = None
     usage: Dict[str, Any] = field(default_factory=dict)
+    #: Reasoning text of this increment (reasoning models), kept apart from ``text``.
+    reasoning: str = ""

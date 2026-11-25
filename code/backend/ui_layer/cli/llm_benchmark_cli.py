@@ -136,7 +136,9 @@ def command_run(args) -> int:
         llm.initialize(config)
         return llm
 
-    runner = LLMBenchmarkRunner(factory, progress=lambda m: print(m, file=sys.stderr))
+    runner = LLMBenchmarkRunner(factory, progress=lambda m: print(m, file=sys.stderr),
+                                max_seconds=args.max_seconds,
+                                loop_repeats=None if args.no_loop_guard else args.loop_repeats)
     report = runner.run(task_set, args.models, languages=args.languages, repeats=args.repeats,
                         warmup=not args.no_warmup,
                         metadata={"provider": args.provider, "endpoint": args.base_url,
@@ -337,7 +339,15 @@ def build_parser() -> argparse.ArgumentParser:  # pylint: disable=too-many-state
     run.add_argument("--repeats", type=int, default=3)
     # 768: at 384 verbose models (Bielik 11B in Polish: 9 of 12 answers) were cut
     # off before their conclusion, measuring the limit rather than the model.
-    run.add_argument("--max-tokens", type=int, default=768)
+    run.add_argument("--max-tokens", type=int, default=768,
+                     help="token backstop; with --max-seconds use a high value, e.g. 16384")
+    run.add_argument("--max-seconds", type=float, default=None,
+                     help="wall-clock budget per answer (same TIME for every local model); "
+                          "answers are streamed and stopped at the budget")
+    run.add_argument("--loop-repeats", type=int, default=10,
+                     help="stop an answer whose end repeats one phrase this many times")
+    run.add_argument("--no-loop-guard", action="store_true",
+                     help="plain calls as in the first runs (no streaming, no loop check)")
     run.add_argument("--temperature", type=float, default=0.0)
     run.add_argument("--timeout", type=float, default=300.0)
     run.add_argument("--no-warmup", action="store_true")

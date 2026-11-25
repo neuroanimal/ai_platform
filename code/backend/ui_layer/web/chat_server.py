@@ -185,6 +185,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--embedder", default="ollama:bge-m3",
                         help="embedder spec for the documents (see create_embedder)")
     parser.add_argument("--top-k", type=int, default=4)
+    parser.add_argument("--max-seconds", type=float, default=300.0,
+                        help="default time budget per answer (the page can change it)")
     parser.add_argument("--min-score", type=float, default=DEFAULT_MIN_SCORE,
                         help="drop passages scoring below this (default calibrated for "
                              "ollama:bge-m3; use a negative value to keep all)")
@@ -201,7 +203,8 @@ def main(argv: Optional[list] = None) -> int:
         return 2
     documents = None if args.documents == "none" else args.documents
     service = ChatService(documents=documents, embedder=args.embedder, top_k=args.top_k,
-                          min_score=args.min_score if args.min_score >= 0 else None)
+                          min_score=args.min_score if args.min_score >= 0 else None,
+                          max_seconds=args.max_seconds)
     server = create_server(service, args.host, args.port, Path(args.static_dir))
     host, port = server.server_address[:2]
     print(f"chat on http://{host}:{port}/  (documents: {documents or 'none'}; Ctrl-C to stop)",

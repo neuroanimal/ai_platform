@@ -14,9 +14,15 @@ document index. Two ways of answering:
   calls is reported after the run. The agent sees only the last question,
   not the earlier turns - the agent loop takes a single question.
 
-Both yield events (dicts with ``type``): ``sources``, ``delta`` (text),
-``trace`` (agent steps), ``done`` (finish reason, usage, elapsed seconds) or
-``error``. The UI layer turns them into Server-Sent Events.
+Both yield events (dicts with ``type``): ``sources``, ``reasoning`` (what a
+reasoning model thinks, streamed apart from the answer), ``delta`` (text),
+``trace`` (agent steps), ``finish`` (finish reason, usage, timestamps), ``done``
+(received/finished UTC timestamps, elapsed seconds) or ``error``.
+
+Chat answers are limited by TIME (``max_seconds``, default 300 s), not by a low
+token count, and stopped when the model loops (the same phrase repeated
+``loop_repeats`` times) - finish reasons "time_limit" and "loop"
+(``generation_guard``). The UI layer turns them into Server-Sent Events.
 
 Models come from local, OpenAI-compatible servers (``PROVIDERS``: Ollama and
 LocalAI); a model id is ``<provider>:<model>``, e.g. ``ollama:qwen2.5:3b``.
@@ -33,6 +39,7 @@ operation runs on one dedicated worker thread.
 
 import threading
 import time
+from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,6 +49,7 @@ from ai_platform.backend.domain_layer.business_logic.rag_benchmark.qa_sets impor
 from ai_platform.common.agent.agent_loop import ToolAgent
 from ai_platform.common.agent.builtin_tools import default_tools, rag_search_tool
 from ai_platform.common.agent.tool import ToolRegistry
+from ai_platform.common.llm.generation_guard import LOOP_REPEATS, guarded_stream
 from ai_platform.common.llm.llm_exception import LLMError
 from ai_platform.common.llm.localai_adapter import LocalAIAdapter
 from ai_platform.common.llm.ollama_adapter import OllamaAdapter
@@ -65,6 +73,12 @@ PROVIDERS = (
 EMBEDDING_MARKERS = ("embed", "bge-")
 ROLES = ("system", "user", "assistant")
 MODELS_CACHE_SECONDS = 30.0
+#: A local model is limited by TIME, not tokens: the answer is stopped after this
+#: many seconds (a request may ask for less, or more up to MAX_SECONDS_CAP).
+DEFAULT_MAX_SECONDS = 300.0
+MAX_SECONDS_CAP = 1800.0
+#: Token limit kept only as a backstop (the time budget and loop guard decide).
+MAX_TOKENS_BACKSTOP = 16384
 MAX_MESSAGES = 50
 MAX_MESSAGE_CHARS = 20000
 MAX_DOCUMENT_BYTES = 2_000_000
@@ -208,16 +222,19 @@ class _DocumentIndex:
         self._worker.shutdown(wait=False)
 
 
-class ChatService:
+class ChatService:  # pylint: disable=too-many-instance-attributes
     """Model listing, streamed chat with optional RAG, and the tool agent."""
 
     def __init__(self, *, providers: Sequence[Provider] = PROVIDERS,  # pylint: disable=too-many-arguments
                  documents: Optional[str] = None, embedder: Any = "ollama:bge-m3",
                  top_k: int = 4, timeout: float = 600.0,
-                 min_score: Optional[float] = None) -> None:
+                 min_score: Optional[float] = None, max_seconds: float = DEFAULT_MAX_SECONDS,
+                 loop_repeats: Optional[int] = LOOP_REPEATS) -> None:
         self.providers = {p.name: p for p in providers}
         self.timeout = timeout
         self.min_score = min_score
+        self.max_seconds = max_seconds
+        self.loop_repeats = loop_repeats
         self._models: List[Dict[str, Any]] = []
         self._models_at = 0.0
         self.index = _DocumentIndex(documents, embedder, top_k)
@@ -268,23 +285,30 @@ class ChatService:
     def answer(self, request: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         """Events for one request; errors become an ``error`` event."""
         start = time.perf_counter()
+        received = _utc()
         try:
             messages = validate_messages(request.get("messages"))
             llm = self._llm(request.get("model", ""))
             params = {"temperature": float(request.get("temperature", 0.3)),
-                      "max_tokens": int(request.get("max_tokens", 1024))}
+                      "max_tokens": int(request.get("max_tokens", MAX_TOKENS_BACKSTOP))}
+            budget = min(float(request.get("max_seconds", self.max_seconds)), MAX_SECONDS_CAP)
             use_documents = bool(request.get("use_documents"))
             if request.get("mode", "chat") == "agent":
                 yield from self._agent(llm, messages[-1]["content"], use_documents,
                                        request.get("agent_mode", "auto"))
             else:
-                yield from self._chat(llm, messages, use_documents, params)
+                yield from self._chat(llm, messages, use_documents, params, budget)
         except (ChatError, LLMError, ValueError) as exc:
-            yield {"type": "error", "message": f"{type(exc).__name__}: {exc}"}
+            yield {"type": "error", "message": f"{type(exc).__name__}: {exc}",
+                   "received_utc": received, "finished_utc": _utc()}
             return
-        yield {"type": "done", "elapsed_seconds": round(time.perf_counter() - start, 2)}
+        yield {"type": "done", "elapsed_seconds": round(time.perf_counter() - start, 2),
+               "received_utc": received, "finished_utc": _utc()}
 
-    def _chat(self, llm, messages, use_documents, params) -> Iterator[Dict[str, Any]]:
+    def _chat(self, llm, messages, use_documents, params,  # pylint: disable=too-many-arguments
+              budget) -> Iterator[Dict[str, Any]]:
+        """Streamed answer under the time budget and the loop guard; reasoning
+        (qwen3 and other reasoning models) is streamed as its own events."""
         if use_documents:
             used, dropped = split_by_score(self.index.retrieve(messages[-1]["content"]),
                                            self.min_score)
@@ -292,13 +316,17 @@ class ChatService:
                    "below_min_score": [_source(s) for s in dropped],
                    "min_score": self.min_score}
             messages = [{"role": "system", "content": rag_system_prompt(used)}] + messages
-        finish, usage = None, {}
-        for chunk in llm.stream_chat(messages, **params):
+        finish, usage, timing = None, {}, {}
+        for chunk in guarded_stream(llm.stream_chat(messages, **params), max_seconds=budget,
+                                    loop_repeats=self.loop_repeats, timing=timing):
+            if chunk.reasoning:
+                yield {"type": "reasoning", "text": chunk.reasoning}
             if chunk.text:
                 yield {"type": "delta", "text": chunk.text}
             finish = chunk.finish_reason or finish
             usage = chunk.usage or usage
-        yield {"type": "finish", "finish_reason": finish, "usage": usage}
+        yield {"type": "finish", "finish_reason": finish, "usage": usage, "timing": timing,
+               "max_seconds": budget}
 
     def _agent(self, llm, question, use_documents, agent_mode) -> Iterator[Dict[str, Any]]:
         """Tool agent. With documents it searches FIRST: the passages for the
@@ -326,6 +354,10 @@ class ChatService:
     def close(self) -> None:
         """Release the document index."""
         self.index.close()
+
+
+def _utc() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
 def _source(source: Dict[str, Any]) -> Dict[str, Any]:

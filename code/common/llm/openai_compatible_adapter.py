@@ -180,20 +180,36 @@ class OpenAICompatibleAdapter(LLMAdapter):
         payload = self._build_payload(messages, kwargs)
         payload["stream"] = True
         payload.setdefault("stream_options", {"include_usage": True})
+        plain: List[str] = []  # a server that ignores "stream" answers with one JSON body
+        events = 0
         try:
             for line in client.stream_lines("POST", self._path("/chat/completions"), payload):
                 if not line.startswith("data:"):
+                    if not events:
+                        plain.append(line)
                     continue
                 data = line[5:].strip()
                 if data == "[DONE]":
                     return
+                events += 1
                 chunk = self._parse_stream_event(data)
                 if chunk is not None:
                     yield chunk
+            if not events and "".join(plain).strip():
+                result = self._parse_chat_response(self._json_body("\n".join(plain)),
+                                                   payload["model"], 0.0, True)
+                yield StreamChunk(result.text, result.finish_reason or "stop", result.usage,
+                                  result.reasoning)
         except HttpConnectionError as exc:
             raise LLMConnectionError(f"{self.PROVIDER}: {exc}") from exc
         except HttpStatusError as exc:
             raise LLMRequestError(f"{self.PROVIDER}: {exc}", exc.status) from exc
+
+    def _json_body(self, text: str) -> Any:
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise LLMResponseError(f"{self.PROVIDER}: bad response {text[:200]!r}") from exc
 
     def _parse_stream_event(self, data: str) -> Optional[StreamChunk]:
         try:
@@ -206,7 +222,8 @@ class OpenAICompatibleAdapter(LLMAdapter):
             return StreamChunk("", None, usage) if usage else None
         choice = choices[0]
         delta = choice.get("delta") or {}
-        return StreamChunk(delta.get("content") or "", choice.get("finish_reason"), usage)
+        return StreamChunk(delta.get("content") or "", choice.get("finish_reason"), usage,
+                           delta.get("reasoning") or delta.get("reasoning_content") or "")
 
     def list_models(self) -> List[str]:
         """Return model ids served by the endpoint (``GET /v1/models``)."""
@@ -288,6 +305,8 @@ class OpenAICompatibleAdapter(LLMAdapter):
         try:
             choice = data["choices"][0]
             text = choice["message"].get("content") or ""
+            reasoning = choice["message"].get("reasoning") or \
+                choice["message"].get("reasoning_content") or ""
             tool_calls = parse_tool_calls(choice["message"].get("tool_calls") or [])
         except (KeyError, IndexError, TypeError, AttributeError) as exc:
             raise LLMResponseError(
@@ -296,7 +315,11 @@ class OpenAICompatibleAdapter(LLMAdapter):
 
         # An answer that only calls tools is not empty.
         if not allow_empty and not text.strip() and not tool_calls:
-            raise LLMResponseError(f"{self.PROVIDER}: model {model!r} returned an empty answer")
+            hint = (" (it only reasoned - the token limit ended before the answer; raise "
+                    "max_tokens or use generation_guard.guarded_chat with a time budget)"
+                    if reasoning else "")
+            raise LLMResponseError(f"{self.PROVIDER}: model {model!r} returned an empty "
+                                   f"answer{hint}")
 
         return ChatResult(
             text=text,
@@ -306,6 +329,7 @@ class OpenAICompatibleAdapter(LLMAdapter):
             elapsed_seconds=elapsed,
             raw=data,
             tool_calls=tool_calls,
+            reasoning=reasoning,
         )
 
 
