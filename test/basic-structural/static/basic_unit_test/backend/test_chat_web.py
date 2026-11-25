@@ -82,7 +82,8 @@ def test_chat_streams_and_rag_adds_sources():
     events = list(service.answer({"model": "fake:tiny:1b",
                                   "messages": [{"role": "user", "content": "Ile ciężarówek "
                                                 "elektrycznych ma Nordwind?"}]}))
-    assert [e["type"] for e in events] == ["delta", "delta", "finish", "done"]
+    assert [e["type"] for e in events] == ["context", "delta", "delta", "finish", "done"]
+    assert events[0]["context_tokens"] == 4096 and events[0]["dropped_messages"] == 0
     assert "".join(e["text"] for e in events if e["type"] == "delta") == "Odpowiedź"
     events = list(service.answer({"model": "fake:tiny:1b", "use_documents": True,
                                   "messages": [{"role": "user", "content": "Nordwind?"}]}))
@@ -158,7 +159,7 @@ def test_server_routes(server_url):
     assert status == 200 and ctype.startswith("text/event-stream")
     events = [json.loads(line[5:]) for line in body.decode().splitlines()
               if line.startswith("data:")]
-    assert [e["type"] for e in events] == ["delta", "delta", "finish", "done"]
+    assert [e["type"] for e in events] == ["context", "delta", "delta", "finish", "done"]
 
 
 def test_server_rejects_foreign_host_origin_and_form_posts(server_url):
@@ -213,7 +214,31 @@ def test_chat_streams_reasoning_and_stops_a_loop():
     events = list(service.answer({"model": "fake:tiny:1b",
                                   "messages": [{"role": "user", "content": "12 x 12?"}]}))
     kinds = [e["type"] for e in events]
-    assert kinds[0] == "reasoning" and kinds[-2:] == ["finish", "done"]
+    assert kinds[:2] == ["context", "reasoning"] and kinds[-2:] == ["finish", "done"]
     finish = events[-2]
     assert finish["finish_reason"] == "loop" and "dwanaście" in finish["timing"]["loop_unit"]
     assert {"received_utc", "finished_utc"} <= set(events[-1])
+
+
+def test_long_history_is_summarized_into_the_window():
+    class SmallWindow(FakeLLM):
+        """Reports a 1024-token window."""
+
+        @staticmethod
+        def context_length():
+            """Like OllamaAdapter.context_length."""
+            return {"effective": 1024, "source": "num_ctx parameter", "trained": 32768}
+
+    history = []
+    for number in range(30):
+        history += [{"role": "user", "content": f"pytanie {number} " + "x" * 200},
+                    {"role": "assistant", "content": f"odpowiedź {number} " + "y" * 200}]
+    service = ChatService(providers=[Provider("fake", SmallWindow, "http://x")],
+                          embedder="hashing")
+    events = list(service.answer({"model": "fake:tiny:1b",
+                                  "messages": history + [{"role": "user", "content": "i?"}]}))
+    context = events[0]
+    assert context["type"] == "context" and context["context_tokens"] == 1024, context
+    assert context["dropped_messages"] > 0 and context["summarized"]
+    sent = FakeLLM.seen[-1]
+    assert sent[0]["content"].startswith("Summary of the earlier part") and sent[-1]["content"] == "i?"

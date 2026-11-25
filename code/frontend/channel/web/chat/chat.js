@@ -143,6 +143,10 @@ async function send(question) {
             (t.elapsed_seconds !== undefined ? `, generowanie ${t.elapsed_seconds} s` : ""));
           if (event.finish_reason === "loop" || event.finish_reason === "time_limit") box.classList.add("warning");
         }
+        else if (event.type === "context") addMeta(box, `kontekst: ~${event.prompt_tokens} z ${event.context_tokens} tokenów` +
+          ` (${event.source}${event.trained ? `, model obsługuje ${event.trained}` : ""}), rezerwa na odpowiedź ${event.reserve_tokens}` +
+          (event.dropped_messages ? `, starsze wiadomości poza oknem: ${event.dropped_messages}` +
+            (event.summarized ? " (zastąpione streszczeniem)" : " (pominięte)") : ""));
         else if (event.type === "done") addMeta(box, `zapytanie ${event.received_utc} → odpowiedź ${event.finished_utc} (UTC), razem ${event.elapsed_seconds} s`);
         else if (event.type === "error") throw new Error(event.message);
       });

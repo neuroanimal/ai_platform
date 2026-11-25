@@ -55,7 +55,32 @@ class OllamaAdapter(OpenAICompatibleAdapter):
         response = self._call(client.get, "/api/tags")
         return list((response.data or {}).get("models", []))
 
-    def native_chat_completion(
+    def context_length(self) -> Dict[str, Any]:
+        """Context window of the configured model, as Ollama will use it.
+
+        ``effective``: the ``context_length`` of the loaded model (``/api/ps``)
+        if it is loaded, else the model's ``num_ctx`` parameter (``/api/show``),
+        else None - then the server default applies (4096 in Ollama 0.40,
+        unless the server sets ``OLLAMA_CONTEXT_LENGTH``). ``trained``: what the
+        model was built for (``<arch>.context_length``), which is usually far
+        more than Ollama gives it by default.
+        """
+        client = self._require_client()
+        info: Dict[str, Any] = {"effective": None, "source": "server default", "trained": None}
+        shown = self._call(client.post, "/api/show", {"model": self.model}).data or {}
+        for key, value in (shown.get("model_info") or {}).items():
+            if key.endswith(".context_length"):
+                info["trained"] = value
+        for line in str(shown.get("parameters") or "").splitlines():
+            parts = line.split()
+            if len(parts) == 2 and parts[0] == "num_ctx" and parts[1].isdigit():
+                info.update(effective=int(parts[1]), source="num_ctx parameter")
+        for loaded in (self._call(client.get, "/api/ps").data or {}).get("models", []):
+            if loaded.get("name") == self.model and loaded.get("context_length"):
+                info.update(effective=int(loaded["context_length"]), source="loaded model")
+        return info
+
+    def native_chat_completion(  # pylint: disable=too-many-locals
         self,
         messages: List[Dict[str, str]],
         keep_alive: str = "5m",

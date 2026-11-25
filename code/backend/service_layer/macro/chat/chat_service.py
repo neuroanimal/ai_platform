@@ -19,6 +19,12 @@ reasoning model thinks, streamed apart from the answer), ``delta`` (text),
 ``trace`` (agent steps), ``finish`` (finish reason, usage, timestamps), ``done``
 (received/finished UTC timestamps, elapsed seconds) or ``error``.
 
+Before a chat answer the conversation is fitted into the model's context
+window (``context_window.fit_messages``): system messages and the newest turns
+are kept, older turns are replaced by a summary made by the same model, and a
+``context`` event reports the estimate. The window is what Ollama will use
+(``OllamaAdapter.context_length``; 4096 when the server does not say).
+
 Chat answers are limited by TIME (``max_seconds``, default 300 s), not by a low
 token count, and stopped when the model loops (the same phrase repeated
 ``loop_repeats`` times) - finish reasons "time_limit" and "loop"
@@ -49,7 +55,13 @@ from ai_platform.backend.domain_layer.business_logic.rag_benchmark.qa_sets impor
 from ai_platform.common.agent.agent_loop import ToolAgent
 from ai_platform.common.agent.builtin_tools import default_tools, rag_search_tool
 from ai_platform.common.agent.tool import ToolRegistry
-from ai_platform.common.llm.generation_guard import LOOP_REPEATS, guarded_stream
+from ai_platform.common.llm.context_window import (
+    ContextError,
+    ConversationSummarizer,
+    default_reserve,
+    fit_messages,
+)
+from ai_platform.common.llm.generation_guard import LOOP_REPEATS, guarded_chat, guarded_stream
 from ai_platform.common.llm.llm_exception import LLMError
 from ai_platform.common.llm.localai_adapter import LocalAIAdapter
 from ai_platform.common.llm.ollama_adapter import OllamaAdapter
@@ -79,7 +91,13 @@ DEFAULT_MAX_SECONDS = 300.0
 MAX_SECONDS_CAP = 1800.0
 #: Token limit kept only as a backstop (the time budget and loop guard decide).
 MAX_TOKENS_BACKSTOP = 16384
-MAX_MESSAGES = 50
+#: Context window assumed when the server does not say (Ollama 0.40 default).
+DEFAULT_CONTEXT_TOKENS = 4096
+#: Time budget for summarizing turns that fall out of the context window.
+SUMMARY_SECONDS = 90.0
+#: Long conversations are fine: what does not fit the window is summarized
+#: (context_window); this only bounds one request (the HTTP body is capped at 1 MB too).
+MAX_MESSAGES = 1000
 MAX_MESSAGE_CHARS = 20000
 MAX_DOCUMENT_BYTES = 2_000_000
 DOCUMENT_SUFFIXES = (".txt", ".md")
@@ -235,6 +253,8 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
         self.min_score = min_score
         self.max_seconds = max_seconds
         self.loop_repeats = loop_repeats
+        self._contexts: Dict[str, tuple] = {}
+        self._summarizers: Dict[str, ConversationSummarizer] = {}
         self._models: List[Dict[str, Any]] = []
         self._models_at = 0.0
         self.index = _DocumentIndex(documents, embedder, top_k)
@@ -276,6 +296,29 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
             raise ChatError(f"model {model_id!r} is not served by {provider_name}")
         return self._adapter(provider, model)
 
+    def context_window(self, model_id: str, llm) -> Dict[str, Any]:
+        """Context window of ``model_id`` (cached 30 s; Ollama reports it, else the default)."""
+        cached = self._contexts.get(model_id)
+        if cached and time.monotonic() - cached[0] < MODELS_CACHE_SECONDS:
+            return cached[1]
+        info: Dict[str, Any] = {"effective": None, "source": "server default", "trained": None}
+        if hasattr(llm, "context_length"):
+            try:
+                info = llm.context_length()
+            except LLMError:
+                pass
+        info = {**info, "tokens": info.get("effective") or DEFAULT_CONTEXT_TOKENS}
+        self._contexts[model_id] = (time.monotonic(), info)
+        return info
+
+    def _summarizer(self, model_id: str, llm) -> ConversationSummarizer:
+        """Summarizer of dropped turns using ``llm``; its cache lives per model."""
+        summarizer = self._summarizers.setdefault(model_id, ConversationSummarizer(str))
+        summarizer.complete = lambda prompt: guarded_chat(
+            llm, [{"role": "user", "content": prompt}], max_seconds=SUMMARY_SECONDS,
+            loop_repeats=self.loop_repeats, max_tokens=600, temperature=0).text
+        return summarizer
+
     def status(self) -> Dict[str, Any]:
         """What the service offers."""
         return {"providers": list(self.providers), "documents": self.index.status()}
@@ -297,7 +340,8 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
                 yield from self._agent(llm, messages[-1]["content"], use_documents,
                                        request.get("agent_mode", "auto"))
             else:
-                yield from self._chat(llm, messages, use_documents, params, budget)
+                yield from self._chat(llm, messages, use_documents, params, budget,
+                                      request.get("model", ""))
         except (ChatError, LLMError, ValueError) as exc:
             yield {"type": "error", "message": f"{type(exc).__name__}: {exc}",
                    "received_utc": received, "finished_utc": _utc()}
@@ -305,8 +349,8 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
         yield {"type": "done", "elapsed_seconds": round(time.perf_counter() - start, 2),
                "received_utc": received, "finished_utc": _utc()}
 
-    def _chat(self, llm, messages, use_documents, params,  # pylint: disable=too-many-arguments
-              budget) -> Iterator[Dict[str, Any]]:
+    def _chat(self, llm, messages, use_documents, params,  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+              budget, model_id: str = "") -> Iterator[Dict[str, Any]]:
         """Streamed answer under the time budget and the loop guard; reasoning
         (qwen3 and other reasoning models) is streamed as its own events."""
         if use_documents:
@@ -316,6 +360,16 @@ class ChatService:  # pylint: disable=too-many-instance-attributes
                    "below_min_score": [_source(s) for s in dropped],
                    "min_score": self.min_score}
             messages = [{"role": "system", "content": rag_system_prompt(used)}] + messages
+        window = self.context_window(model_id, llm)
+        try:
+            messages, report = fit_messages(
+                messages, window["tokens"],
+                reserve_tokens=default_reserve(window["tokens"], params.get("max_tokens")),
+                summarize=self._summarizer(model_id, llm))
+        except ContextError as exc:
+            raise ChatError(str(exc)) from exc
+        yield {"type": "context", **report.to_dict(), "source": window.get("source"),
+               "trained": window.get("trained")}
         finish, usage, timing = None, {}, {}
         for chunk in guarded_stream(llm.stream_chat(messages, **params), max_seconds=budget,
                                     loop_repeats=self.loop_repeats, timing=timing):
