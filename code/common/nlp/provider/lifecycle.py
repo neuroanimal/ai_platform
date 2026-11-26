@@ -446,7 +446,7 @@ class NLPProviderLifecycle:
         result = await self.analyze_with_context(provider_id, request)
         return result.response
 
-    async def analyze_with_context(  # pylint: disable=too-many-arguments
+    async def analyze_with_context(  # pylint: disable=too-many-arguments,too-many-locals
         self,
         provider_id: str,
         request: NLPProviderRequest,
@@ -481,6 +481,10 @@ class NLPProviderLifecycle:
                 timeout_seconds=timeout_seconds,
                 policy=record.policy.narrow(policy),
             )
+            if cancellation is not None:
+                # Both the caller's context and the separate token can stop it.
+                child_token = context.cancellation
+                cancellation.add_callback(child_token.cancel)
 
         provider = self._registry.get(
             f"{NLPProviderPlugin.KEY_PREFIX}{provider_id}"
@@ -520,11 +524,27 @@ class NLPProviderLifecycle:
                 configuration_fingerprint=record.configuration_fingerprint,
             )
         except BaseException as exc:
+            real_work = getattr(exc, "execution_work", None)
             if inner and not inner[0].done():
+                # Legacy provider: its shielded call is still running.
                 mark_abandoned(exc)
                 inner[0].add_done_callback(
                     lambda call: self._finish_abandoned(record, call)
                 )
+            elif real_work is not None and not real_work.done():
+                # Context-aware provider whose worker thread is still running:
+                # the analysis counts as active until that thread really ends.
+                loop = asyncio.get_running_loop()
+
+                def finished() -> None:
+                    try:
+                        loop.call_soon_threadsafe(
+                            self._finish_abandoned, record, None
+                        )
+                    except RuntimeError:  # loop already closed
+                        self._finish_abandoned(record, None)
+
+                real_work.add_done_callback(finished)
             else:
                 await self._finish_analysis(record)
             translated = as_nlp_error(exc, provider_id)
@@ -544,10 +564,10 @@ class NLPProviderLifecycle:
     def _finish_abandoned(
         self,
         record: _ProviderRecord,
-        call: asyncio.Future,
+        call: asyncio.Future | None,
     ) -> None:
         """Done-callback of a provider call that outlived its deadline."""
-        if not call.cancelled():
+        if call is not None and not call.cancelled():
             call.exception()  # retrieved: the late result is dropped on purpose
         record.active_analyses -= 1
         if record.active_analyses == 0:

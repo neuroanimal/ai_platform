@@ -12,7 +12,10 @@ policy marks the difference instead of hiding it:
 - ``max_concurrency``: enforced by ``ResourceManager.slot``; ``queue_timeout_seconds``
   bounds the wait for a slot;
 - ``device``: checked against the devices the engine reports; without
-  ``allow_device_fallback`` a missing device is a ``PolicyViolationError``;
+  ``allow_device_fallback`` a missing device is a ``PolicyViolationError``.
+  The boundary is deliberate: the ENGINE CONFIGURATION chooses the device
+  (a loaded model sits on one device); the policy only RESTRICTS it - it can
+  reject an execution, not move a model to another device;
 - ``max_threads``: applied by the adapter; process-global thread settings go
   through ``ResourceManager.claim_setting`` so two engines cannot silently
   overwrite each other;
@@ -25,6 +28,7 @@ of every limit wins, so a request can tighten but never loosen a policy.
 ``NLPRuntimeConfigV2``: device, threads, batch_size, memory_limit_mb_hint).
 """
 
+import math
 import re
 from dataclasses import dataclass, replace
 from typing import Any, Mapping, Optional, Sequence
@@ -64,12 +68,21 @@ class RuntimePolicy:  # pylint: disable=too-many-instance-attributes
         object.__setattr__(self, "device", device)
         for name in ("max_threads", "batch_size", "max_concurrency", "memory_limit_mb"):
             value = getattr(self, name)
-            if value is not None and (not isinstance(value, int) or value <= 0):
-                raise PolicyViolationError(f"{name} must be a positive integer", stage="policy")
+            # bool is a subclass of int in Python: True must not pass as 1.
+            if value is not None and (isinstance(value, bool) or not isinstance(value, int)
+                                      or value <= 0):
+                raise PolicyViolationError(f"{name} must be a positive integer, got {value!r}",
+                                           stage="policy")
         for name in ("timeout_seconds", "queue_timeout_seconds"):
             value = getattr(self, name)
-            if value is not None and value <= 0:
-                raise PolicyViolationError(f"{name} must be positive", stage="policy")
+            if value is not None and (isinstance(value, bool)
+                                      or not isinstance(value, (int, float))
+                                      or not math.isfinite(value) or value <= 0):
+                raise PolicyViolationError(f"{name} must be a finite positive number, got "
+                                           f"{value!r}", stage="policy")
+        for name in ("allow_device_fallback", "memory_limit_enforced"):
+            if not isinstance(getattr(self, name), bool):
+                raise PolicyViolationError(f"{name} must be a bool", stage="policy")
 
     def narrow(self, other: Optional["RuntimePolicy"]) -> "RuntimePolicy":
         """The stricter combination of two policies (a request cannot loosen a provider)."""

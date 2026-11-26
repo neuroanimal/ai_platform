@@ -18,8 +18,10 @@ from ai_platform.common.core.execution.errors import (
 )
 from ai_platform.common.core.execution.executor import (
     ExecutionResult,
+    PendingWork,
     execute,
     execute_blocking,
+    run_in_thread,
 )
 from ai_platform.common.core.execution.metadata import (
     ExecutionMetadata,
@@ -33,6 +35,6 @@ __all__ = [
     "CancellationToken", "ErrorInfo", "ExecutionCancelledError", "ExecutionContext",
     "ExecutionError", "ExecutionMetadata", "ExecutionOutcome", "ExecutionRecorder",
     "ExecutionResult", "ExecutionTimeoutError", "PolicyViolationError", "ResourceConflictError",
-    "ResourceManager", "ResourceUnavailableError", "RuntimePolicy", "execute",
-    "execute_blocking",
+    "PendingWork", "ResourceManager", "ResourceUnavailableError", "RuntimePolicy", "execute",
+    "execute_blocking", "run_in_thread",
 ]

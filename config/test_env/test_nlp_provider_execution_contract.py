@@ -224,6 +224,21 @@ class TestNLPExecutionContract(unittest.IsolatedAsyncioTestCase):
         print("CALLER CONTEXT AS PARENT: OK")
 
 
+class TestCancellationWithContext(unittest.IsolatedAsyncioTestCase):
+
+    async def test_11_separate_token_works_together_with_a_context(self) -> None:
+        lifecycle = NLPProviderLifecycle(PluginRegistry())
+        lifecycle.register(ContextAwareProvider(steps=100))
+        parent = ExecutionContext.create("pipeline.run", timeout_seconds=30)
+        token = CancellationToken()
+        asyncio.get_running_loop().call_later(0.05, token.cancel, "stop button")
+        with self.assertRaises(NLPProviderCancelledError):
+            await lifecycle.analyze_with_context("aware", build_request(), context=parent,
+                                                 cancellation=token)
+        self.assertFalse(parent.cancellation.cancelled)  # only this analysis stopped
+        print("SEPARATE TOKEN + CALLER CONTEXT: OK")
+
+
 class TestPolicyFromConfiguration(unittest.IsolatedAsyncioTestCase):
 
     async def test_10_runtime_section_becomes_policy(self) -> None:
@@ -258,6 +273,7 @@ def main() -> None:
     print("=" * 60)
     loader = unittest.defaultTestLoader
     suite = unittest.TestSuite([loader.loadTestsFromTestCase(TestNLPExecutionContract),
+                                loader.loadTestsFromTestCase(TestCancellationWithContext),
                                 loader.loadTestsFromTestCase(TestPolicyFromConfiguration)])
     result = unittest.TextTestRunner(verbosity=0).run(suite)
     if not result.wasSuccessful():

@@ -12,7 +12,7 @@ same cancellation token.
 - time: an absolute monotonic deadline (``timeout_seconds`` from the call,
   else from the policy), ``remaining_seconds`` and ``check``;
 - control: the ``CancellationToken`` and the effective ``RuntimePolicy``;
-- ``labels``: free key/value pairs for tracing (frozen).
+- ``labels``: free key/value pairs for tracing (deeply frozen, ``freeze``).
 
 ``child`` opens a nested context: its deadline is never later than the
 parent's, its token is cancelled with the parent's, and its policy can only
@@ -23,11 +23,11 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from types import MappingProxyType
 from typing import Any, Callable, Mapping, Optional
 
 from ai_platform.common.core.execution.cancellation import CancellationToken
 from ai_platform.common.core.execution.errors import ExecutionTimeoutError
+from ai_platform.common.core.execution.freeze import deep_freeze
 from ai_platform.common.core.execution.policy import RuntimePolicy
 
 Clock = Callable[[], float]
@@ -53,7 +53,7 @@ class ExecutionContext:  # pylint: disable=too-many-instance-attributes
     def __post_init__(self) -> None:
         if not str(self.operation).strip():
             raise ValueError("operation must not be blank")
-        object.__setattr__(self, "labels", MappingProxyType(dict(self.labels)))
+        object.__setattr__(self, "labels", deep_freeze(dict(self.labels)))
 
     @classmethod
     def create(cls, operation: str, *, timeout_seconds: Optional[float] = None,  # pylint: disable=too-many-arguments

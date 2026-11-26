@@ -38,10 +38,12 @@ class ProviderInputError(Exception):
 # -- policy -------------------------------------------------------------------
 
 def test_policy_validation_narrowing_and_devices():
-    with pytest.raises(PolicyViolationError):
-        RuntimePolicy(device="tpu")
-    with pytest.raises(PolicyViolationError):
-        RuntimePolicy(max_threads=0)
+    for bad in ({"device": "tpu"}, {"max_threads": 0}, {"max_threads": True},
+                {"max_concurrency": 1.5}, {"timeout_seconds": float("nan")},
+                {"timeout_seconds": float("inf")}, {"timeout_seconds": True},
+                {"queue_timeout_seconds": -1}, {"allow_device_fallback": "yes"}):
+        with pytest.raises(PolicyViolationError):
+            RuntimePolicy(**bad)
     provider = RuntimePolicy(max_threads=8, timeout_seconds=60, max_concurrency=2)
     request = RuntimePolicy(max_threads=2, timeout_seconds=300, device="cpu")
     combined = provider.narrow(request)
@@ -167,15 +169,22 @@ def test_slots_limit_and_queue_timeout():
     assert manager.slots_in_use("stanza") == 0
 
 
-def test_process_global_settings_conflict():
+def test_process_global_settings_have_several_owners():
     manager = ResourceManager()
     assert manager.claim_setting("torch.num_threads", 4, "stanza")
-    assert not manager.claim_setting("torch.num_threads", 4, "ocr")
+    assert not manager.claim_setting("torch.num_threads", 4, "ocr")   # relies on it too
     with pytest.raises(ResourceConflictError):
-        manager.claim_setting("torch.num_threads", 8, "ocr")
-    assert manager.claim_setting("torch.num_threads", 2, "stanza")  # its own claim
-    manager.release_settings("stanza")
+        manager.claim_setting("torch.num_threads", 8, "speech")      # a third one
+    with pytest.raises(ResourceConflictError):
+        manager.claim_setting("torch.num_threads", 2, "stanza")      # ocr still relies on 4
+    manager.release_settings("stanza")                                 # first owner closes
+    assert manager.setting("torch.num_threads") == (4, frozenset({"ocr"}))
+    with pytest.raises(ResourceConflictError):
+        manager.claim_setting("torch.num_threads", 8, "speech")      # still protected
+    manager.release_settings("ocr")
     assert manager.setting("torch.num_threads") is None
+    assert manager.claim_setting("torch.num_threads", 8, "speech")
+    assert manager.claim_setting("torch.num_threads", 2, "speech")   # sole owner may change
 
 
 # -- executor -------------------------------------------------------------------
@@ -297,3 +306,91 @@ def test_conformance_check_tells_cooperative_from_blocking_engines():
     assert good.ok, good.problems
     bad = asyncio.run(check_execution_conformance(lambda c, r: time.sleep(1.0), grace=0.1))
     assert not bad.results["honours_cancellation"] and not bad.ok
+
+
+def test_slot_limit_cannot_change_while_someone_waits():
+    manager = ResourceManager()
+    holder_entered, release = threading.Event(), threading.Event()
+
+    def holder():
+        with manager.slot("k", 1):
+            holder_entered.set()
+            release.wait(2)
+
+    def waiter():
+        with manager.slot("k", 1, queue_timeout_seconds=2):
+            pass
+
+    threads = [threading.Thread(target=holder)]
+    threads[0].start()
+    holder_entered.wait(1)
+    threads.append(threading.Thread(target=waiter))
+    threads[1].start()
+    time.sleep(0.1)
+    with pytest.raises(ResourceConflictError):
+        with manager.slot("k", 5):
+            pass
+    release.set()
+    for thread in threads:
+        thread.join()
+
+
+def test_async_work_with_thread_is_abandoned_and_keeps_its_slot():
+    """Cancelling the coroutine does not stop its thread: the executor must know (GPT audit P0)."""
+    from ai_platform.common.core.execution import run_in_thread  # pylint: disable=import-outside-toplevel
+    manager, release = ResourceManager(), threading.Event()
+
+    async def work(context, recorder):
+        return await run_in_thread(context, recorder, release.wait, 3)
+
+    async def scenario():
+        policy = RuntimePolicy(max_concurrency=1, queue_timeout_seconds=0.1)
+        context = ExecutionContext.create("ocr", timeout_seconds=0.1, policy=policy)
+        with pytest.raises(ExecutionTimeoutError) as caught:
+            await execute(context, work, resources=manager, slot_key="engine")
+        error = caught.value
+        assert error.execution_metadata.abandoned            # thread still runs
+        assert not error.execution_work.done()
+        assert manager.slots_in_use("engine") == 1           # slot still held
+        release.set()
+        assert await asyncio.to_thread(error.execution_work.wait, 2)
+        assert manager.slots_in_use("engine") == 0           # freed at the real end
+
+    asyncio.run(scenario())
+
+
+def test_async_work_that_resists_cancellation_is_abandoned():
+    async def stubborn(context, recorder):
+        for _ in range(10):
+            try:
+                await asyncio.sleep(0.05)
+            except asyncio.CancelledError:
+                continue  # swallows the cancellation and keeps working
+
+    async def scenario():
+        with pytest.raises(ExecutionTimeoutError) as caught:
+            await execute(ExecutionContext.create("x", timeout_seconds=0.05), stubborn)
+        assert caught.value.execution_metadata.abandoned
+        assert not caught.value.execution_work.done()
+
+    asyncio.run(scenario())
+
+
+def test_labels_metadata_and_details_are_deeply_frozen():
+    context = ExecutionContext.create("x", labels={"stage": {"name": "pos"}, "ids": [1, 2]})
+    with pytest.raises(TypeError):
+        context.labels["stage"]["name"] = "lemma"
+    assert context.labels["ids"] == (1, 2)
+
+    def work(ctx, recorder):
+        recorder.note("stage_seconds", {"pos": 0.1})
+        return 1
+
+    meta = execute_blocking(context, work).metadata
+    with pytest.raises(TypeError):
+        meta.extra["stage_seconds"]["pos"] = 9
+    assert meta.to_dict()["extra"] == {"stage_seconds": {"pos": 0.1}}
+    info = ErrorInfo.from_exception(ProviderInputError("x"))
+    with pytest.raises(TypeError):
+        info.details["field"] = "other"
+    assert info.to_dict()["details"] == {"field": "text"}

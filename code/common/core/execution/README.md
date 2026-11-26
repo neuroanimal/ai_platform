@@ -56,3 +56,21 @@ one engine's limits.
 
 `conformance.py` gives each provider a ready check: cancellation honoured,
 deadline honoured, metadata reported, error types kept.
+
+## Hardening after the review of 8B-8D (2026-11-26)
+
+An independent review (GPT) found real gaps; all are fixed and tested:
+
+| Finding | Fix |
+|---|---|
+| A cancelled coroutine was treated as stopped, and a thread started with `asyncio.to_thread` was invisible: slot freed and `close()` passed while Stanza still ran | `run_in_thread(context, recorder, fn)` registers the thread; "ended" = task done AND every thread returned; the slot is released and `exc.execution_work` (`PendingWork`) completes only then; coroutines that resist cancellation count as abandoned |
+| `claim_setting` kept one owner; releasing it unprotected a setting others relied on | every owner of a value is recorded; a change is a conflict while any other owner relies on it; `release_settings` drops only that owner |
+| `RuntimePolicy` accepted `True` as 1 and NaN/inf timeouts | strict types: no bool for numbers, finite positive timeouts, bool flags |
+| Changing a slot limit while callers waited replaced their semaphore | waiting callers are counted; a change is refused while anyone holds or waits |
+| Labels, metadata `extra`, `ErrorInfo.details` were only shallowly frozen | `freeze.deep_freeze` on construction, `thaw` in `to_dict` |
+| `analyze_with_context(context=..., cancellation=...)` ignored the token | the token now cancels the analysis's child context |
+| Stanza: lock per provider instance, but the pipeline is shared | the lock lives in the shared pipeline holder |
+| Stanza: claims under the constant `stanza-pl` | per-instance owner `stanza-pl#<id>`; `close()` always releases its own claims |
+| Device: who decides? | the engine configuration chooses the device; the policy only restricts (rejects) - documented in `policy.py` |
+| MWT with `processors=["tokenize"]` unproven | live check on the real models: the staged run equals the whole pipeline, MWT expanded (`config/test_env/test_nlp_stanza_execution_live.py`) |
+

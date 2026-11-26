@@ -19,7 +19,7 @@ Rule of propagation (the same for every engine - NLP, OCR/HTR, speech, LLM):
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 MAX_CAUSE_DEPTH = 5
 
@@ -84,6 +84,13 @@ class ErrorInfo:
     details: Dict[str, Any] = field(default_factory=dict)
     cause: Optional["ErrorInfo"] = None
 
+    def __post_init__(self) -> None:
+        # Deferred import: freeze has no dependencies, errors is imported everywhere.
+        from ai_platform.common.core.execution.freeze import (  # pylint: disable=import-outside-toplevel
+            deep_freeze,
+        )
+        object.__setattr__(self, "details", deep_freeze(dict(self.details)))
+
     @classmethod
     def from_exception(cls, exc: BaseException, stage: Optional[str] = None,
                        _depth: int = 0) -> "ErrorInfo":
@@ -96,12 +103,13 @@ class ErrorInfo:
             message=str(exc),
             retryable=bool(getattr(exc, "retryable", False)),
             stage=getattr(exc, "stage", None) or stage,
-            details=dict(details) if isinstance(details, dict) else {},
+            details=dict(details) if isinstance(details, Mapping) else {},
             cause=cls.from_exception(cause, _depth=_depth + 1)
             if cause is not None and _depth < MAX_CAUSE_DEPTH else None)
 
     def to_dict(self) -> Dict[str, Any]:
         """JSON-compatible form."""
+        from ai_platform.common.core.execution.freeze import thaw  # pylint: disable=import-outside-toplevel
         return {"type": self.type, "code": self.code, "message": self.message,
-                "retryable": self.retryable, "stage": self.stage, "details": self.details,
+                "retryable": self.retryable, "stage": self.stage, "details": thaw(self.details),
                 "cause": self.cause.to_dict() if self.cause else None}

@@ -23,6 +23,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from ai_platform.common.core.execution.errors import ErrorInfo
+from ai_platform.common.core.execution.freeze import deep_freeze, thaw
 
 
 class ExecutionOutcome(str, Enum):
@@ -63,12 +64,17 @@ class ExecutionMetadata:  # pylint: disable=too-many-instance-attributes
     error: Optional[ErrorInfo] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "extra", deep_freeze(dict(self.extra)))
+        object.__setattr__(self, "resources", tuple(self.resources))
+
     def to_dict(self) -> Dict[str, Any]:
         """JSON-compatible form."""
         data = dict(self.__dict__)
         data["outcome"] = self.outcome.value
         data["resources"] = list(self.resources)
         data["error"] = self.error.to_dict() if self.error else None
+        data["extra"] = thaw(self.extra)
         return data
 
 

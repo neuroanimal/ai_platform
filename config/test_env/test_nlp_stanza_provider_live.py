@@ -96,6 +96,11 @@ async def main() -> None:
         include_provider_native=True,
     )
 
+    # Since the provider factory (78d22f1) real pipelines are created only by
+    # initialize() - normally called by NLPProviderLifecycle; this test calls
+    # the provider directly, so it initializes it explicitly.
+    provider.initialize()
+
     response = await provider.analyze(request)
     analysis = response.analysis
 

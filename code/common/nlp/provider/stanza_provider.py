@@ -45,6 +45,7 @@ from pathlib import Path
 from typing import Any
 
 from ai_platform.common.core.execution.errors import ExecutionError
+from ai_platform.common.core.execution.executor import run_in_thread
 
 from ..model.analysis import (
     AnalysisLayer,
@@ -119,6 +120,14 @@ UPOS_MAPPING = {
     "SYM": PartOfSpeech.OTHER,
     "X": PartOfSpeech.OTHER,
 }
+
+
+class _SharedPipeline:  # pylint: disable=too-few-public-methods
+    """A Stanza pipeline shared through the ResourceManager, with ITS lock (8D)."""
+
+    def __init__(self, pipeline: Any) -> None:
+        self.pipeline = pipeline
+        self.lock = threading.Lock()
 
 
 class StanzaPolishProvider(NLPProvider):
@@ -199,6 +208,9 @@ class StanzaPolishProvider(NLPProvider):
         # key of the shared pipeline leased from it.
         self._resources: Any = None
         self._pipeline_key: str | None = None
+        # Owner name of this instance's process-global setting claims: one
+        # instance closing must not drop the claim another instance relies on.
+        self._owner = f"{PROVIDER_ID}#{id(self):x}"
 
         # Initialization and inference use separate locks.
         self._initialization_lock = threading.Lock()
@@ -278,11 +290,15 @@ class StanzaPolishProvider(NLPProvider):
             # Stage 8D: one pipeline per configuration, shared by every
             # provider instance of this lifecycle (loaded models are large).
             self._pipeline_key = self._shared_pipeline_key()
-            self._pipeline = resources.acquire(
+            shared = resources.acquire(
                 self._pipeline_key,
-                self._initialize_pipeline,
-                closer=lambda pipeline: None,
+                lambda: _SharedPipeline(self._initialize_pipeline()),
+                closer=lambda holder: None,
             )
+            # The lock belongs to the shared pipeline, not to this instance:
+            # two providers using one pipeline must not run it at once.
+            self._pipeline = shared.pipeline
+            self._lock = shared.lock
 
     def _initialize_pipeline(self) -> Any:
         try:
@@ -420,7 +436,7 @@ class StanzaPolishProvider(NLPProvider):
         if max_threads is not None:
             resources = getattr(self, "_resources", None)
             must_apply = (
-                resources.claim_setting("torch.num_threads", max_threads, PROVIDER_ID)
+                resources.claim_setting("torch.num_threads", max_threads, self._owner)
                 if resources is not None
                 else True
             )
@@ -432,10 +448,14 @@ class StanzaPolishProvider(NLPProvider):
         """Release the shared pipeline (stage 8D); invoked by NLPProviderLifecycle.close."""
         resources = getattr(self, "_resources", None)
         key = getattr(self, "_pipeline_key", None)
-        if resources is not None and key is not None:
+        if resources is None:
+            return
+        # This instance no longer relies on its process-global settings.
+        resources.release_settings(self._owner)
+        if key is not None:
             resources.release(key, close_when_unused=True)
-            resources.release_settings(PROVIDER_ID)
             self._pipeline = None
+            self._pipeline_key = None
 
     def _shared_pipeline_key(self) -> str:
         """Key under which identical pipelines are shared between provider instances."""
@@ -947,8 +967,11 @@ class StanzaPolishProvider(NLPProvider):
         recorder.note("processors", self._processors)
 
         async def run(text: str) -> Any:
-            return await asyncio.to_thread(
-                self._run_staged_pipeline, text, context, recorder
+            # run_in_thread, not asyncio.to_thread: the executor tracks the
+            # thread, so a timed-out analysis keeps its slot (and close()
+            # waits) until the current processor has really finished.
+            return await run_in_thread(
+                context, recorder, self._run_staged_pipeline, text, context, recorder
             )
 
         return await self._analyze(request, run)

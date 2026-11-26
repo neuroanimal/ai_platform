@@ -12,9 +12,12 @@ Three things every engine adapter needs and should not invent again:
   cancellation and deadline and ``queue_timeout_seconds``; the time waited is
   returned for ``ExecutionMetadata.queue_seconds``.
 - ``claim_setting(name, value, owner)``: process-global settings (e.g.
-  ``torch.set_num_threads``) are claimed before they are applied. A different
-  value claimed by another owner is a ``ResourceConflictError`` instead of a
-  silent overwrite that changes another engine's behaviour.
+  ``torch.set_num_threads``) are claimed before they are applied. Every owner
+  that relies on the value is recorded; a different value is a
+  ``ResourceConflictError`` while any OTHER owner holds a claim, instead of a
+  silent overwrite that changes another engine's behaviour. ``release_settings``
+  drops only that owner's claims - the setting stays protected while anyone
+  else still relies on it.
 
 Synchronization uses threading primitives, so the manager works from
 worker threads and from asyncio code (where blocking waits are run in a
@@ -48,6 +51,7 @@ class _Slots:
     limit: int
     semaphore: threading.Semaphore = field(init=False)
     in_use: int = 0
+    waiting: int = 0
 
     def __post_init__(self) -> None:
         self.semaphore = threading.Semaphore(self.limit)
@@ -61,7 +65,8 @@ class ResourceManager:
         self._shared: Dict[str, _Shared] = {}
         self._creating: Dict[str, threading.Lock] = {}
         self._slots: Dict[str, _Slots] = {}
-        self._settings: Dict[str, Tuple[Any, str]] = {}
+        # setting name -> (value, owners that rely on it)
+        self._settings: Dict[str, Tuple[Any, set]] = {}
 
     # -- shared objects -------------------------------------------------------
 
@@ -138,20 +143,27 @@ class ResourceManager:
         with self._lock:
             slots = self._slots.get(key)
             if slots is None or slots.limit != limit:
-                if slots is not None and slots.in_use:
+                if slots is not None and (slots.in_use or slots.waiting):
+                    # Replacing the semaphore would strand the holders/waiters of the old one.
                     raise ResourceConflictError(
-                        f"slot limit of {key!r} changed from {slots.limit} to {limit} while in "
-                        "use", stage="slot")
+                        f"slot limit of {key!r} changed from {slots.limit} to {limit} while "
+                        f"{slots.in_use} hold and {slots.waiting} wait for a slot", stage="slot")
                 slots = self._slots[key] = _Slots(limit)
+            slots.waiting += 1
         start = time.monotonic()
-        while not slots.semaphore.acquire(timeout=POLL_SECONDS):
-            waited = time.monotonic() - start
-            if context is not None:
-                context.check(f"waiting for a slot of {key}")
-            if queue_timeout_seconds is not None and waited >= queue_timeout_seconds:
-                raise ResourceUnavailableError(
-                    f"no free slot of {key!r} within {queue_timeout_seconds} s", stage="slot",
-                    details={"key": key, "limit": limit, "waited_seconds": round(waited, 3)})
+        try:
+            while not slots.semaphore.acquire(timeout=POLL_SECONDS):
+                waited = time.monotonic() - start
+                if context is not None:
+                    context.check(f"waiting for a slot of {key}")
+                if queue_timeout_seconds is not None and waited >= queue_timeout_seconds:
+                    raise ResourceUnavailableError(
+                        f"no free slot of {key!r} within {queue_timeout_seconds} s",
+                        stage="slot", details={"key": key, "limit": limit,
+                                               "waited_seconds": round(waited, 3)})
+        finally:
+            with self._lock:
+                slots.waiting -= 1
         with self._lock:
             slots.in_use += 1
         try:
@@ -172,31 +184,41 @@ class ResourceManager:
     def claim_setting(self, name: str, value: Any, owner: str) -> bool:
         """Claim a process-global setting; True when this owner must apply it now.
 
-        The same value claimed again (by anyone) is fine and returns False; a
-        different value claimed by a different owner is a ResourceConflictError.
+        The same value claimed again adds the owner to those relying on it and
+        returns False. A different value is allowed only when no other owner
+        holds a claim (then this owner becomes the only one and must apply
+        it); otherwise it is a ResourceConflictError and nothing changes.
         """
         with self._lock:
             current = self._settings.get(name)
             if current is None:
-                self._settings[name] = (value, owner)
+                self._settings[name] = (value, {owner})
                 return True
-            if current[0] == value:
+            current_value, owners = current
+            if current_value == value:
+                owners.add(owner)
                 return False
-            if current[1] == owner:
-                self._settings[name] = (value, owner)
+            others = owners - {owner}
+            if not others:
+                self._settings[name] = (value, {owner})
                 return True
             raise ResourceConflictError(
-                f"{name}={value!r} requested by {owner!r}, but {current[1]!r} set "
-                f"{current[0]!r} for the whole process", stage="setting",
-                details={"setting": name, "requested": value, "current": current[0],
-                         "owner": current[1]})
+                f"{name}={value!r} requested by {owner!r}, but {sorted(others)} rely on "
+                f"{current_value!r} for the whole process", stage="setting",
+                details={"setting": name, "requested": value, "current": current_value,
+                         "owners": sorted(others)})
 
     def release_settings(self, owner: str) -> None:
-        """Drop every claim of ``owner`` (it no longer depends on them)."""
+        """Drop the claims of ``owner``; a setting stays claimed while others rely on it."""
         with self._lock:
-            self._settings = {k: v for k, v in self._settings.items() if v[1] != owner}
+            for name in list(self._settings):
+                owners = self._settings[name][1]
+                owners.discard(owner)
+                if not owners:
+                    del self._settings[name]
 
-    def setting(self, name: str) -> Optional[Tuple[Any, str]]:
-        """(value, owner) of a claimed setting, or None."""
+    def setting(self, name: str) -> Optional[Tuple[Any, frozenset]]:
+        """(value, owners relying on it) of a claimed setting, or None."""
         with self._lock:
-            return self._settings.get(name)
+            current = self._settings.get(name)
+            return (current[0], frozenset(current[1])) if current else None
