@@ -125,10 +125,13 @@ class StanzaPolishProvider(NLPProvider):
         *,
         model_dir: str | Path | None = None,
         package: str = "default",
-        use_gpu: bool = False,
+        use_gpu: bool | None = False,
         pipeline: Any | None = None,
         provider_version: str | None = None,
         provenance: NLPProvenanceConfigV2 | None = None,
+        processors: str = PROCESSORS,
+        tokenize_batch_size: int = 32,
+        device: str | None = None,
     ) -> None:
         """
         Initialize the provider.
@@ -151,8 +154,41 @@ class StanzaPolishProvider(NLPProvider):
             if model_dir is not None
             else None
         )
+        if not isinstance(package, str) or not package.strip():
+            raise ValueError("package must be a non-empty string.")
+
+        if use_gpu is not None and not isinstance(use_gpu, bool):
+            raise TypeError("use_gpu must be bool or None.")
+
+        if not isinstance(processors, str) or not processors.strip():
+            raise ValueError(
+                "processors must be a non-empty string."
+            )
+
+        if (
+            isinstance(tokenize_batch_size, bool)
+            or not isinstance(tokenize_batch_size, int)
+            or tokenize_batch_size <= 0
+        ):
+            raise ValueError(
+                "tokenize_batch_size must be a positive integer."
+            )
+
         self._package = package
         self._use_gpu = use_gpu
+        self._processors = processors
+        self._tokenize_batch_size = tokenize_batch_size
+
+        self._device = (
+            device
+            if device is not None
+            else (
+                "auto"
+                if use_gpu is None
+                else ("cuda" if use_gpu else "cpu")
+            )
+        )
+
         self._lock = threading.Lock()
 
         # Initialization and inference use separate locks.
@@ -200,8 +236,10 @@ class StanzaPolishProvider(NLPProvider):
                 "language": "Polish",
                 "model_package": self._package,
                 "treebank": "PDB",
-                "processors": PROCESSORS,
-                "use_gpu": use_gpu,
+                "processors": self._processors,
+                "tokenize_batch_size": self._tokenize_batch_size,
+                "use_gpu": self._use_gpu,
+                "device": self._device,
             },
         )
 
@@ -239,7 +277,8 @@ class StanzaPolishProvider(NLPProvider):
         kwargs: dict[str, Any] = {
             "lang": "pl",
             "package": self._package,
-            "processors": PROCESSORS,
+            "processors": self._processors,
+            "tokenize_batch_size": self._tokenize_batch_size,
             "use_gpu": self._use_gpu,
             "download_method": None,
         }
@@ -261,7 +300,9 @@ class StanzaPolishProvider(NLPProvider):
                         if self._model_dir is not None
                         else None
                     ),
-                    "processors": PROCESSORS,
+                    "processors": self._processors,
+                    "tokenize_batch_size": self._tokenize_batch_size,
+                    "device": self._device,
                     "original_error": str(exc),
                 },
             ) from exc
@@ -429,9 +470,17 @@ class StanzaPolishProvider(NLPProvider):
 
         configuration = {
             "language": "pl",
-            "processors": PROCESSORS,
+            "processors": self._processors,
+            "tokenize_batch_size": self._tokenize_batch_size,
             "use_gpu": self._use_gpu,
+            "device": self._device,
             "model_package": self._package,
+            "model_id": self._model_id,
+            "model_dir": (
+                str(self._model_dir)
+                if self._model_dir is not None
+                else None
+            ),
         }
 
         provenance = self._make_provenance(
@@ -706,7 +755,7 @@ class StanzaPolishProvider(NLPProvider):
                 configuration=configuration,
                 runtime_seconds=runtime_seconds,
                 hardware={
-                    "device": "cuda" if self._use_gpu else "cpu",
+                    "device": self._device,
                 },
             ),
             sentences=sentences,
@@ -718,7 +767,9 @@ class StanzaPolishProvider(NLPProvider):
                 "language": "pl",
                 "model_package": self._package,
                 "treebank": "PDB",
-                "processors": PROCESSORS,
+                "processors": self._processors,
+                "tokenize_batch_size": self._tokenize_batch_size,
+                "device": self._device,
                 "dependency_roots": roots,
                 "mwt_policy": (
                     "surface-verifiable spans; syntactic word forms "
