@@ -61,6 +61,7 @@ from .execution import (
     NLPExecutionResult,
     as_nlp_error,
     mark_abandoned,
+    runtime_policy_from_nlp_config,
 )
 from .plugin import NLPProviderPlugin
 from .protocol import NLPProvider
@@ -99,8 +100,14 @@ class _ProviderRecord:  # pylint: disable=too-many-instance-attributes
     drained: asyncio.Event = field(default_factory=asyncio.Event)
     active_analyses: int = 0
     last_error: str | None = None
-    # Stage 8C: execution policy and configuration identity of the provider.
-    policy: RuntimePolicy = field(default_factory=RuntimePolicy)
+
+    # Immutable baseline policy supplied when the provider is registered.
+    provider_policy: RuntimePolicy = field(
+        default_factory=RuntimePolicy
+    )
+
+    # Current configuration policy; replaced, never cumulatively narrowed.
+    configuration_policy: RuntimePolicy | None = None
     configuration_fingerprint: str | None = None
 
 class NLPProviderLifecycle:
@@ -167,7 +174,10 @@ class NLPProviderLifecycle:
             provider=provider,
             state=NLPProviderLifecycleState.REGISTERED,
             lock=asyncio.Lock(),
-            policy=policy or RuntimePolicy(),
+            # policy=policy or RuntimePolicy(),
+            provider_policy=(
+                policy if policy is not None else RuntimePolicy()
+            ),
         )
         record.drained.set()
         self._records[provider_id] = record
@@ -362,14 +372,14 @@ class NLPProviderLifecycle:
             )
 
         # Stage 8C: the configuration's runtime section becomes the policy.
-        record.policy = record.policy.narrow(
-            RuntimePolicy.from_runtime_config(
-                resolution.configuration.runtime
-            )
-        )
-        record.configuration_fingerprint = (
-            resolution.configuration_fingerprint
-        )
+        ### record.policy = record.policy.narrow(
+        ###     runtime_policy_from_nlp_config(
+        ###         resolution.configuration.runtime
+        ###     )
+        ### )
+        ### record.configuration_fingerprint = (
+        ###     resolution.configuration_fingerprint
+        ### )
 
         registered_provider = self._registry.get(expected_key)
 
@@ -382,6 +392,29 @@ class NLPProviderLifecycle:
                     "registry_key": expected_key,
                     "reason": "registry_identity_mismatch",
                 },
+            )
+
+        configuration_policy = runtime_policy_from_nlp_config(
+            resolution.configuration.runtime
+        )
+
+        async with record.lock:
+            if record.state in {
+                NLPProviderLifecycleState.CLOSING,
+                NLPProviderLifecycleState.CLOSED,
+            }:
+                raise NLPProviderUnavailableError(
+                    f"Provider '{resolution.provider_id}' cannot "
+                    "accept a new configuration while closing or closed.",
+                    provider_id=resolution.provider_id,
+                    details={
+                        "state": record.state.value,
+                    },
+                )
+
+            record.configuration_policy = configuration_policy
+            record.configuration_fingerprint = (
+                resolution.configuration_fingerprint
             )
 
         return await self.initialize(resolution.provider_id)
@@ -430,6 +463,31 @@ class NLPProviderLifecycle:
                     },
                 ) from exc
 
+    @staticmethod
+    def _effective_policy(
+        record: _ProviderRecord,
+        caller_policy: RuntimePolicy | None = None,
+    ) -> RuntimePolicy:
+        """
+        Derive the effective policy without mutating stored policies.
+
+        Order:
+        1. provider registration policy;
+        2. current configuration policy;
+        3. per-invocation caller policy.
+        """
+        effective = record.provider_policy
+
+        if record.configuration_policy is not None:
+            effective = effective.narrow(
+                record.configuration_policy
+            )
+
+        if caller_policy is not None:
+            effective = effective.narrow(caller_policy)
+
+        return effective
+
     async def analyze(
         self,
         provider_id: str,
@@ -466,11 +524,44 @@ class NLPProviderLifecycle:
         """
         await self.initialize(provider_id)
         record = self._get_record(provider_id)
+
+        async with record.lock:
+            if record.state != NLPProviderLifecycleState.READY:
+                raise NLPProviderUnavailableError(
+                    f"Provider '{provider_id}' is not ready.",
+                    provider_id=provider_id,
+                    details={
+                        "state": record.state.value,
+                    },
+                )
+
+            effective_policy = self._effective_policy(
+                record,
+                policy,
+            )
+            configuration_fingerprint = (
+                record.configuration_fingerprint
+            )
+
+        # A policy timeout must also apply when the caller supplies
+        # a parent context. ExecutionContext.child() preserves the
+        # parent's deadline but does not infer a deadline from policy.
+        effective_timeout = timeout_seconds
+
+        if effective_policy.timeout_seconds is not None:
+            if effective_timeout is None:
+                effective_timeout = effective_policy.timeout_seconds
+            else:
+                effective_timeout = min(
+                    effective_timeout,
+                    effective_policy.timeout_seconds,
+                )
+
         if context is None:
             context = ExecutionContext.create(
                 ANALYZE_OPERATION,
-                timeout_seconds=timeout_seconds,
-                policy=record.policy.narrow(policy),
+                timeout_seconds=effective_timeout,
+                policy=effective_policy,
                 cancellation=cancellation,
                 provider_id=provider_id,
                 request_id=request.request_id,
@@ -478,11 +569,11 @@ class NLPProviderLifecycle:
         else:
             context = context.child(
                 ANALYZE_OPERATION,
-                timeout_seconds=timeout_seconds,
-                policy=record.policy.narrow(policy),
+                timeout_seconds=effective_timeout,
+                policy=effective_policy,
             )
+
             if cancellation is not None:
-                # Both the caller's context and the separate token can stop it.
                 child_token = context.cancellation
                 cancellation.add_callback(child_token.cancel)
 
@@ -521,7 +612,7 @@ class NLPProviderLifecycle:
                 work,
                 resources=self.resources,
                 slot_key=f"nlp:{provider_id}",
-                configuration_fingerprint=record.configuration_fingerprint,
+                configuration_fingerprint=configuration_fingerprint,
             )
         except BaseException as exc:
             real_work = getattr(exc, "execution_work", None)

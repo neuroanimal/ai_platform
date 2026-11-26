@@ -17,6 +17,7 @@ Responsibilities:
 from __future__ import annotations
 
 import copy
+import math
 import os
 import re
 
@@ -56,6 +57,20 @@ def _parse_integer(value: str) -> int:
         raise ValueError("expected an integer")
 
     return int(normalized)
+
+
+def _parse_float(value: str) -> float:
+    normalized = value.strip()
+
+    try:
+        parsed = float(normalized)
+    except ValueError as error:
+        raise ValueError("expected a number") from error
+
+    if not math.isfinite(parsed):
+        raise ValueError("expected a finite number")
+
+    return parsed
 
 
 def _parse_boolean(value: str) -> bool:
@@ -118,6 +133,18 @@ _ENVIRONMENT_FIELDS = {
     "RUNTIME__BATCH_SIZE": (
         ("runtime", "batch_size"),
         _parse_integer,
+    ),
+    "RUNTIME__MAX_CONCURRENCY": (
+        ("runtime", "max_concurrency"),
+        _parse_integer,
+    ),
+    "RUNTIME__TIMEOUT_SECONDS": (
+        ("runtime", "timeout_seconds"),
+        _parse_float,
+    ),
+    "RUNTIME__QUEUE_TIMEOUT_SECONDS": (
+        ("runtime", "queue_timeout_seconds"),
+        _parse_float,
     ),
     "RUNTIME__MEMORY_LIMIT_MB_HINT": (
         ("runtime", "memory_limit_mb_hint"),

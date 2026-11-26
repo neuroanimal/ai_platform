@@ -194,6 +194,27 @@ class NLPRuntimeConfigV2(NLPModel):
 
     batch_size: int | None = Field(default=None, gt=0)
 
+    # Maximum number of concurrent analyses for this provider.
+    max_concurrency: int | None = Field(
+        default=None,
+        gt=0,
+        strict=True,
+    )
+
+    # Maximum duration of one analysis, in seconds.
+    timeout_seconds: float | None = Field(
+        default=None,
+        gt=0,
+        allow_inf_nan=False,
+    )
+
+    # Maximum duration of waiting for an execution slot, in seconds.
+    queue_timeout_seconds: float | None = Field(
+        default=None,
+        gt=0,
+        allow_inf_nan=False,
+    )
+
     memory_limit_mb_hint: int | None = Field(default=None, gt=0)
 
     allow_device_fallback: bool = True
@@ -284,7 +305,7 @@ class NLPProviderConfigurationV2(NLPModel):
             }
 
         return {
-            "fingerprint_schema": "nlp-provider-configuration-v2.1",
+            "fingerprint_schema": "nlp-provider-configuration-v2.2",
             "provider_id": self.provider_id,
             "engine": {
                 "engine_name": self.engine.engine_name,
@@ -297,6 +318,11 @@ class NLPProviderConfigurationV2(NLPModel):
                 "batch_size": self.runtime.batch_size,
                 "allow_device_fallback": (
                     self.runtime.allow_device_fallback
+                ),
+                "max_concurrency": self.runtime.max_concurrency,
+                "timeout_seconds": self.runtime.timeout_seconds,
+                "queue_timeout_seconds": (
+                    self.runtime.queue_timeout_seconds
                 ),
             },
             "provenance": self.provenance.model_dump(

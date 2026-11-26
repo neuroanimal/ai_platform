@@ -34,6 +34,7 @@ from ai_platform.common.core.execution import (
     ExecutionMetadata,
     ExecutionRecorder,
     ExecutionTimeoutError,
+    RuntimePolicy,
 )
 
 from .errors import (
@@ -97,10 +98,30 @@ def as_nlp_error(exc: BaseException, provider_id: str) -> BaseException:
     return exc
 
 
+def runtime_policy_from_nlp_config(runtime: object) -> RuntimePolicy:
+    """
+    Build the shared runtime policy from NLP runtime configuration.
+
+    NLP owns the configuration schema. The shared execution package
+    remains the single owner of runtime policy validation and behavior.
+    """
+    return RuntimePolicy.from_runtime_config(
+        runtime,
+        max_concurrency=getattr(runtime, "max_concurrency", None),
+        timeout_seconds=getattr(runtime, "timeout_seconds", None),
+        queue_timeout_seconds=getattr(
+            runtime,
+            "queue_timeout_seconds",
+            None,
+        ),
+    )
+
+
 __all__ = [
     "ANALYZE_OPERATION",
     "ContextAwareNLPProvider",
     "NLPExecutionResult",
     "as_nlp_error",
     "mark_abandoned",
+    "runtime_policy_from_nlp_config",
 ]
