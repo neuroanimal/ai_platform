@@ -7,7 +7,11 @@
 from pydantic import Field
 
 from ...model.base import NLPModel
-from ...model.analysis import AnalysisLayer, NLPAnalysis
+from ...model.analysis import (
+    AnalysisLayer,
+    AnalysisLayerExecutionStatus,
+    NLPAnalysis,
+)
 from ..capabilities import ProviderCapabilities
 from ..request import NLPProviderRequest
 from ..response import NLPProviderResponse
@@ -248,6 +252,112 @@ def validate_provider_response(
                 (
                     "Partial results were not allowed, but the provider "
                     f"did not complete all requested layers: {names}."
+                ),
+            )
+
+    # Layer execution status validation.
+    layer_executions = analysis.layer_executions
+
+    if layer_executions:
+        execution_layers = [
+            item.layer
+            for item in layer_executions
+        ]
+
+        if len(execution_layers) != len(set(execution_layers)):
+            _add_issue(
+                issues,
+                "duplicate_layer_executions",
+                "Analysis contains duplicate layer execution records.",
+            )
+
+        execution_map = {
+            item.layer: item
+            for item in layer_executions
+        }
+
+        execution_set = set(execution_layers)
+
+        unrequested_executions = execution_set - requested_layers
+
+        if unrequested_executions:
+            names = sorted(
+                layer.value
+                for layer in unrequested_executions
+            )
+
+            _add_issue(
+                issues,
+                "unrequested_layer_executions",
+                (
+                    "Analysis contains execution records for "
+                    f"unrequested layers: {names}."
+                ),
+            )
+
+        missing_executions = requested_layers - execution_set
+
+        if missing_executions:
+            names = sorted(
+                layer.value
+                for layer in missing_executions
+            )
+
+            _add_issue(
+                issues,
+                "missing_layer_executions",
+                (
+                    "Analysis does not contain execution records "
+                    f"for requested layers: {names}."
+                ),
+            )
+
+        completed_from_status = {
+            layer
+            for layer, item in execution_map.items()
+            if item.status == AnalysisLayerExecutionStatus.COMPLETED
+        }
+
+        unavailable_from_status = {
+            layer
+            for layer, item in execution_map.items()
+            if item.status == AnalysisLayerExecutionStatus.UNAVAILABLE
+        }
+
+        if completed_from_status != completed_set:
+            _add_issue(
+                issues,
+                "completed_layer_execution_mismatch",
+                (
+                    "completed_layers must match layers whose "
+                    "execution status is COMPLETED."
+                ),
+            )
+
+        if unavailable_from_status != unavailable_set:
+            _add_issue(
+                issues,
+                "unavailable_layer_execution_mismatch",
+                (
+                    "unavailable_layers must match layers whose "
+                    "execution status is UNAVAILABLE."
+                ),
+            )
+
+        unsupported_executions = execution_set - supported_layers
+
+        if unsupported_executions:
+            names = sorted(
+                layer.value
+                for layer in unsupported_executions
+            )
+
+            _add_issue(
+                issues,
+                "unsupported_layer_executions",
+                (
+                    "Analysis contains execution records for "
+                    f"unsupported layers: {names}."
                 ),
             )
 

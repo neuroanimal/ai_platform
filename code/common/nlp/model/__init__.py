@@ -5,6 +5,8 @@ from .analysis import (
     HypothesisStatus,
     NLPAnalysis,
     ProviderMetadata,
+    AnalysisLayerExecution,
+    AnalysisLayerExecutionStatus,
 )
 from .base import (
     ActorType,
@@ -95,5 +97,7 @@ __all__ = [
     "ProviderMetadata",
     "Sentence",
     "SentenceType",
+    "AnalysisLayerExecution",
+    "AnalysisLayerExecutionStatus",
 ]
 
