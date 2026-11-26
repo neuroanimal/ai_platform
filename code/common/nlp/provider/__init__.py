@@ -80,6 +80,26 @@ from .execution import (
     NLPExecutionResult,
 )
 
+from .batch import (
+    NLPProviderBatchRequest,
+    NLPProviderBatchItemError,
+    NLPProviderBatchItemResult,
+    NLPProviderBatchResponse,
+    NLPProviderBatchConformanceIssue,
+    NLPProviderBatchConformanceReport,
+    validate_provider_batch_response,
+)
+from .batch_protocol import NLPProviderBatch
+from .streaming import (
+    NLPProviderStreamEventType,
+    NLPProviderStreamError,
+    NLPProviderStreamEvent,
+    NLPProviderStreamConformanceIssue,
+    NLPProviderStreamConformanceReport,
+    validate_provider_stream_events,
+)
+from .streaming_protocol import NLPProviderStreaming
+
 
 __all__ = [
     "ProviderCapabilities",
@@ -132,5 +152,20 @@ __all__ = [
     "NLPProviderCancelledError",
     "ContextAwareNLPProvider",
     "NLPExecutionResult",
+    "NLPProviderBatchRequest",
+    "NLPProviderBatchItemError",
+    "NLPProviderBatchItemResult",
+    "NLPProviderBatchResponse",
+    "NLPProviderBatchConformanceIssue",
+    "NLPProviderBatchConformanceReport",
+    "validate_provider_batch_response",
+    "NLPProviderBatch",
+    "NLPProviderStreamEventType",
+    "NLPProviderStreamError",
+    "NLPProviderStreamEvent",
+    "NLPProviderStreamConformanceIssue",
+    "NLPProviderStreamConformanceReport",
+    "validate_provider_stream_events",
+    "NLPProviderStreaming",
 ]
 
