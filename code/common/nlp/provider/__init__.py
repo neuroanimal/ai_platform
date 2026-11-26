@@ -20,6 +20,8 @@ from .errors import (
     NLPProviderOutputError,
     NLPProviderUnavailableError,
     NLPProviderFactoryError,
+    NLPProviderTimeoutError,
+    NLPProviderCancelledError,
 )
 from .protocol import NLPProvider
 from .validation import (
@@ -73,6 +75,10 @@ from .stanza_factory import (
 from .provenance_configuration import (
     NLPProvenanceConfigV2,
 )
+from .execution import (
+    ContextAwareNLPProvider,
+    NLPExecutionResult,
+)
 
 
 __all__ = [
@@ -122,5 +128,9 @@ __all__ = [
     "NLPProviderFactoryService",
     "StanzaPolishEngineAdapter",
     "NLPProvenanceConfigV2",
+    "NLPProviderTimeoutError",
+    "NLPProviderCancelledError",
+    "ContextAwareNLPProvider",
+    "NLPExecutionResult",
 ]
 

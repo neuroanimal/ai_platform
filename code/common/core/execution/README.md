@@ -28,15 +28,20 @@ one engine's limits.
   different `threads` would overwrite each other; `claim_setting` turns that
   into a `ResourceConflictError`.
 
-## How a provider adopts it (next stages, not done in 8B)
+## How a provider adopts it (8C done 2026-11-26; 8D and later still to do)
 
-- **8C — lifecycle integration:** `NLPProviderLifecycle.analyze(provider_id, request,
-  context=None)` creates a context from the provider's policy narrowed by the
-  request, runs the provider through `execute()` with `slot_key=provider_id`,
-  and returns the response together with `ExecutionMetadata` (e.g. in
-  `NLPProviderResponse` diagnostics or a new metadata field). Providers that
-  accept a context implement `analyze(request, context, recorder)`; old ones
-  keep working (the lifecycle checks context at its own boundaries only).
+- **8C — lifecycle integration (done):** `NLPProviderLifecycle.analyze_with_context(
+  provider_id, request, *, context, timeout_seconds, policy, cancellation)` runs the
+  provider through `execute()` with a slot `nlp:<provider_id>` and returns
+  `NLPExecutionResult(response, metadata)`; `analyze()` keeps its signature. The
+  provider's policy comes from `register(provider, policy)` narrowed by the
+  configuration's runtime section (`initialize_resolution`), then by the caller.
+  Providers implementing `analyze_in_context(request, context, recorder)`
+  (`ContextAwareNLPProvider`) get the context; old ones are awaited shielded, so on
+  a timeout their call is reported `abandoned` and `close()` waits for it.
+  Timeouts and cancellations arrive as `NLPProviderTimeoutError` /
+  `NLPProviderCancelledError` (both NLP and execution errors). Tests:
+  `config/test_env/test_nlp_provider_execution_contract.py`.
 - **8D — Stanza:** check the context between sentences/batches instead of one
   call over the whole text; claim `torch.num_threads`; lease the pipeline per
   (language, processors, package) key; record device and version. Then run

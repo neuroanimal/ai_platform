@@ -59,3 +59,52 @@ class NLPProviderFactoryError(NLPProviderError):
     default_code = "provider_factory_error"
 
 
+
+
+# Stage 8C: errors decided by the runtime execution contract
+# (ai_platform.common.core.execution) when an NLP analysis runs out of time or
+# is cancelled. They belong to BOTH hierarchies, so a caller catching
+# NLPProviderError and a caller catching ExecutionTimeoutError /
+# ExecutionCancelledError both see them.
+from ai_platform.common.core.execution.errors import (  # noqa: E402  pylint: disable=wrong-import-position
+    ExecutionCancelledError,
+    ExecutionTimeoutError,
+)
+
+
+class _NLPExecutionContractError(NLPProviderExecutionError):
+    """Shared constructor: NLP fields plus the execution contract's ``stage``."""
+
+    default_retryable = False
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        provider_id: str | None = None,
+        retryable: bool | None = None,
+        stage: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            code=code,
+            provider_id=provider_id,
+            retryable=self.default_retryable if retryable is None else retryable,
+            details=details,
+        )
+        self.stage = stage
+
+
+class NLPProviderTimeoutError(_NLPExecutionContractError, ExecutionTimeoutError):
+    """The analysis did not finish before the deadline (retrying may succeed)."""
+
+    default_code = "provider_timeout"
+    default_retryable = True
+
+
+class NLPProviderCancelledError(_NLPExecutionContractError, ExecutionCancelledError):
+    """The caller cancelled the analysis."""
+
+    default_code = "provider_cancelled"

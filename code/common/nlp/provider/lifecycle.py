@@ -12,6 +12,23 @@ Responsibilities:
 - analysis execution;
 - graceful shutdown.
 
+Stage 8C - runtime execution contract (ai_platform.common.core.execution):
+- every analysis runs through ``execute()`` in an ExecutionContext with a
+  deadline, a cancellation token and the provider's RuntimePolicy (from the
+  configuration's runtime section, or given at registration), narrowed by
+  the caller's policy;
+- ``max_concurrency`` of the policy is enforced with a slot per provider in a
+  ResourceManager shared by this lifecycle;
+- ``analyze_with_context`` returns the response with ExecutionMetadata;
+  ``analyze`` keeps its old signature and result;
+- providers implementing ``analyze_in_context`` are given the context and a
+  recorder; others are awaited as before, and on a timeout their call keeps
+  running (shielded) until it really ends - ``close()`` waits for it and the
+  metadata says ``abandoned``;
+- timeouts and cancellations reach the caller as NLPProviderTimeoutError /
+  NLPProviderCancelledError, provider errors with their own types; all of
+  them carry ``execution_metadata``.
+
 The central PluginRegistry remains responsible only for storage
 and retrieval. This module does not modify its behavior.
 """
@@ -25,11 +42,26 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, Callable
 
+from ai_platform.common.core.execution import (
+    CancellationToken,
+    ExecutionContext,
+    ExecutionRecorder,
+    ResourceManager,
+    RuntimePolicy,
+    execute,
+)
 from ai_platform.common.core.registry.registry_contract import (
     RegistryContract,
 )
 
 from .errors import NLPProviderUnavailableError
+from .execution import (
+    ANALYZE_OPERATION,
+    ContextAwareNLPProvider,
+    NLPExecutionResult,
+    as_nlp_error,
+    mark_abandoned,
+)
 from .plugin import NLPProviderPlugin
 from .protocol import NLPProvider
 from .request import NLPProviderRequest
@@ -56,7 +88,7 @@ class NLPProviderLifecycleSnapshot:
     last_error: str | None = None
 
 @dataclass
-class _ProviderRecord:
+class _ProviderRecord:  # pylint: disable=too-many-instance-attributes
     """Internal mutable lifecycle record."""
 
     provider_id: str
@@ -67,6 +99,9 @@ class _ProviderRecord:
     drained: asyncio.Event = field(default_factory=asyncio.Event)
     active_analyses: int = 0
     last_error: str | None = None
+    # Stage 8C: execution policy and configuration identity of the provider.
+    policy: RuntimePolicy = field(default_factory=RuntimePolicy)
+    configuration_fingerprint: str | None = None
 
 class NLPProviderLifecycle:
     """
@@ -86,6 +121,7 @@ class NLPProviderLifecycle:
     def __init__(
         self,
         registry: RegistryContract,
+        resources: ResourceManager | None = None,
     ) -> None:
         if not isinstance(registry, RegistryContract):
             raise TypeError(
@@ -94,16 +130,21 @@ class NLPProviderLifecycle:
 
         self._registry = registry
         self._records: dict[str, _ProviderRecord] = {}
+        # Shared by every provider of this lifecycle: concurrency slots,
+        # shared engine objects, process-global setting claims.
+        self.resources = resources or ResourceManager()
 
     def register(
         self,
         provider: NLPProvider,
+        policy: RuntimePolicy | None = None,
     ) -> NLPProviderLifecycleSnapshot:
         """
         Explicitly register a provider.
 
         The underlying provider is stored in PluginRegistry
-        through NLPProviderPlugin.
+        through NLPProviderPlugin. ``policy`` is the provider's execution
+        policy (stage 8C); a configuration resolved later narrows it.
         """
 
         plugin = NLPProviderPlugin(provider)
@@ -121,6 +162,7 @@ class NLPProviderLifecycle:
             provider=provider,
             state=NLPProviderLifecycleState.REGISTERED,
             lock=asyncio.Lock(),
+            policy=policy or RuntimePolicy(),
         )
         record.drained.set()
         self._records[provider_id] = record
@@ -314,6 +356,16 @@ class NLPProviderLifecycle:
                 },
             )
 
+        # Stage 8C: the configuration's runtime section becomes the policy.
+        record.policy = record.policy.narrow(
+            RuntimePolicy.from_runtime_config(
+                resolution.configuration.runtime
+            )
+        )
+        record.configuration_fingerprint = (
+            resolution.configuration_fingerprint
+        )
+
         registered_provider = self._registry.get(expected_key)
 
         if registered_provider is not resolution.provider:
@@ -383,11 +435,51 @@ class NLPProviderLifecycle:
 
         Initialization is automatic on first use.
         Shutdown waits for all active analyses to finish.
+        Runs under the execution contract with the provider's policy;
+        use ``analyze_with_context`` to also get the execution metadata.
         """
+        result = await self.analyze_with_context(provider_id, request)
+        return result.response
 
+    async def analyze_with_context(  # pylint: disable=too-many-arguments
+        self,
+        provider_id: str,
+        request: NLPProviderRequest,
+        *,
+        context: ExecutionContext | None = None,
+        timeout_seconds: float | None = None,
+        policy: RuntimePolicy | None = None,
+        cancellation: CancellationToken | None = None,
+    ) -> NLPExecutionResult:
+        """
+        Execute analysis under the runtime execution contract (stage 8C).
+
+        Without ``context`` one is created: the provider's policy narrowed
+        by ``policy``, the deadline from ``timeout_seconds`` (else the
+        policy's timeout), and ``cancellation`` if given. With ``context``
+        its policy is narrowed by the provider's (a caller cannot loosen it).
+        """
         await self.initialize(provider_id)
-
         record = self._get_record(provider_id)
+        if context is None:
+            context = ExecutionContext.create(
+                ANALYZE_OPERATION,
+                timeout_seconds=timeout_seconds,
+                policy=record.policy.narrow(policy),
+                cancellation=cancellation,
+                provider_id=provider_id,
+                request_id=request.request_id,
+            )
+        else:
+            context = context.child(
+                ANALYZE_OPERATION,
+                timeout_seconds=timeout_seconds,
+                policy=record.policy.narrow(policy),
+            )
+
+        provider = self._registry.get(
+            f"{NLPProviderPlugin.KEY_PREFIX}{provider_id}"
+        )
 
         async with record.lock:
             if record.state != NLPProviderLifecycleState.READY:
@@ -402,19 +494,59 @@ class NLPProviderLifecycle:
             record.active_analyses += 1
             record.drained.clear()
 
+        inner: list[asyncio.Future] = []
+
+        async def work(ctx: ExecutionContext, recorder: ExecutionRecorder):
+            if isinstance(provider, ContextAwareNLPProvider):
+                return await provider.analyze_in_context(request, ctx, recorder)
+            recorder.note("context_aware", False)
+            # Shielded: on a timeout the provider's call keeps running and
+            # is still counted as active until it really ends.
+            call = asyncio.ensure_future(provider.analyze(request))
+            inner.append(call)
+            return await asyncio.shield(call)
+
         try:
-            provider = self._registry.get(
-                f"{NLPProviderPlugin.KEY_PREFIX}{provider_id}"
+            result = await execute(
+                context,
+                work,
+                resources=self.resources,
+                slot_key=f"nlp:{provider_id}",
+                configuration_fingerprint=record.configuration_fingerprint,
             )
+        except BaseException as exc:
+            if inner and not inner[0].done():
+                mark_abandoned(exc)
+                inner[0].add_done_callback(
+                    lambda call: self._finish_abandoned(record, call)
+                )
+            else:
+                await self._finish_analysis(record)
+            translated = as_nlp_error(exc, provider_id)
+            if translated is exc:
+                raise
+            raise translated from exc
+        await self._finish_analysis(record)
+        return NLPExecutionResult(result.value, result.metadata)
 
-            return await provider.analyze(request)
+    async def _finish_analysis(self, record: _ProviderRecord) -> None:
+        """One analysis fewer; the last one lets close() continue."""
+        async with record.lock:
+            record.active_analyses -= 1
+            if record.active_analyses == 0:
+                record.drained.set()
 
-        finally:
-            async with record.lock:
-                record.active_analyses -= 1
-
-                if record.active_analyses == 0:
-                    record.drained.set()
+    def _finish_abandoned(
+        self,
+        record: _ProviderRecord,
+        call: asyncio.Future,
+    ) -> None:
+        """Done-callback of a provider call that outlived its deadline."""
+        if not call.cancelled():
+            call.exception()  # retrieved: the late result is dropped on purpose
+        record.active_analyses -= 1
+        if record.active_analyses == 0:
+            record.drained.set()
 
     async def close(
         self,
