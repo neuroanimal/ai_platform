@@ -31,6 +31,106 @@
       "title": "AnalysisLayer",
       "type": "string"
     },
+    "AnalysisLayerExecution": {
+      "additionalProperties": false,
+      "description": "Execution state and diagnostics for one analysis layer.",
+      "properties": {
+        "duration_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Seconds"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finished At"
+        },
+        "layer": {
+          "$ref": "#/$defs/AnalysisLayer"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "status": {
+          "$ref": "#/$defs/AnalysisLayerExecutionStatus"
+        }
+      },
+      "required": [
+        "layer",
+        "status"
+      ],
+      "title": "AnalysisLayerExecution",
+      "type": "object"
+    },
+    "AnalysisLayerExecutionStatus": {
+      "description": "Execution status of one NLP analysis layer.",
+      "enum": [
+        "not_started",
+        "running",
+        "completed",
+        "failed",
+        "skipped",
+        "unavailable",
+        "cancelled"
+      ],
+      "title": "AnalysisLayerExecutionStatus",
+      "type": "string"
+    },
     "AnalysisStatus": {
       "enum": [
         "draft",
@@ -1044,6 +1144,13 @@
             "$ref": "#/$defs/AnnotationHypothesis"
           },
           "title": "Hypotheses",
+          "type": "array"
+        },
+        "layer_executions": {
+          "items": {
+            "$ref": "#/$defs/AnalysisLayerExecution"
+          },
+          "title": "Layer Executions",
           "type": "array"
         },
         "metadata": {

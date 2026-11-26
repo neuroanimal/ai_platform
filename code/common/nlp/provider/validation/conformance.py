@@ -344,7 +344,16 @@ def validate_provider_response(
                 ),
             )
 
-        unsupported_executions = execution_set - supported_layers
+        # A requested layer the provider does not support must still get an
+        # execution record (see missing_layer_executions above) - with status
+        # UNAVAILABLE. Only other statuses on unsupported layers are wrong;
+        # otherwise a correct partial response could never be valid.
+        unsupported_executions = {
+            layer
+            for layer in execution_set - supported_layers
+            if execution_map[layer].status
+            != AnalysisLayerExecutionStatus.UNAVAILABLE
+        }
 
         if unsupported_executions:
             names = sorted(
@@ -356,8 +365,8 @@ def validate_provider_response(
                 issues,
                 "unsupported_layer_executions",
                 (
-                    "Analysis contains execution records for "
-                    f"unsupported layers: {names}."
+                    "Analysis reports execution of unsupported layers "
+                    f"(only status UNAVAILABLE is allowed for them): {names}."
                 ),
             )
 

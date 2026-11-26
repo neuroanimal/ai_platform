@@ -574,6 +574,7 @@ class NLPProviderLifecycle:
             )
 
             if cancellation is not None:
+                # Both the caller's context and the separate token can stop it.
                 child_token = context.cancellation
                 cancellation.add_callback(child_token.cancel)
 

@@ -222,6 +222,49 @@ class TestLayerExecutionConformance(unittest.TestCase):
         self.assertTrue(self.validate(response).is_valid)
         print("UNAVAILABLE LAYERS CONSISTENCY: OK")
 
+    def test_unsupported_requested_layer_is_unavailable_not_an_error(self) -> None:
+        """Partial response of a provider without MORPHOLOGY: UNAVAILABLE is the only valid status."""
+        capabilities = ProviderCapabilities(
+            provider_id="layer-provider",
+            provider_version="1.0.0",
+            supported_language_codes=["pl"],
+            supported_layers=[AnalysisLayer.SEGMENTATION],
+        )
+        response = build_response(
+            layer_executions=[
+                AnalysisLayerExecution(
+                    layer=AnalysisLayer.SEGMENTATION,
+                    status=AnalysisLayerExecutionStatus.COMPLETED,
+                ),
+                AnalysisLayerExecution(
+                    layer=AnalysisLayer.MORPHOLOGY,
+                    status=AnalysisLayerExecutionStatus.UNAVAILABLE,
+                ),
+            ],
+            completed_layers=[AnalysisLayer.SEGMENTATION],
+            unavailable_layers=[AnalysisLayer.MORPHOLOGY],
+        )
+        report = validate_provider_response(build_request(), capabilities, response)
+        self.assertTrue(report.is_valid, [issue.code for issue in report.issues])
+
+        claimed = build_response(
+            layer_executions=[
+                AnalysisLayerExecution(
+                    layer=AnalysisLayer.SEGMENTATION,
+                    status=AnalysisLayerExecutionStatus.COMPLETED,
+                ),
+                AnalysisLayerExecution(
+                    layer=AnalysisLayer.MORPHOLOGY,
+                    status=AnalysisLayerExecutionStatus.COMPLETED,
+                ),
+            ],
+            completed_layers=[AnalysisLayer.SEGMENTATION, AnalysisLayer.MORPHOLOGY],
+        )
+        codes = [issue.code for issue in
+                 validate_provider_response(build_request(), capabilities, claimed).issues]
+        self.assertIn("unsupported_layer_executions", codes)
+        print("UNSUPPORTED REQUESTED LAYER AS UNAVAILABLE: OK")
+
     def test_failed_layer_is_not_completed(self) -> None:
         response = build_response(
             layer_executions=[
