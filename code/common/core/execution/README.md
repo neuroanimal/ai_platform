@@ -28,7 +28,7 @@ one engine's limits.
   different `threads` would overwrite each other; `claim_setting` turns that
   into a `ResourceConflictError`.
 
-## How a provider adopts it (8C done 2026-11-26; 8D and later still to do)
+## How a provider adopts it (8C and 8D done 2026-11-26)
 
 - **8C — lifecycle integration (done):** `NLPProviderLifecycle.analyze_with_context(
   provider_id, request, *, context, timeout_seconds, policy, cancellation)` runs the
@@ -42,10 +42,16 @@ one engine's limits.
   Timeouts and cancellations arrive as `NLPProviderTimeoutError` /
   `NLPProviderCancelledError` (both NLP and execution errors). Tests:
   `config/test_env/test_nlp_provider_execution_contract.py`.
-- **8D — Stanza:** check the context between sentences/batches instead of one
-  call over the whole text; claim `torch.num_threads`; lease the pipeline per
-  (language, processors, package) key; record device and version. Then run
-  `conformance.check_execution_conformance` in its tests.
+- **8D — Stanza (done):** `StanzaPolishProvider.analyze_in_context` runs the
+  processors one group at a time (tokenize+mwt, pos, lemma, depparse) and checks
+  the context before each, so a deadline or cancellation stops it at the next
+  processor boundary; one processor over a long text still runs to its end.
+  `max_threads` is claimed as `torch.num_threads` in the shared ResourceManager
+  (conflict -> `ResourceConflictError`, nothing changed); the device is checked
+  with `RuntimePolicy.resolve_device`; identical pipelines are leased once per
+  (package, processors, batch size, GPU, model dir) and released by `close()`.
+  Metadata: engine + version, device, threads, seconds per processor. Tests:
+  `config/test_env/test_nlp_stanza_execution_contract.py`.
 - **OCR/HTR and speech** reuse the same steps with their own keys.
 
 `conformance.py` gives each provider a ready check: cancellation honoured,

@@ -32,6 +32,8 @@ Root dependencies:
 No automatic model download is performed.
 """
 
+# pylint: disable=too-many-lines  # one engine adapter: mapping + 8D execution contract
+
 from __future__ import annotations
 
 import asyncio
@@ -41,6 +43,8 @@ import time
 import unicodedata
 from pathlib import Path
 from typing import Any
+
+from ai_platform.common.core.execution.errors import ExecutionError
 
 from ..model.analysis import (
     AnalysisLayer,
@@ -191,6 +195,11 @@ class StanzaPolishProvider(NLPProvider):
 
         self._lock = threading.Lock()
 
+        # Stage 8D: shared ResourceManager (bind_execution_resources) and the
+        # key of the shared pipeline leased from it.
+        self._resources: Any = None
+        self._pipeline_key: str | None = None
+
         # Initialization and inference use separate locks.
         self._initialization_lock = threading.Lock()
 
@@ -262,7 +271,18 @@ class StanzaPolishProvider(NLPProvider):
             if self._pipeline is not None:
                 return
 
-            self._pipeline = self._initialize_pipeline()
+            resources = getattr(self, "_resources", None)
+            if resources is None:
+                self._pipeline = self._initialize_pipeline()
+                return
+            # Stage 8D: one pipeline per configuration, shared by every
+            # provider instance of this lifecycle (loaded models are large).
+            self._pipeline_key = self._shared_pipeline_key()
+            self._pipeline = resources.acquire(
+                self._pipeline_key,
+                self._initialize_pipeline,
+                closer=lambda pipeline: None,
+            )
 
     def _initialize_pipeline(self) -> Any:
         try:
@@ -306,6 +326,123 @@ class StanzaPolishProvider(NLPProvider):
                     "original_error": str(exc),
                 },
             ) from exc
+
+    async def _run_whole_pipeline(self, text: str) -> Any:
+        """The whole pipeline in one call, in a worker thread (no execution context)."""
+        def run_pipeline() -> Any:
+            with self._lock:
+                return self._pipeline(text)
+
+        return await asyncio.to_thread(run_pipeline)
+
+    def _pipeline_stages(self) -> list[list[str]]:
+        """Processor groups in pipeline order; mwt runs together with tokenize.
+
+        (Stanza adds mwt whenever tokenize is requested, so running mwt again
+        as its own stage would apply it twice.)
+        """
+        try:
+            from stanza.pipeline.core import PIPELINE_NAMES  # pylint: disable=import-outside-toplevel
+        except ImportError:  # injected test pipelines without Stanza
+            PIPELINE_NAMES = (  # pylint: disable=invalid-name
+                "tokenize", "mwt", "pos", "lemma", "depparse",
+                "ner", "sentiment", "constituency",
+            )
+        active = getattr(self._pipeline, "processors", None) or {
+            name.strip(): True for name in self._processors.split(",")
+        }
+        stages: list[list[str]] = []
+        for name in PIPELINE_NAMES:
+            if name not in active:
+                continue
+            if name == "mwt" and stages and stages[-1] == ["tokenize"]:
+                stages[-1].append("mwt")
+            else:
+                stages.append([name])
+        return stages
+
+    def _run_staged_pipeline(
+        self,
+        text: str,
+        context: Any,
+        recorder: Any,
+    ) -> Any:
+        """Run the processors one group at a time, checking the context before each."""
+        seconds: dict[str, float] = {}
+        with self._lock:
+            if not hasattr(self._pipeline, "process"):
+                # An injected pipeline that is only callable (tests, embedding):
+                # one call, with the context checked before and after it.
+                context.check("stanza:pipeline")
+                started = time.perf_counter()
+                document = self._pipeline(text)
+                seconds["pipeline"] = round(time.perf_counter() - started, 4)
+                context.check("stanza:mapping")
+                recorder.note("stage_seconds", seconds)
+                return document
+            document: Any = text
+            for stage in self._pipeline_stages():
+                name = "+".join(stage)
+                context.check(f"stanza:{name}")
+                started = time.perf_counter()
+                document = self._pipeline.process(document, processors=[stage[0]])
+                seconds[name] = round(time.perf_counter() - started, 4)
+            context.check("stanza:mapping")
+        recorder.note("stage_seconds", seconds)
+        return document
+
+    def _actual_device(self) -> str:
+        """Device the pipeline really runs on ("cpu" or "cuda:0")."""
+        if not self._use_gpu:
+            return "cpu"
+        try:
+            import torch  # pylint: disable=import-outside-toplevel
+        except ImportError:
+            return "cpu"
+        return "cuda:0" if torch.cuda.is_available() else "cpu"
+
+    def bind_execution_resources(self, resources: Any) -> None:
+        """Called by NLPProviderLifecycle.register (stage 8D): the shared ResourceManager."""
+        self._resources = resources
+
+    def _apply_thread_policy(self, max_threads: int | None) -> int | None:
+        """Apply ``max_threads`` to PyTorch's process-global thread pool.
+
+        The setting is claimed in the shared ResourceManager first: if another
+        engine already set a different value for the whole process, this is a
+        ResourceConflictError instead of a silent change of its behaviour.
+        Returns the thread count in effect (None when torch is absent).
+        """
+        try:
+            import torch  # pylint: disable=import-outside-toplevel
+        except ImportError:
+            return None
+        if max_threads is not None:
+            resources = getattr(self, "_resources", None)
+            must_apply = (
+                resources.claim_setting("torch.num_threads", max_threads, PROVIDER_ID)
+                if resources is not None
+                else True
+            )
+            if must_apply:
+                torch.set_num_threads(max_threads)
+        return torch.get_num_threads()
+
+    def close(self) -> None:
+        """Release the shared pipeline (stage 8D); invoked by NLPProviderLifecycle.close."""
+        resources = getattr(self, "_resources", None)
+        key = getattr(self, "_pipeline_key", None)
+        if resources is not None and key is not None:
+            resources.release(key, close_when_unused=True)
+            resources.release_settings(PROVIDER_ID)
+            self._pipeline = None
+
+    def _shared_pipeline_key(self) -> str:
+        """Key under which identical pipelines are shared between provider instances."""
+        return (
+            f"stanza:pl:{self._package}:{self._processors}:"
+            f"{self._tokenize_batch_size}:{self._use_gpu}:{self._model_dir}"
+        )
 
     @property
     def capabilities(self) -> ProviderCapabilities:
@@ -783,6 +920,45 @@ class StanzaPolishProvider(NLPProvider):
         request: NLPProviderRequest,
     ) -> NLPProviderResponse:
         """Analyze one canonical document request."""
+        return await self._analyze(request, self._run_whole_pipeline)
+
+    async def analyze_in_context(
+        self,
+        request: NLPProviderRequest,
+        context: Any,
+        recorder: Any,
+    ) -> NLPProviderResponse:
+        """
+        Analyze under the runtime execution contract (stage 8D).
+
+        The Stanza processors run one after another (tokenize+mwt, pos,
+        lemma, depparse, ...) and the context is checked before each of
+        them, so a timeout or a cancellation stops the analysis at the
+        next processor boundary instead of after the whole pipeline.
+        A single processor over a long text still runs to its end - that
+        is the finest granularity Stanza offers. The recorder gets the
+        engine, its version, the device, the threads and the seconds of
+        every processor.
+        """
+        recorder.record_engine("stanza", self._provider_version)
+        device = context.policy.resolve_device([self._actual_device()])
+        threads = self._apply_thread_policy(context.policy.max_threads)
+        recorder.record_device(device, threads=threads)
+        recorder.note("processors", self._processors)
+
+        async def run(text: str) -> Any:
+            return await asyncio.to_thread(
+                self._run_staged_pipeline, text, context, recorder
+            )
+
+        return await self._analyze(request, run)
+
+    async def _analyze(
+        self,
+        request: NLPProviderRequest,
+        run_pipeline_fn: Any,
+    ) -> NLPProviderResponse:
+        """Shared body of analyze / analyze_in_context; ``run_pipeline_fn(text)`` runs Stanza."""
 
         if request.configuration:
             raise NLPProviderConfigurationError(
@@ -891,14 +1067,14 @@ class StanzaPolishProvider(NLPProvider):
             started = time.perf_counter()
 
             try:
-                # Stanza is synchronous. Run inference outside the
-                # event loop and serialize access to the pipeline.
-                def run_pipeline() -> Any:
-                    with self._lock:
-                        return self._pipeline(text)
+                # Stanza is synchronous: the runner executes inference
+                # outside the event loop and serializes pipeline access.
+                stanza_document = await run_pipeline_fn(text)
 
-                stanza_document = await asyncio.to_thread(run_pipeline)
-
+            except ExecutionError:
+                # Timeout / cancellation of the execution contract (8D):
+                # not a Stanza failure, propagated with its own type.
+                raise
             except Exception as exc:
                 raise NLPProviderExecutionError(
                     "Stanza inference failed.",

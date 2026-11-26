@@ -157,6 +157,11 @@ class NLPProviderLifecycle:
 
         plugin.register(self._registry)
 
+        # Stage 8D: providers that share engine resources get the manager.
+        bind = getattr(provider, "bind_execution_resources", None)
+        if callable(bind):
+            bind(self.resources)
+
         record = _ProviderRecord(
             provider_id=provider_id,
             provider=provider,
